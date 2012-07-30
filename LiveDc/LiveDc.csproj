@@ -77,6 +77,10 @@
       <Project>{A09B408A-26A0-4FF8-83D5-6E1B1DA5F63C}</Project>
       <Name>DokanNet</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\QuickDc\QuickDc\QuickDc.csproj">
+      <Project>{660E074C-9BAC-4681-856E-1668862252CA}</Project>
+      <Name>QuickDc</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

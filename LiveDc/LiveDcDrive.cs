@@ -1,31 +1,64 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using Dokan;
+using QuickDc.Managers;
 
 namespace LiveDc
 {
     public class LiveDcDrive : DokanOperations
     {
         private int _count = 1;
+        private char _driveLetter;
+        private readonly QuickDc.DcEngine _engine;
+
+
+        public ContentItem GetFile(string fileName)
+        {
+            var item = _engine.Share.Search(new SearchQuery { Query = fileName });
+
+            if (item.Count == 0)
+            {
+                // get the item from the download manager
+                //item = new  _engine.DownloadManager.Items().FirstOrDefault( di=> di.Magnet.FileName == fileName);
+            }
+
+            throw new NotImplementedException();
+        }
+
+        public bool HaveFile(string fileName)
+        {
+            return false;
+        }
+
+        public LiveDcDrive(QuickDc.DcEngine engine)
+        {
+            _engine = engine;
+        }
+        
+        public void Unmount()
+        {
+            DokanNet.DokanUnmount(_driveLetter);
+        }
 
         public void MountAsync()
         {
             new ThreadStart(() => Mount()).BeginInvoke(null, null);
         }
 
-        public bool Mount(string driveLetter = "n:\\")
+        public bool Mount(char driveLetter = 'n')
         {
-            if (DriveInfo.GetDrives().Any(di => di.Name.Equals(driveLetter, StringComparison.InvariantCultureIgnoreCase)))
+            if (DriveInfo.GetDrives().Any(di => di.Name.Equals(driveLetter.ToString()+":\\", StringComparison.InvariantCultureIgnoreCase)))
                 return false;
+
+            _driveLetter = driveLetter;
 
             var opt = new DokanOptions();
             opt.DebugMode = true;
-            opt.MountPoint = driveLetter;
+            opt.MountPoint = driveLetter + ":\\";
             opt.ThreadCount = 1;
             var result = DokanNet.DokanMain(opt, this);
             return result == DokanNet.DOKAN_SUCCESS;
