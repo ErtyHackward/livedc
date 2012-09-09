@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -6,27 +7,39 @@ using System.Text;
 using System.Threading;
 using Dokan;
 using QuickDc.Managers;
+using QuickDc.Structs;
 
 namespace LiveDc
 {
+    /// <summary>
+    /// Represents virtual drive
+    /// </summary>
     public class LiveDcDrive : DokanOperations
     {
         private int _count = 1;
         private char _driveLetter;
         private readonly QuickDc.DcEngine _engine;
 
+        private Dictionary<string, DcStream> _openedFiles = new Dictionary<string, DcStream>();
 
-        public ContentItem GetFile(string fileName)
+        /// <summary>
+        /// Groups shared files and currently donwloading files
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Magnet> AllMagnets()
         {
-            var item = _engine.Share.Search(new SearchQuery { Query = fileName });
-
-            if (item.Count == 0)
+            if (_engine.Share != null)
             {
-                // get the item from the download manager
-                //item = new  _engine.DownloadManager.Items().FirstOrDefault( di=> di.Magnet.FileName == fileName);
+                foreach (var item in _engine.Share.Items())
+                {
+                    yield return item.Magnet;
+                }
             }
 
-            throw new NotImplementedException();
+            foreach (var downloadItem in _engine.DownloadManager.Items())
+            {
+                yield return downloadItem.Magnet;
+            }
         }
 
         public bool HaveFile(string fileName)
@@ -36,6 +49,8 @@ namespace LiveDc
 
         public LiveDcDrive(QuickDc.DcEngine engine)
         {
+            if (engine == null)
+                throw new ArgumentNullException("engine");
             _engine = engine;
         }
         
@@ -70,12 +85,11 @@ namespace LiveDc
 
             Trace.Write("Create file " + filename);
 
-            if (filename == "\\myvirtualfile.txt")
-            {
-                Trace.WriteLine(" ok");
-                return 0;
-            }
+            var pureFileName = filename.Trim('\\');
 
+            if (!string.IsNullOrEmpty(pureFileName) && AllMagnets().Any(m => m.FileName == pureFileName))
+                return 0;
+            
             if (filename == "\\")
             {
                 info.IsDirectory = true;
@@ -110,24 +124,58 @@ namespace LiveDc
 
         public int CloseFile(string filename, DokanFileInfo info)
         {
+            lock (_openedFiles)
+            {
+                DcStream stream;
+
+                if (_openedFiles.TryGetValue(filename, out stream))
+                {
+                    stream.Dispose();
+                    _openedFiles.Remove(filename);
+                }
+            }
+
             Trace.WriteLine("Closefile " + filename);
             return 0;
         }
 
         public int ReadFile(string filename, byte[] buffer, ref uint readBytes, long offset, DokanFileInfo info)
         {
-            var length = Math.Min(buffer.Length, 1024 * 1024 - offset);
+            DcStream stream;
+            lock (_openedFiles)
+            {  
+                if (!_openedFiles.TryGetValue(filename, out stream))
+                {
+                    var pureFileName = Path.GetFileName(filename);
 
-            readBytes = (uint)length;
+                    var magnet = AllMagnets().FirstOrDefault(m => m.FileName == pureFileName);
 
-            if (offset == 0)
-            {
-                var data = Encoding.Default.GetBytes("ErtyHackward");
-                Array.Copy(data, buffer, data.Length);
+                    if (!string.IsNullOrEmpty(magnet.TTH))
+                    {
+                        stream = _engine.GetStream(magnet);
+                        _openedFiles.Add(filename, stream);
+                    }
+                }
             }
 
-            Trace.WriteLine("Read file " + filename);
+            if (stream == null)
+            {
+                Trace.WriteLine("Stream does not found " + filename);
+                return -1;
+            }
 
+            Trace.WriteLine(string.Format("Reading {0} {1}", filename, offset));
+
+
+            try
+            {
+                stream.Seek(offset, SeekOrigin.Begin);
+                readBytes = (uint)stream.Read(buffer, 0, buffer.Length);
+            }
+            catch
+            {
+                return -1;
+            }
             return 0;
         }
 
@@ -145,53 +193,50 @@ namespace LiveDc
         {
             Trace.WriteLine("Get file info " + filename);
 
-            if (filename == "\\myvirtualfile.txt")
-            {
-
-                fileinfo.Attributes = FileAttributes.ReadOnly;
-                fileinfo.CreationTime = DateTime.Now;
-                fileinfo.LastAccessTime = DateTime.Now;
-                fileinfo.LastWriteTime = DateTime.Now;
-                fileinfo.Length = 1024*1024;
-
-                return 0;
-            }
-
+            // base folder
             if (filename == "\\")
             {
                 fileinfo.Attributes = FileAttributes.Directory;
                 fileinfo.CreationTime = DateTime.Now;
                 fileinfo.LastAccessTime = DateTime.Now;
                 fileinfo.LastWriteTime = DateTime.Now;
-                fileinfo.Length = 0;// f.Length;
+                fileinfo.Length = 0;
                 return 0;
             }
 
+            var pureFileName = filename.Trim('\\');
+
+            var item = AllMagnets().FirstOrDefault(m => m.FileName == pureFileName);
+
+            if (!string.IsNullOrEmpty(item.FileName))
+            {
+                fileinfo.Attributes = FileAttributes.ReadOnly;
+                fileinfo.CreationTime = DateTime.Now;
+                fileinfo.LastAccessTime = DateTime.Now;
+                fileinfo.LastWriteTime = DateTime.Now;
+                fileinfo.Length = item.Size;
+                return 0;
+            }
+
+            // file not found
             return -1;
-
-            //DirectoryInfo f = new DirectoryInfo(path);
-
-            //fileinfo.Attributes = f.Attributes;
-            //fileinfo.CreationTime = f.CreationTime;
-            //fileinfo.LastAccessTime = f.LastAccessTime;
-            //fileinfo.LastWriteTime = f.LastWriteTime;
-            //fileinfo.Length = 0;// f.Length;
-            //return 0;
-            
         }
 
         public int FindFiles(string filename, System.Collections.ArrayList files, DokanFileInfo info)
         {
             Trace.WriteLine("Find files in " + filename);
 
-            var fi = new FileInformation();
-            fi.Attributes = FileAttributes.ReadOnly ;
-            fi.CreationTime = DateTime.Now;
-            fi.LastAccessTime = DateTime.Now;
-            fi.LastWriteTime = DateTime.Now;
-            fi.Length = 1024 * 1024;
-            fi.FileName = "myvirtualfile.txt";
-            files.Add(fi);
+            foreach (var item in AllMagnets())
+            {
+                var fi = new FileInformation();
+                fi.Attributes = FileAttributes.ReadOnly;
+                fi.CreationTime = DateTime.Now;
+                fi.LastAccessTime = DateTime.Now;
+                fi.LastWriteTime = DateTime.Now;
+                fi.Length = item.Size;
+                fi.FileName = item.FileName;
+                files.Add(fi);
+            }
 
             return 0;
         }
@@ -253,5 +298,34 @@ namespace LiveDc
         {
             return 0;
         }
+    }
+
+    public class LiveFolder
+    {
+        public LiveFolder()
+        {
+            Folders = new List<LiveFolder>();
+            Files = new List<LiveFile>();
+        }
+
+        public string Name { get; set; }
+
+        public List<LiveFolder> Folders { get; private set; }
+
+        public List<LiveFile> Files { get; private set; }
+    }
+
+    public class LiveFile
+    {
+        public string Name { get; set; }
+        public long Size { get; set; }
+
+        public DateTime Created { get; set; }
+        public DateTime Modified { get; set; }
+        public DateTime LastAccess { get; set; }
+
+        public string SystemPath { get; set; }
+
+        public DownloadItem DownloadItem { get; set; }
     }
 }

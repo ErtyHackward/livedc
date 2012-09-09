@@ -2,6 +2,8 @@
 using System.Windows.Forms;
 using LiveDc.Properties;
 using QuickDc;
+using QuickDc.Managers;
+using QuickDc.Structs;
 
 namespace LiveDc
 {
@@ -29,18 +31,31 @@ namespace LiveDc
             var appMenu = new ContextMenuStrip();
             appMenu.Items.Add("Exit").Click += ProgramExitClick;
             _icon.ContextMenuStrip = appMenu;
-
-            _drive = new LiveDcDrive(Engine);
-            _drive.MountAsync();
-
+            
             var r = new Random();
 
             Engine = new DcEngine();
+
+            _drive = new LiveDcDrive(Engine);
+            _drive.MountAsync();
 
             Engine.Hubs.Add("hub2.o-go.ru", "livedc" + r.Next(0, 10000000));
             Engine.ActiveStatusChanged += EngineActivated;
 
             Engine.StartAsync();
+
+            var magnet = new Magnet(@"magnet:?xt=urn:tree:tiger:JQDOIABICG4SEXIRU6FY7UCWZDDFELETQ65PQWY&xl=782245888&dn=%D0%A1%D0%B0%D0%BC%D0%BE%D0%B5%20%D0%A1%D0%BC%D0%B5%D1%88%D0%BD%D0%BE%D0%B5%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%201.avi");
+
+            Engine.Share = new MemoryShare();
+
+            Engine.Share.AddFile(new ContentItem 
+                                    { 
+                                        SystemPath = @"C:\Share\funny 1.avi",
+                                        VirtualPath = @"/funny 1.avi", 
+                                        Magnet = magnet 
+                                    });
+
+
 
             Application.Run();
         }
