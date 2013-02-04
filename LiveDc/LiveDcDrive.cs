@@ -6,8 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Dokan;
-using QuickDc.Managers;
-using QuickDc.Structs;
+using SharpDc.Managers;
+using SharpDc.Structs;
 
 namespace LiveDc
 {
@@ -18,9 +18,14 @@ namespace LiveDc
     {
         private int _count = 1;
         private char _driveLetter;
-        private readonly QuickDc.DcEngine _engine;
+        private readonly SharpDc.DcEngine _engine;
 
         private Dictionary<string, DcStream> _openedFiles = new Dictionary<string, DcStream>();
+
+        public string DriveRoot
+        {
+            get { return _driveLetter.ToString() + ":\\"; }
+        }
 
         /// <summary>
         /// Groups shared files and currently donwloading files
@@ -47,7 +52,7 @@ namespace LiveDc
             return false;
         }
 
-        public LiveDcDrive(QuickDc.DcEngine engine)
+        public LiveDcDrive(SharpDc.DcEngine engine)
         {
             if (engine == null)
                 throw new ArgumentNullException("engine");
@@ -66,12 +71,13 @@ namespace LiveDc
 
         public bool Mount(char driveLetter = 'n')
         {
-            if (DriveInfo.GetDrives().Any(di => di.Name.Equals(driveLetter.ToString()+":\\", StringComparison.InvariantCultureIgnoreCase)))
+            if (DriveInfo.GetDrives().Any(di => di.Name.Equals(driveLetter.ToString() + ":\\", StringComparison.InvariantCultureIgnoreCase)))
                 return false;
 
             _driveLetter = driveLetter;
 
             var opt = new DokanOptions();
+            opt.VolumeLabel = "LiveDC";
             opt.DebugMode = true;
             opt.MountPoint = driveLetter + ":\\";
             opt.ThreadCount = 1;
@@ -108,7 +114,7 @@ namespace LiveDc
 
             if (filename == "\\")
                 return 0;
-            return -DokanNet.ERROR_PATH_NOT_FOUND; ;
+            return -DokanNet.ERROR_PATH_NOT_FOUND;
         }
 
         public int CreateDirectory(string filename, DokanFileInfo info)
@@ -165,8 +171,7 @@ namespace LiveDc
             }
 
             Trace.WriteLine(string.Format("Reading {0} {1}", filename, offset));
-
-
+            
             try
             {
                 stream.Seek(offset, SeekOrigin.Begin);

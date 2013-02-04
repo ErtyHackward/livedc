@@ -1,18 +1,16 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Reflection;
 using System.Windows.Forms;
-using LiveDc.Properties;
 using LiveDc.Utilites;
-using QuickDc;
-using QuickDc.Managers;
-using QuickDc.Structs;
+using SharpDc.Structs;
+using Win32;
 
 namespace LiveDc
 {
     static class Program
     {
-        public static DcEngine Engine;
-        private static NotifyIcon _icon;
-        private static LiveDcDrive _drive;
+        private static LiveClient _client;
 
         /// <summary>
         /// The main entry point for the application.
@@ -39,6 +37,21 @@ namespace LiveDc
                         VistaSecurity.RestartElevated(args);
                     }
                 }
+
+                if (arg.StartsWith("magnet:"))
+                {
+                    Process proc = RunningInstance();
+                    if (proc != null)
+                    {
+                        var m = new Magnet(arg);
+                        using (var copyData = new CopyData())
+                        {
+                            copyData.Channels.Add("LIVEDC");
+                            copyData.Channels["LIVEDC"].Send(m.ToString());
+                        }
+                    }
+                    return;
+                }
             }
             #endregion
 
@@ -50,66 +63,36 @@ namespace LiveDc
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            if (!WindowsHelper.IsMagnetHandlerAssigned)
-            {
-                if (MessageBox.Show("Would you like LiveDc to handle magnet links?", "Question", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    VistaSecurity.StartElevated("-reg");
-                }
-            }
-
-            _icon = new NotifyIcon
-            {
-                Icon = Resources.AppIcon,
-                Visible = true,
-                Text = "Status: offline"
-            };
-
-            var appMenu = new ContextMenuStrip();
-            appMenu.Items.Add("Exit").Click += ProgramExitClick;
-            _icon.ContextMenuStrip = appMenu;
-
-            var r = new Random();
-
-            Engine = new DcEngine();
-
-            _drive = new LiveDcDrive(Engine);
-            _drive.MountAsync();
-
-            Engine.Hubs.Add("hub2.o-go.ru", "livedc" + r.Next(0, 10000000));
-            Engine.ActiveStatusChanged += EngineActivated;
-
-            Engine.StartAsync();
-
-
-
-            //var magnet = new Magnet(@"magnet:?xt=urn:tree:tiger:JQDOIABICG4SEXIRU6FY7UCWZDDFELETQ65PQWY&xl=782245888&dn=%D0%A1%D0%B0%D0%BC%D0%BE%D0%B5%20%D0%A1%D0%BC%D0%B5%D1%88%D0%BD%D0%BE%D0%B5%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%201.avi");
-
-            //Engine.Share = new MemoryShare();
-
-            //Engine.Share.AddFile(new ContentItem 
-            //                        { 
-            //                            SystemPath = @"C:\Share\funny 1.avi",
-            //                            VirtualPath = @"/funny 1.avi", 
-            //                            Magnet = magnet 
-            //                        });
-
-
-
+            _client = new LiveClient();
+            
             Application.Run();
         }
 
-        static void ProgramExitClick(object sender, EventArgs e)
+        public static Process RunningInstance()
         {
-            _drive.Unmount();
-            Engine.Dispose(); 
-            _icon.Visible = false; 
-            Application.Exit();
+            Process current = Process.GetCurrentProcess();
+            Process[] processes = Process.GetProcessesByName(current.ProcessName);
+
+            //Loop through the running processes in with the same name 
+            foreach (Process process in processes)
+            {
+                //Ignore the current process 
+                if (process.Id != current.Id)
+                {
+                    //Make sure that the process is running from the exe file. 
+                    if (Assembly.GetExecutingAssembly().Location.
+                         Replace("/", "\\") == current.MainModule.FileName)
+                    {
+                        //Return the other process instance.  
+                        return process;
+
+                    }
+                }
+            }
+            //No other instance was found, return null.  
+            return null;
         }
 
-        static void EngineActivated(object sender, EventArgs e)
-        {
-            _icon.Text = Engine.Active ? "Status: online" : "Status: offline";
-        }
+
     }
 }
