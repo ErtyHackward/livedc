@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Utilites;
 using SharpDc.Structs;
@@ -29,7 +31,7 @@ namespace LiveDc
                         var result = WindowsHelper.RegisterMagnetHandler();
 
                         if (!result)
-                            MessageBox.Show("Unable to set the program as a magnet handler", "Error",
+                            MessageBox.Show("Не удается установить обработчик магнет-ссылок", "Ошибка",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     else
