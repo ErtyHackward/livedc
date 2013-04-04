@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
+using LiveDc.Forms;
 using LiveDc.Properties;
 using LiveDc.Utilites;
 using SharpDc;
@@ -14,7 +15,7 @@ using DataReceivedEventArgs = Win32.DataReceivedEventArgs;
 
 namespace LiveDc
 {
-    public class LiveClient
+    public partial class LiveClient
     {
         private readonly DcEngine _engine;
         private NotifyIcon _icon;
@@ -24,6 +25,7 @@ namespace LiveDc
         private FrmStatus _statusForm;
         private AsyncOperation _ao;
 
+        public Settings Settings { get; private set; }
 
         public LiveClient()
         {
@@ -36,16 +38,11 @@ namespace LiveDc
                 }
             }
 
-            _icon = new NotifyIcon
-            {
-                Icon = Resources.AppIcon,
-                Visible = true,
-                Text = "Статус: отключен"
-            };
+            InitializeComponent();
 
-            var appMenu = new ContextMenuStrip();
-            appMenu.Items.Add("Выход").Click += ProgramExitClick;
-            _icon.ContextMenuStrip = appMenu;
+            Settings = new Settings();
+            if (File.Exists(Settings.SettingsFilePath))
+                Settings.Load();
 
             var r = new Random();
 
@@ -58,7 +55,7 @@ namespace LiveDc
             _drive = new LiveDcDrive(_engine);
             _drive.MountAsync();
 
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
             
             var hub = _engine.Hubs.Add("hub2.o-go.ru", "livedc" + r.Next(0, 10000000));
 
@@ -77,14 +74,19 @@ namespace LiveDc
             _copyData = new CopyData();
             _copyData.CreateHandle(new CreateParams());
             _copyData.Channels.Add("LIVEDC");
-            _copyData.DataReceived += _copyData_DataReceived;
+            _copyData.DataReceived += CopyDataDataReceived;
 
             _ao = AsyncOperationManager.CreateOperation(null);
             _statusForm = new FrmStatus();
 
         }
 
-        void _copyData_DataReceived(object sender, DataReceivedEventArgs e)
+        void SettingsClick(object sender, EventArgs e)
+        {
+
+        }
+
+        void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
         {
             try
             {
@@ -112,14 +114,12 @@ namespace LiveDc
             {
                 if (_currentDownload.DoneSegmentsCount == 0)
                 {
-                    UpdateMessage(string.Format("{0} {1}\nПоиск. Найдено {2} источников ",
-                                                _currentDownload.Magnet.FileName,
+                    UpdateMessage(_currentDownload.Magnet.FileName, string.Format("{0}. Поиск. Найдено {1} источников ",
                                                 Utils.FormatBytes(_currentDownload.Magnet.Size), _currentDownload.Sources.Count));
                 }
                 else
                 {
-                    UpdateMessage(string.Format("{0} {1}\nОткрываю файл... ",
-                                                _currentDownload.Magnet.FileName,
+                    UpdateMessage(_currentDownload.Magnet.FileName, string.Format("{0}. Открываю файл... ",
                                                 Utils.FormatBytes(_currentDownload.Magnet.Size)));
                     Process.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
                     break;
@@ -133,8 +133,7 @@ namespace LiveDc
 
             if (_currentDownload.DoneSegmentsCount == 0)
             {
-                UpdateMessage(string.Format("{0} {1}\nНе удается начать загрузку. Источников {2}.",
-                            _currentDownload.Magnet.FileName,
+                UpdateMessage(_currentDownload.Magnet.FileName, string.Format("{0}. Не удается начать загрузку. Источников {1}.",
                             Utils.FormatBytes(_currentDownload.Magnet.Size), _currentDownload.Sources.Count));
             }
 
@@ -150,12 +149,16 @@ namespace LiveDc
             _ao.Post((o) => _statusForm.Hide(), null);
         }
 
-        private void UpdateMessage(string message)
+        private void UpdateMessage(string message, string status)
         {
-            _ao.Post((o) => { _statusForm.MainText = message; }, null);
+            _ao.Post((o) =>
+                         {
+                             _statusForm.MainText = message;
+                             _statusForm.StatusText = status;
+                         }, null);
         }
 
-        void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             // it is critically important to release the virtual drive
             _drive.Unmount();

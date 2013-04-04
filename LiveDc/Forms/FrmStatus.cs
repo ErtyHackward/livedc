@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
-namespace LiveDc
+namespace LiveDc.Forms
 {
     public partial class FrmStatus : Form
     {
@@ -15,6 +9,12 @@ namespace LiveDc
         {
             get { return label2.Text; }
             set { label2.Text = value; }
+        }
+
+        public string StatusText
+        {
+            get { return label3.Text; }
+            set { label3.Text = value; }
         }
         
         public FrmStatus()
