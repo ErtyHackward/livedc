@@ -13,14 +13,15 @@ namespace LiveDc
         {
             _icon = new NotifyIcon
             {
-                Icon = Resources.AppIcon,
+                Icon = Resources.livedc_offline,
                 Visible = true,
                 Text = "Статус: отключен"
             };
 
             var appMenu = new ContextMenuStrip();
-            appMenu.Items.Add("Выход").Click += ProgramExitClick;
+            
             appMenu.Items.Add("Настройки").Click += SettingsClick;
+            appMenu.Items.Add("Выход").Click += ProgramExitClick;
 
             _icon.ContextMenuStrip = appMenu;
         }

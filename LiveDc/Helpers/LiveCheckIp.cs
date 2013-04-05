@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 
-namespace LiveDc
+namespace LiveDc.Helpers
 {
-    public static class CheckIp
+    public static class LiveCheckIp
     {
         public static void CheckPortAsync(int tcpPort, Action<CheckIpResult> callback)
         {

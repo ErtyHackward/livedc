@@ -1,13 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Forms;
+using LiveDc.Helpers;
 using LiveDc.Properties;
 using LiveDc.Utilites;
 using SharpDc;
+using SharpDc.Connections;
 using SharpDc.Logging;
 using SharpDc.Structs;
 using Win32;
@@ -17,7 +22,7 @@ namespace LiveDc
 {
     public partial class LiveClient
     {
-        private readonly DcEngine _engine;
+        private DcEngine _engine;
         private NotifyIcon _icon;
         private LiveDcDrive _drive;
         private CopyData _copyData;
@@ -27,8 +32,20 @@ namespace LiveDc
 
         public Settings Settings { get; private set; }
 
+        public DcEngine Engine
+        {
+            get { return _engine; }
+        }
+
+        public AsyncOperation AsyncOperation
+        {
+            get { return _ao; }
+        }
+
         public LiveClient()
         {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
+
             if (!WindowsHelper.IsMagnetHandlerAssigned)
             {
                 if (MessageBox.Show("Хотите чтобы LiveDC обрабатывал магнет-ссылки ?", "Вопрос", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
@@ -44,32 +61,7 @@ namespace LiveDc
             if (File.Exists(Settings.SettingsFilePath))
                 Settings.Load();
 
-            var r = new Random();
-
-            LogManager.LogManagerInstance = new TraceLogManager();
-
-            _engine = new DcEngine();
-            //_engine.Settings.ActiveMode = false;
-            _engine.TagInfo.Version = "livedc";
-
-            _drive = new LiveDcDrive(_engine);
-            _drive.MountAsync();
-
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
-            
-            var hub = _engine.Hubs.Add("hub2.o-go.ru", "livedc" + r.Next(0, 10000000));
-
-            var settings = hub.Settings;
-
-            settings.GetUsersList = true;
-            //settings.PassiveMode = true;
-
-            hub.Settings = settings;
-
-            _engine.ActiveStatusChanged += EngineActivated;
-
-            _engine.StartAsync();
-            _engine.Connect();
+            LogManager.LogManagerInstance = new NLogManager();
 
             _copyData = new CopyData();
             _copyData.CreateHandle(new CreateParams());
@@ -78,7 +70,109 @@ namespace LiveDc
 
             _ao = AsyncOperationManager.CreateOperation(null);
             _statusForm = new FrmStatus();
+            
+            InitializeEngine();
 
+            LiveCheckIp.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
+        }
+
+        private void PortCheckComplete(CheckIpResult e)
+        {
+            if (e.IsPortOpen)
+            {
+                _engine.Settings.LocalAddress = e.ExternalIpAddress;
+                Settings.IPAddress = e.ExternalIpAddress;
+            }
+
+            _engine.Settings.ActiveMode = e.IsPortOpen;
+
+            if (string.IsNullOrEmpty(Settings.Hubs))
+            {
+                if (FlyLinkHelper.IsFlyLinkInstalled)
+                {
+                    var hubs = FlyLinkHelper.ReadHubs();
+
+                    for (int i = 0; i < hubs.Count; i++)
+                    {
+                        if (hubs[i].StartsWith("dchub://"))
+                            hubs[i] = hubs[i].Remove(0, 8);
+                    }
+
+                    Settings.Hubs = string.Join(";", hubs);
+                    Settings.Save();
+                    foreach (var hub in hubs)
+                    {
+                        AddHub(hub);
+                    }
+                }
+
+                IpGeoBase.RequestAsync(IPAddress.Parse(e.ExternalIpAddress), CityReceived);
+            }
+        }
+
+        private void CityReceived(IpGeoBaseResponse e)
+        {
+            if (e.City != null)
+            {
+                LiveHubs.GetHubsAsync(e.City, HubsListReceived);
+                if (!string.IsNullOrEmpty(Settings.Hubs))
+                {
+                    LiveHubs.PostHubsAsync(e.City, Settings.Hubs);
+                }
+            }
+
+            _ao.Post((o) => new FrmHubList(this).Show(), null);
+        }
+
+        private void HubsListReceived(List<string> list)
+        {
+            if (list.Count > 0)
+            {
+                if (Settings.Hubs == null)
+                    Settings.Hubs = "";
+                else
+                    Settings.Hubs += ";";
+
+                Settings.Hubs += string.Join(";", list);
+                Settings.Save();
+            }
+            list.ForEach(AddHub);
+        }
+
+        private void AddHub(string hubAddress)
+        {
+            if (_engine.Hubs.All().Any(h => h.Settings.HubAddress == hubAddress))
+                return;
+
+            var hub = _engine.Hubs.Add(hubAddress, Settings.Nickname);
+            hub.Settings.GetUsersList = false;
+        }
+
+        private void InitializeEngine()
+        {
+            _engine = new DcEngine();
+            _engine.Settings.ActiveMode = Settings.ActiveMode;
+            _engine.TagInfo.Version = "livedc";
+
+            _drive = new LiveDcDrive(_engine);
+            _drive.MountAsync();
+
+            Settings.Nickname = "livedc" + Guid.NewGuid().ToString().GetMd5Hash().Substring(0, 8);
+
+            if (!string.IsNullOrEmpty(Settings.Hubs))
+            {
+                var hubs = Settings.Hubs.Split(';');
+
+                foreach (var hubAddress in hubs)
+                {
+                    AddHub(hubAddress);
+                }
+            }
+
+            _engine.ActiveStatusChanged += EngineActivated;
+
+            _engine.StartAsync();
+            _engine.Connect();
         }
 
         void SettingsClick(object sender, EventArgs e)
@@ -160,8 +254,11 @@ namespace LiveDc
 
         void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            // it is critically important to release the virtual drive
-            _drive.Unmount();
+            if (_drive != null)
+            {
+                // it is critically important to release the virtual drive
+                _drive.Unmount();
+            }
         }
 
         void ProgramExitClick(object sender, EventArgs e)
@@ -178,11 +275,11 @@ namespace LiveDc
             {
                 System.Media.SystemSounds.Asterisk.Play();
                 _icon.Text = "Статус: в сети";
-                _icon.Icon = Resources.green;
+                _icon.Icon = Resources.livedc;
             }
             else
             {
-                _icon.Icon = Resources.AppIcon;
+                _icon.Icon = Resources.livedc_offline;
                 _icon.Text = "Статус: отключен";
             }
         }

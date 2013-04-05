@@ -24,17 +24,38 @@ namespace LiveDc
 
         public bool AutoUpdate { get; set; }
 
+        public string Hubs { get; set; }
+
+        public bool ActiveMode { get; set; }
+
+        public string IPAddress { get; set; }
+
+        public string Nickname { get; set; }
+
         #endregion
 
         public string SettingsFilePath
         {
-            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), _fileName); }
+            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), _fileName); }
+        }
+        
+        public Settings()
+        {
+            StorageAutoSelect = true;
+            StorageAutoPrune = true;
+            AutoUpdate = true;
+            ActiveMode = true;
         }
 
         public void Save()
         {
             try
             {
+                var dir = Path.GetDirectoryName(SettingsFilePath);
+
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
                 using (var sw = new StreamWriter(File.OpenWrite(SettingsFilePath)))
                 {
                     foreach (var prop in GetType().GetProperties())

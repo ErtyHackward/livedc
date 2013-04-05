@@ -1,11 +1,11 @@
-п»їusing System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Xml;
 
-namespace LiveDc
+namespace LiveDc.Helpers
 {
     public static class IpGeoBase
     {
@@ -33,9 +33,9 @@ namespace LiveDc
                         <ip value="144.206.192.6">
                             <inetnum>144.206.0.0 - 144.206.255.255</inetnum>
                             <country>RU</country>
-                            <city>РњРѕСЃРєРІР°</city>
-                            <region>РњРѕСЃРєРІР°</region>
-                            <district>Р¦РµРЅС‚СЂР°Р»СЊРЅС‹Р№ С„РµРґРµСЂР°Р»СЊРЅС‹Р№ РѕРєСЂСѓРі</district>
+                            <city>Москва</city>
+                            <region>Москва</region>
+                            <district>Центральный федеральный округ</district>
                             <lat>55.755787</lat>
                             <lng>37.617634</lng>
                         </ip>
