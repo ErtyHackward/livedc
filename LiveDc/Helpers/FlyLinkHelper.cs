@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
 
-namespace LiveDc
+namespace LiveDc.Helpers
 {
     public static class FlyLinkHelper
     {
