@@ -71,6 +71,7 @@
             this.continueButton.TabIndex = 3;
             this.continueButton.Text = "Продолжить";
             this.continueButton.UseVisualStyleBackColor = true;
+            this.continueButton.Click += new System.EventHandler(this.continueButton_Click);
             // 
             // exitButton
             // 
@@ -80,6 +81,7 @@
             this.exitButton.TabIndex = 4;
             this.exitButton.Text = "Выход";
             this.exitButton.UseVisualStyleBackColor = true;
+            this.exitButton.Click += new System.EventHandler(this.exitButton_Click);
             // 
             // statusLabel
             // 

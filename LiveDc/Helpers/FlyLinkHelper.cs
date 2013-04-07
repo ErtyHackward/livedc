@@ -18,7 +18,7 @@ namespace LiveDc.Helpers
             }
         }
 
-        public static bool IsFlyLinkInstalled 
+        public static bool IsInstalled 
         {
             get
             {
