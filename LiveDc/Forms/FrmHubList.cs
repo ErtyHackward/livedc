@@ -47,7 +47,8 @@ namespace LiveDc.Forms
                 {
                     _client.Settings.Hubs = "";
                 }
-                else _client.Settings.Hubs += ";";
+                else 
+                    _client.Settings.Hubs += ";";
 
                 _client.Settings.Hubs += hubText.Text;
                 _client.Settings.Save();
@@ -67,7 +68,9 @@ namespace LiveDc.Forms
             {
                 _client.AsyncOperation.Post((o) =>
                 {
-                    statusLabel.Text = "Отключен. Не удается подключиться к хабу. Попробуйте другой адрес.";
+                    statusLabel.Text = "Отключен. Не удается подключиться к хабу. Попробуйте другой адрес.\n";
+                    if (e.Exception != null)
+                        statusLabel.Text += e.Exception.Message;
                     addButton.Enabled = true;
                     hubText.Enabled = true;
                 }, null);
@@ -98,6 +101,19 @@ namespace LiveDc.Forms
             _hub.ConnectionStatusChanged -= HubConnectionStatusChanged;
             _hub.ActiveStatusChanged -= HubActiveStatusChanged;
             _hub = null;
+        }
+
+        private void exitButton_Click(object sender, EventArgs e)
+        {
+            Close();
+            _client.Dispose();
+            Application.Exit();
+        }
+
+        private void continueButton_Click(object sender, EventArgs e)
+        {
+            _client.Settings.Save();
+            Close();
         }
     }
 }

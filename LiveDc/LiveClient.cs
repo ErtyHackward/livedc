@@ -88,9 +88,27 @@ namespace LiveDc
 
             if (string.IsNullOrEmpty(Settings.Hubs))
             {
-                if (FlyLinkHelper.IsFlyLinkInstalled)
+                if (FlyLinkHelper.IsInstalled)
                 {
                     var hubs = FlyLinkHelper.ReadHubs();
+
+                    for (int i = 0; i < hubs.Count; i++)
+                    {
+                        if (hubs[i].StartsWith("dchub://"))
+                            hubs[i] = hubs[i].Remove(0, 8);
+                    }
+
+                    Settings.Hubs = string.Join(";", hubs);
+                    Settings.Save();
+                    foreach (var hub in hubs)
+                    {
+                        AddHub(hub);
+                    }
+                }
+
+                if (StrongDcHelper.IsInstalled)
+                {
+                    var hubs = StrongDcHelper.ReadHubs();
 
                     for (int i = 0; i < hubs.Count; i++)
                     {
@@ -263,9 +281,7 @@ namespace LiveDc
 
         void ProgramExitClick(object sender, EventArgs e)
         {
-            _drive.Unmount();
-            _engine.Dispose();
-            _icon.Visible = false;
+            Dispose();
             Application.Exit();
         }
 
@@ -282,6 +298,13 @@ namespace LiveDc
                 _icon.Icon = Resources.livedc_offline;
                 _icon.Text = "Статус: отключен";
             }
+        }
+
+        internal void Dispose()
+        {
+            _drive.Unmount();
+            _engine.Dispose();
+            _icon.Visible = false;
         }
     }
 }
