@@ -79,6 +79,7 @@
     <Compile Include="Helpers\IpGeoBase.cs" />
     <Compile Include="Helpers\LiveHubs.cs" />
     <Compile Include="Helpers\StorageHelper.cs" />
+    <Compile Include="Helpers\StrongDcHelper.cs" />
     <Compile Include="LiveClient.cs" />
     <Compile Include="LiveClient.Designer.cs">
       <DependentUpon>LiveClient.cs</DependentUpon>
