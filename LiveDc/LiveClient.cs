@@ -11,9 +11,10 @@ using LiveDc.Forms;
 using LiveDc.Helpers;
 using LiveDc.Properties;
 using LiveDc.Utilites;
+using Microsoft.Win32;
 using SharpDc;
-using SharpDc.Connections;
 using SharpDc.Logging;
+using SharpDc.Managers;
 using SharpDc.Structs;
 using Win32;
 using DataReceivedEventArgs = Win32.DataReceivedEventArgs;
@@ -22,6 +23,8 @@ namespace LiveDc
 {
     public partial class LiveClient
     {
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private DcEngine _engine;
         private NotifyIcon _icon;
         private LiveDcDrive _drive;
@@ -45,6 +48,7 @@ namespace LiveDc
         public LiveClient()
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
+            Application.ApplicationExit += ApplicationApplicationExit;
 
             if (!WindowsHelper.IsMagnetHandlerAssigned)
             {
@@ -74,6 +78,11 @@ namespace LiveDc
             InitializeEngine();
 
             LiveCheckIp.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
+        }
+
+        void ApplicationApplicationExit(object sender, EventArgs e)
+        {
+            Dispose();
         }
 
         private void PortCheckComplete(CheckIpResult e)
@@ -106,23 +115,23 @@ namespace LiveDc
                     }
                 }
 
-                if (StrongDcHelper.IsInstalled)
-                {
-                    var hubs = StrongDcHelper.ReadHubs();
+                //if (StrongDcHelper.IsInstalled)
+                //{
+                //    var hubs = StrongDcHelper.ReadHubs();
 
-                    for (int i = 0; i < hubs.Count; i++)
-                    {
-                        if (hubs[i].StartsWith("dchub://"))
-                            hubs[i] = hubs[i].Remove(0, 8);
-                    }
+                //    for (int i = 0; i < hubs.Count; i++)
+                //    {
+                //        if (hubs[i].StartsWith("dchub://"))
+                //            hubs[i] = hubs[i].Remove(0, 8);
+                //    }
 
-                    Settings.Hubs = string.Join(";", hubs);
-                    Settings.Save();
-                    foreach (var hub in hubs)
-                    {
-                        AddHub(hub);
-                    }
-                }
+                //    Settings.Hubs = string.Join(";", hubs);
+                //    Settings.Save();
+                //    foreach (var hub in hubs)
+                //    {
+                //        AddHub(hub);
+                //    }
+                //}
 
                 IpGeoBase.RequestAsync(IPAddress.Parse(e.ExternalIpAddress), CityReceived);
             }
@@ -166,14 +175,57 @@ namespace LiveDc
             hub.Settings.GetUsersList = false;
         }
 
+        private string SharePath { get { return Path.Combine(Settings.SettingsFolder, "share.xml"); } }
+
         private void InitializeEngine()
         {
             _engine = new DcEngine();
             _engine.Settings.ActiveMode = Settings.ActiveMode;
             _engine.TagInfo.Version = "livedc";
 
+
+            if (File.Exists(SharePath))
+            {
+                try
+                {
+                    _engine.Share = MemoryShare.CreateFromXml(SharePath);
+                }
+                catch (Exception x)
+                {
+                    logger.Error("Unable to load share from {0} because {1}", SharePath, x.Message);
+                }
+            }
+
+            if (_engine.Share == null)
+            {
+                _engine.Share = new MemoryShare();
+            }
+
+            if (Settings.StorageAutoSelect)
+            {
+                _engine.Settings.PathDownload = StorageHelper.GetBestSaveDirectory();
+            }
+
+            #region Virtual drive
+            char driveLetter;
+
+            if (!string.IsNullOrEmpty(Settings.VirtualDriveLetter))
+            {
+                if (!StorageHelper.IsDriveFree(Settings.VirtualDriveLetter[0]))
+                    driveLetter = StorageHelper.GetFreeDrive('l');
+                else
+                {
+                    driveLetter = Settings.VirtualDriveLetter[0];
+                }
+            }
+            else
+            {
+                driveLetter = StorageHelper.GetFreeDrive('l');
+            }
+
             _drive = new LiveDcDrive(_engine);
-            _drive.MountAsync();
+            _drive.MountAsync(driveLetter);
+            #endregion
 
             Settings.Nickname = "livedc" + Guid.NewGuid().ToString().GetMd5Hash().Substring(0, 8);
 
@@ -202,6 +254,18 @@ namespace LiveDc
         {
             try
             {
+                if (!_engine.Active)
+                {
+                    MessageBox.Show("Не удалось установить соединение ни с одним из хабов. Проверьте сетевое подключение.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (!_drive.IsReady)
+                {
+                    MessageBox.Show("Не удалось подключить виртуальный диск. Попробуйте перезагрузить компьютер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return; 
+                }
+
                 if (_currentDownload != null)
                     _engine.RemoveDownload(_currentDownload);
 
@@ -281,7 +345,6 @@ namespace LiveDc
 
         void ProgramExitClick(object sender, EventArgs e)
         {
-            Dispose();
             Application.Exit();
         }
 
@@ -289,7 +352,6 @@ namespace LiveDc
         {
             if (_engine.Active)
             {
-                System.Media.SystemSounds.Asterisk.Play();
                 _icon.Text = "Статус: в сети";
                 _icon.Icon = Resources.livedc;
             }
@@ -299,9 +361,21 @@ namespace LiveDc
                 _icon.Text = "Статус: отключен";
             }
         }
-
+        
         internal void Dispose()
         {
+            var share = (MemoryShare)_engine.Share;
+
+            try
+            {
+                if (share.IsDirty)
+                    share.ExportAsXml(SharePath);
+            }
+            catch (Exception x)
+            {
+                logger.Error("Share save error: {0}", x.Message );
+            }
+            
             _drive.Unmount();
             _engine.Dispose();
             _icon.Visible = false;

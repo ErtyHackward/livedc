@@ -57,6 +57,8 @@ namespace LiveDc.Forms
                                                 {
                                                     statusLabel.Text = "Успешное подключение. Клиент готов к работе. Если желаете, можно добавить еще.";
                                                     continueButton.Enabled = true;
+                                                    addButton.Enabled = true;
+                                                    hubText.Enabled = true;
                                                 }, null);
                 CleanUpHub();
             }
@@ -103,14 +105,14 @@ namespace LiveDc.Forms
             _hub = null;
         }
 
-        private void exitButton_Click(object sender, EventArgs e)
+        private void ExitButtonClick(object sender, EventArgs e)
         {
             Close();
             _client.Dispose();
             Application.Exit();
         }
 
-        private void continueButton_Click(object sender, EventArgs e)
+        private void ContinueButtonClick(object sender, EventArgs e)
         {
             _client.Settings.Save();
             Close();

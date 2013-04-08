@@ -7,8 +7,10 @@ namespace LiveDc
     public class Settings
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        
-        private string _fileName = "LiveDC\\livedc.ini";
+
+        private string _folderName = "LiveDC";
+
+        private string _fileName = "livedc.ini";
 
         #region Settings
 
@@ -32,11 +34,18 @@ namespace LiveDc
 
         public string Nickname { get; set; }
 
+        public string VirtualDriveLetter { get; set; }
+
         #endregion
 
         public string SettingsFilePath
         {
-            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), _fileName); }
+            get { return Path.Combine(SettingsFolder, _fileName); }
+        }
+
+        public string SettingsFolder
+        {
+            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), _folderName); }
         }
         
         public Settings()
