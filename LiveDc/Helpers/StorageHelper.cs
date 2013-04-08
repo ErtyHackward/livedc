@@ -10,7 +10,7 @@ namespace LiveDc.Helpers
         {
             var drives = DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed).ToList();
 
-            drives.Sort((d1, d2) => ( d2.AvailableFreeSpace.CompareTo(d2.AvailableFreeSpace) ));
+            drives.Sort((d1, d2) => ( d2.AvailableFreeSpace.CompareTo(d1.AvailableFreeSpace) ));
 
             return drives[0];
         }
@@ -29,6 +29,21 @@ namespace LiveDc.Helpers
             }
 
             return Path.Combine(drive.RootDirectory.Name, "LiveDcCache");
+        }
+
+        public static char GetFreeDrive(char startLetter = 'c')
+        {
+            for (char c = startLetter; c <= 'z'; c++)
+            {
+                if (IsDriveFree(startLetter))
+                    return c;
+            }
+            throw new ApplicationException("No free letter found to mount virtual drive");
+        }
+
+        public static bool IsDriveFree(char letter)
+        {
+            return !DriveInfo.GetDrives().Any(d => d.Name.Equals(letter + ":\\", StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }

@@ -16,6 +16,8 @@ namespace LiveDc
     /// </summary>
     public class LiveDcDrive : DokanOperations
     {
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private int _count = 1;
         private char _driveLetter;
         private readonly SharpDc.DcEngine _engine;
@@ -26,6 +28,11 @@ namespace LiveDc
         {
             get { return _driveLetter.ToString() + ":\\"; }
         }
+
+        /// <summary>
+        /// Indicates if the virtual drive is mounted and ready to work
+        /// </summary>
+        public bool IsReady { get; private set; }
 
         /// <summary>
         /// Groups shared files and currently donwloading files
@@ -62,15 +69,19 @@ namespace LiveDc
         public void Unmount()
         {
             DokanNet.DokanUnmount(_driveLetter);
+            IsReady = false;
         }
 
-        public void MountAsync()
+        public void MountAsync(char driveLetter, AsyncCallback callback = null)
         {
-            new ThreadStart(() => Mount()).BeginInvoke(null, null);
+            new ThreadStart(() => Mount(driveLetter)).BeginInvoke(callback, null);
         }
 
         public bool Mount(char driveLetter = 'n')
         {
+            if (IsReady)
+                throw new InvalidOperationException("Virtual drive is alredy mounted, dismount previous one");
+
             if (DriveInfo.GetDrives().Any(di => di.Name.Equals(driveLetter.ToString() + ":\\", StringComparison.InvariantCultureIgnoreCase)))
                 return false;
 
@@ -78,11 +89,14 @@ namespace LiveDc
 
             var opt = new DokanOptions();
             opt.VolumeLabel = "LiveDC";
-            opt.DebugMode = true;
+            opt.DebugMode = false;
             opt.MountPoint = driveLetter + ":\\";
             opt.ThreadCount = 1;
             var result = DokanNet.DokanMain(opt, this);
-            return result == DokanNet.DOKAN_SUCCESS;
+
+            IsReady = result == DokanNet.DOKAN_SUCCESS;
+
+            return IsReady;
         }
 
         public int CreateFile(string filename, FileAccess access, FileShare share, FileMode mode, FileOptions options, DokanFileInfo info)
