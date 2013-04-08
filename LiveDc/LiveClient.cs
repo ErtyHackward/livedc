@@ -45,6 +45,10 @@ namespace LiveDc
             get { return _ao; }
         }
 
+        private string SharePath { get { return Path.Combine(Settings.SettingsFolder, "share.xml"); } }
+
+        private string DriveLockPath { get { return Path.Combine(Settings.SettingsFolder, "drive.lck"); } }
+
         public LiveClient()
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
@@ -115,23 +119,23 @@ namespace LiveDc
                     }
                 }
 
-                //if (StrongDcHelper.IsInstalled)
-                //{
-                //    var hubs = StrongDcHelper.ReadHubs();
+                if (StrongDcHelper.IsInstalled)
+                {
+                    var hubs = StrongDcHelper.ReadHubs();
 
-                //    for (int i = 0; i < hubs.Count; i++)
-                //    {
-                //        if (hubs[i].StartsWith("dchub://"))
-                //            hubs[i] = hubs[i].Remove(0, 8);
-                //    }
+                    for (int i = 0; i < hubs.Count; i++)
+                    {
+                        if (hubs[i].StartsWith("dchub://"))
+                            hubs[i] = hubs[i].Remove(0, 8);
+                    }
 
-                //    Settings.Hubs = string.Join(";", hubs);
-                //    Settings.Save();
-                //    foreach (var hub in hubs)
-                //    {
-                //        AddHub(hub);
-                //    }
-                //}
+                    Settings.Hubs = string.Join(";", hubs);
+                    Settings.Save();
+                    foreach (var hub in hubs)
+                    {
+                        AddHub(hub);
+                    }
+                }
 
                 IpGeoBase.RequestAsync(IPAddress.Parse(e.ExternalIpAddress), CityReceived);
             }
@@ -174,11 +178,25 @@ namespace LiveDc
             var hub = _engine.Hubs.Add(hubAddress, Settings.Nickname);
             hub.Settings.GetUsersList = false;
         }
-
-        private string SharePath { get { return Path.Combine(Settings.SettingsFolder, "share.xml"); } }
-
+        
         private void InitializeEngine()
         {
+            if (File.Exists(DriveLockPath))
+            {
+                var text = File.ReadAllText(DriveLockPath);
+
+                if (text.Length > 0)
+                {
+                    var letter = text[0];
+
+                    if (char.IsLetter(letter))
+                    {
+                        LiveDcDrive.Unmount(letter);
+                    }
+                }
+                File.Delete(DriveLockPath);
+            }
+            
             _engine = new DcEngine();
             _engine.Settings.ActiveMode = Settings.ActiveMode;
             _engine.TagInfo.Version = "livedc";
@@ -225,6 +243,7 @@ namespace LiveDc
 
             _drive = new LiveDcDrive(_engine);
             _drive.MountAsync(driveLetter);
+            File.WriteAllText(DriveLockPath, driveLetter.ToString());
             #endregion
 
             Settings.Nickname = "livedc" + Guid.NewGuid().ToString().GetMd5Hash().Substring(0, 8);
@@ -340,6 +359,7 @@ namespace LiveDc
             {
                 // it is critically important to release the virtual drive
                 _drive.Unmount();
+                File.Delete(DriveLockPath);
             }
         }
 
@@ -364,20 +384,28 @@ namespace LiveDc
         
         internal void Dispose()
         {
-            var share = (MemoryShare)_engine.Share;
+            if (_drive != null)
+            {
+                _drive.Unmount();
+                File.Delete(DriveLockPath);
+            }
 
-            try
+            if (_engine != null)
             {
-                if (share.IsDirty)
-                    share.ExportAsXml(SharePath);
+
+                var share = (MemoryShare)_engine.Share;
+
+                try
+                {
+                    if (share.IsDirty)
+                        share.ExportAsXml(SharePath);
+                }
+                catch (Exception x)
+                {
+                    logger.Error("Share save error: {0}", x.Message);
+                }
+                _engine.Dispose();
             }
-            catch (Exception x)
-            {
-                logger.Error("Share save error: {0}", x.Message );
-            }
-            
-            _drive.Unmount();
-            _engine.Dispose();
             _icon.Visible = false;
         }
     }

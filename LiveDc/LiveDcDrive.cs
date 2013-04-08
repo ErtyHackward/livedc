@@ -72,6 +72,11 @@ namespace LiveDc
             IsReady = false;
         }
 
+        public static void Unmount(char driveLetter)
+        {
+            DokanNet.DokanUnmount(driveLetter);
+        }
+
         public void MountAsync(char driveLetter, AsyncCallback callback = null)
         {
             new ThreadStart(() => Mount(driveLetter)).BeginInvoke(callback, null);
@@ -93,7 +98,7 @@ namespace LiveDc
             opt.MountPoint = driveLetter + ":\\";
             opt.ThreadCount = 1;
             var result = DokanNet.DokanMain(opt, this);
-
+            
             IsReady = result == DokanNet.DOKAN_SUCCESS;
 
             return IsReady;

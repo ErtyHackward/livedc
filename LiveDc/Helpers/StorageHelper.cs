@@ -35,7 +35,7 @@ namespace LiveDc.Helpers
         {
             for (char c = startLetter; c <= 'z'; c++)
             {
-                if (IsDriveFree(startLetter))
+                if (IsDriveFree(c))
                     return c;
             }
             throw new ApplicationException("No free letter found to mount virtual drive");
