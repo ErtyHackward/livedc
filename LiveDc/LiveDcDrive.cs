@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Dokan;
-using SharpDc.Managers;
 using SharpDc.Structs;
 
 namespace LiveDc
@@ -103,6 +100,7 @@ namespace LiveDc
             try
             {
                 IsReady = true;
+                logger.Info("Mount virtual drive at {0}", opt.MountPoint);
                 var status = DokanNet.DokanMain(opt, this);
                 success = status == DokanNet.DOKAN_SUCCESS;
                 if (!success)
@@ -123,7 +121,7 @@ namespace LiveDc
         {
             info.Context = _count++;
 
-            Trace.Write("Create file " + filename);
+            //Trace.Write("Create file " + filename);
 
             var pureFileName = filename.Trim('\\');
 
@@ -133,18 +131,18 @@ namespace LiveDc
             if (filename == "\\")
             {
                 info.IsDirectory = true;
-                Trace.WriteLine(" ok dir");
+                //Trace.WriteLine(" ok dir");
                 return 0;
             }
 
-            Trace.WriteLine(" not found");
+            //Trace.WriteLine(" not found");
             return -DokanNet.ERROR_FILE_NOT_FOUND;
         }
 
         public int OpenDirectory(string filename, DokanFileInfo info)
         {
             info.Context = _count++;
-            Trace.WriteLine("OpenDirectory: " + filename);
+            //Trace.WriteLine("OpenDirectory: " + filename);
 
             if (filename == "\\")
                 return 0;
@@ -158,7 +156,7 @@ namespace LiveDc
 
         public int Cleanup(string filename, DokanFileInfo info)
         {
-            Trace.WriteLine("Cleanup " + filename);
+            //Trace.WriteLine("Cleanup " + filename);
             return 0;
         }
 
@@ -175,7 +173,7 @@ namespace LiveDc
                 }
             }
 
-            Trace.WriteLine("Closefile " + filename);
+            //Trace.WriteLine("Closefile " + filename);
             return 0;
         }
 
@@ -200,11 +198,11 @@ namespace LiveDc
 
             if (stream == null)
             {
-                Trace.WriteLine("Stream does not found " + filename);
+                //Trace.WriteLine("Stream does not found " + filename);
                 return -1;
             }
 
-            Trace.WriteLine(string.Format("Reading {0} {1}", filename, offset));
+            //Trace.WriteLine(string.Format("Reading {0} {1}", filename, offset));
             
             try
             {
@@ -230,7 +228,7 @@ namespace LiveDc
 
         public int GetFileInformation(string filename, FileInformation fileinfo, DokanFileInfo info)
         {
-            Trace.WriteLine("Get file info " + filename);
+            //Trace.WriteLine("Get file info " + filename);
 
             // base folder
             if (filename == "\\")
@@ -263,7 +261,7 @@ namespace LiveDc
 
         public int FindFiles(string filename, System.Collections.ArrayList files, DokanFileInfo info)
         {
-            Trace.WriteLine("Find files in " + filename);
+            //Trace.WriteLine("Find files in " + filename);
 
             foreach (var item in AllMagnets())
             {

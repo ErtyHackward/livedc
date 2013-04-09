@@ -36,6 +36,8 @@ namespace LiveDc
 
         public string VirtualDriveLetter { get; set; }
 
+        public bool ShownGreetingsTooltip { get; set; }
+
         #endregion
 
         public string SettingsFilePath
