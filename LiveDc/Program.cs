@@ -33,11 +33,13 @@ namespace LiveDc
                         if (!result)
                             MessageBox.Show("Не удается установить обработчик магнет-ссылок", "Ошибка",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+
                     }
                     else
                     {
                         VistaSecurity.RestartElevated(args);
                     }
+                    return;
                 }
 
                 if (arg.StartsWith("magnet:"))

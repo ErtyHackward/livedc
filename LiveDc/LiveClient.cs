@@ -5,34 +5,37 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Forms;
 using LiveDc.Helpers;
 using LiveDc.Properties;
 using LiveDc.Utilites;
-using Microsoft.Win32;
 using SharpDc;
 using SharpDc.Logging;
 using SharpDc.Managers;
 using SharpDc.Structs;
 using Win32;
 using DataReceivedEventArgs = Win32.DataReceivedEventArgs;
+using Timer = System.Windows.Forms.Timer;
 
 namespace LiveDc
 {
     public partial class LiveClient
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+        
+        private NotifyIcon _icon;
+        private FrmStatus _statusForm;
+        private Timer _timer;
 
         private DcEngine _engine;
-        private NotifyIcon _icon;
+        private AsyncOperation _ao;
         private LiveDcDrive _drive;
         private CopyData _copyData;
         private DownloadItem _currentDownload;
-        private FrmStatus _statusForm;
-        private AsyncOperation _ao;
-
+        
         public Settings Settings { get; private set; }
 
         public DcEngine Engine
@@ -53,13 +56,12 @@ namespace LiveDc
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
             Application.ApplicationExit += ApplicationApplicationExit;
-
+            
             if (!WindowsHelper.IsMagnetHandlerAssigned)
             {
                 if (MessageBox.Show("Хотите чтобы LiveDC обрабатывал магнет-ссылки ?", "Вопрос", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     VistaSecurity.StartElevated("-reg");
-                    return;
                 }
             }
 
@@ -78,7 +80,10 @@ namespace LiveDc
 
             _ao = AsyncOperationManager.CreateOperation(null);
             _statusForm = new FrmStatus();
-            
+
+
+            Utils.FileSizeFormatProvider.BinaryModifiers = new[] { " Б", " КБ", " МБ", " ГБ", " ТБ", " ПБ" };
+
             InitializeEngine();
 
             LiveCheckIp.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
@@ -199,6 +204,7 @@ namespace LiveDc
             
             _engine = new DcEngine();
             _engine.Settings.ActiveMode = Settings.ActiveMode;
+            _engine.Settings.UseSparseFiles = true;
             _engine.TagInfo.Version = "livedc";
 
 
@@ -309,13 +315,11 @@ namespace LiveDc
             {
                 if (_currentDownload.DoneSegmentsCount == 0)
                 {
-                    UpdateMessage(_currentDownload.Magnet.FileName, string.Format("{0}. Поиск. Найдено {1} источников ",
-                                                Utils.FormatBytes(_currentDownload.Magnet.Size), _currentDownload.Sources.Count));
+                    UpdateMessage(string.Format("{0} ({1})",_currentDownload.Magnet.FileName,Utils.FormatBytes(_currentDownload.Magnet.Size)), string.Format("Поиск. Найдено {0} источников ",_currentDownload.Sources.Count));
                 }
                 else
                 {
-                    UpdateMessage(_currentDownload.Magnet.FileName, string.Format("{0}. Открываю файл... ",
-                                                Utils.FormatBytes(_currentDownload.Magnet.Size)));
+                    UpdateMessage(string.Format("{0} ({1})", _currentDownload.Magnet.FileName, Utils.FormatBytes(_currentDownload.Magnet.Size)), " Открываю файл... ");
                     Process.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
                     break;
                 }
@@ -328,8 +332,7 @@ namespace LiveDc
 
             if (_currentDownload.DoneSegmentsCount == 0)
             {
-                UpdateMessage(_currentDownload.Magnet.FileName, string.Format("{0}. Не удается начать загрузку. Источников {1}.",
-                            Utils.FormatBytes(_currentDownload.Magnet.Size), _currentDownload.Sources.Count));
+                UpdateMessage(string.Format("{0} ({1})", _currentDownload.Magnet.FileName, Utils.FormatBytes(_currentDownload.Magnet.Size)), string.Format("Не удается начать загрузку. Источников {0}.", _currentDownload.Sources.Count));
             }
 
             Thread.Sleep(3000);
@@ -372,14 +375,45 @@ namespace LiveDc
         {
             if (_engine.Active)
             {
-                _icon.Text = "Статус: в сети";
                 _icon.Icon = Resources.livedc;
             }
             else
             {
                 _icon.Icon = Resources.livedc_offline;
-                _icon.Text = "Статус: отключен";
             }
+
+            UpdateTrayText();
+        }
+
+        private void UpdateTrayText()
+        {
+            var text = _engine.Active ? "Статус: в сети" : "Статус: отключен";
+
+            if (_currentDownload != null)
+            {
+                var fileName = _currentDownload.Magnet.FileName;
+
+                if (fileName.Length > 30)
+                {
+                    var name = Path.GetFileNameWithoutExtension(fileName);
+                    var ext = Path.GetExtension(fileName);
+
+                    fileName = name.Substring(0, 30 - ext.Length) + "..." + ext;
+                }
+
+                text = string.Format("{0}\n{1}/{2} ({3}/с)\n{4} ",
+                    fileName,
+                    Utils.FormatBytes(_engine.DownloadManager.GetTotalDownloadBytes(_currentDownload)),
+                    Utils.FormatBytes(_currentDownload.Magnet.Size),
+                    Utils.FormatBytes(_engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == _currentDownload)),
+                    text);
+            }
+            Fixes.SetNotifyIconText(_icon, text);
+        }
+
+        void TimerTick(object sender, EventArgs e)
+        {
+            UpdateTrayText();
         }
         
         internal void Dispose()
@@ -406,7 +440,23 @@ namespace LiveDc
                 }
                 _engine.Dispose();
             }
-            _icon.Visible = false;
+
+            if (_icon != null)
+                _icon.Visible = false;
+        }
+    }
+
+    public class Fixes
+    {
+        public static void SetNotifyIconText(NotifyIcon ni, string text)
+        {
+            if (text.Length >= 128) 
+                throw new ArgumentOutOfRangeException("Text limited to 127 characters");
+            Type t = typeof(NotifyIcon);
+            BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance;
+            t.GetField("text", hidden).SetValue(ni, text);
+            if ((bool)t.GetField("added", hidden).GetValue(ni))
+                t.GetMethod("UpdateIcon", hidden).Invoke(ni, new object[] { true });
         }
     }
 }
