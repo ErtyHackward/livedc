@@ -59,10 +59,11 @@ namespace LiveDc
             
             if (!WindowsHelper.IsMagnetHandlerAssigned)
             {
-                if (MessageBox.Show("Хотите чтобы LiveDC обрабатывал магнет-ссылки ?", "Вопрос", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    VistaSecurity.StartElevated("-reg");
-                }
+                var res = WindowsHelper.RegisterMagnetHandler();
+                //if (MessageBox.Show("Хотите чтобы LiveDC обрабатывал магнет-ссылки ?", "Вопрос", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                //{
+                //    VistaSecurity.StartElevated("-reg");
+                //}
             }
 
             InitializeComponent();
@@ -87,6 +88,15 @@ namespace LiveDc
             InitializeEngine();
 
             LiveCheckIp.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
+
+            if (!Settings.ShownGreetingsTooltip)
+            {
+                _icon.ShowBalloonTip(10000, "LiveDC", "Добро пожаловать! Наведите курсор на этот значок чтобы увидеть текущий статус работы.", ToolTipIcon.Info);
+
+                Settings.ShownGreetingsTooltip = true;
+                Settings.Save();
+            }
+
         }
 
         void ApplicationApplicationExit(object sender, EventArgs e)
@@ -156,8 +166,8 @@ namespace LiveDc
                     LiveHubs.PostHubsAsync(e.City, Settings.Hubs);
                 }
             }
-
-            _ao.Post((o) => new FrmHubList(this).Show(), null);
+            else
+                _ao.Post((o) => new FrmHubList(this).Show(), null);
         }
 
         private void HubsListReceived(List<string> list)
@@ -169,7 +179,8 @@ namespace LiveDc
                 else
                     Settings.Hubs += ";";
 
-                Settings.Hubs += string.Join(";", list);
+                Settings.Hubs += string.Join(";", list.Where(i => !Settings.Hubs.Contains(i)));
+                Settings.Hubs = Settings.Hubs.Trim(';');
                 Settings.Save();
             }
             list.ForEach(AddHub);
@@ -205,6 +216,7 @@ namespace LiveDc
             _engine = new DcEngine();
             _engine.Settings.ActiveMode = Settings.ActiveMode;
             _engine.Settings.UseSparseFiles = true;
+            _engine.Settings.AutoSelectPort = true;
             _engine.TagInfo.Version = "livedc";
 
 
@@ -249,6 +261,10 @@ namespace LiveDc
 
             _drive = new LiveDcDrive(_engine);
             _drive.MountAsync(driveLetter);
+
+            if (!Directory.Exists(Path.GetDirectoryName(DriveLockPath)))
+                Directory.CreateDirectory(Path.GetDirectoryName(DriveLockPath));
+
             File.WriteAllText(DriveLockPath, driveLetter.ToString());
             #endregion
 
@@ -311,7 +327,7 @@ namespace LiveDc
 
             var sw = Stopwatch.StartNew();
 
-            while (sw.Elapsed.Seconds < 10)
+            while (sw.Elapsed.Seconds < 20)
             {
                 if (_currentDownload.DoneSegmentsCount == 0)
                 {
