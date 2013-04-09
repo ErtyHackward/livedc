@@ -20,10 +20,15 @@ namespace LiveDc
 
             var appMenu = new ContextMenuStrip();
             
-            appMenu.Items.Add("Настройки").Click += SettingsClick;
+            //appMenu.Items.Add("Настройки").Click += SettingsClick;
             appMenu.Items.Add("Выход").Click += ProgramExitClick;
 
             _icon.ContextMenuStrip = appMenu;
+
+            _timer = new Timer();
+            _timer.Interval = 1000;
+            _timer.Tick += TimerTick;
+            _timer.Start();
         }
     }
 }

@@ -97,11 +97,26 @@ namespace LiveDc
             opt.DebugMode = false;
             opt.MountPoint = driveLetter + ":\\";
             opt.ThreadCount = 1;
-            var result = DokanNet.DokanMain(opt, this);
-            
-            IsReady = result == DokanNet.DOKAN_SUCCESS;
 
-            return IsReady;
+            bool success = false;
+            
+            try
+            {
+                IsReady = true;
+                var status = DokanNet.DokanMain(opt, this);
+                success = status == DokanNet.DOKAN_SUCCESS;
+                if (!success)
+                {
+                    logger.Warn("Dokan mount status: {0} ", status);
+                }
+            }
+            catch (Exception x)
+            {
+                logger.Error("Error while mouting virtual drive: {0} ", x.Message);
+            }
+            IsReady = false;
+            
+            return success;
         }
 
         public int CreateFile(string filename, FileAccess access, FileShare share, FileMode mode, FileOptions options, DokanFileInfo info)

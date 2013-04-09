@@ -33,6 +33,13 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>LiveDc.Program</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>livedc.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NLog">
@@ -85,6 +92,7 @@
       <DependentUpon>LiveClient.cs</DependentUpon>
     </Compile>
     <Compile Include="LiveDcDrive.cs" />
+    <Compile Include="NativeMethods.cs" />
     <Compile Include="NLogManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -137,6 +145,7 @@
   <ItemGroup>
     <None Include="Resources\livedc.ico" />
     <None Include="Resources\livedc_offline.ico" />
+    <Content Include="livedc.ico" />
     <Content Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Drawing;
+using System.Drawing.Text;
 using System.Windows.Forms;
 
 namespace LiveDc.Forms
 {
     public partial class FrmStatus : Form
     {
+        PrivateFontCollection _fontCollection;
+
         public string MainText
         {
             get { return label2.Text; }
@@ -20,6 +24,7 @@ namespace LiveDc.Forms
         public FrmStatus()
         {
             InitializeComponent();
+
         }
 
         private void button1_Click(object sender, EventArgs e)
