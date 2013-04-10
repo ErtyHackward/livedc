@@ -38,6 +38,8 @@ namespace LiveDc
 
         public bool ShownGreetingsTooltip { get; set; }
 
+        public bool DontOverrideHubs { get; set; }
+
         #endregion
 
         public string SettingsFilePath

@@ -13,6 +13,8 @@ using LiveDc.Helpers;
 using LiveDc.Properties;
 using LiveDc.Utilites;
 using SharpDc;
+using SharpDc.Connections;
+using SharpDc.Events;
 using SharpDc.Logging;
 using SharpDc.Managers;
 using SharpDc.Structs;
@@ -35,6 +37,8 @@ namespace LiveDc
         private LiveDcDrive _drive;
         private CopyData _copyData;
         private DownloadItem _currentDownload;
+
+        private HubManager _hubManager;
         
         public Settings Settings { get; private set; }
 
@@ -116,84 +120,10 @@ namespace LiveDc
 
             if (string.IsNullOrEmpty(Settings.Hubs))
             {
-                if (FlyLinkHelper.IsInstalled)
-                {
-                    var hubs = FlyLinkHelper.ReadHubs();
-
-                    for (int i = 0; i < hubs.Count; i++)
-                    {
-                        if (hubs[i].StartsWith("dchub://"))
-                            hubs[i] = hubs[i].Remove(0, 8);
-                    }
-
-                    Settings.Hubs = string.Join(";", hubs);
-                    Settings.Save();
-                    foreach (var hub in hubs)
-                    {
-                        AddHub(hub);
-                    }
-                }
-
-                if (StrongDcHelper.IsInstalled)
-                {
-                    var hubs = StrongDcHelper.ReadHubs();
-
-                    for (int i = 0; i < hubs.Count; i++)
-                    {
-                        if (hubs[i].StartsWith("dchub://"))
-                            hubs[i] = hubs[i].Remove(0, 8);
-                    }
-
-                    Settings.Hubs = string.Join(";", hubs);
-                    Settings.Save();
-                    foreach (var hub in hubs)
-                    {
-                        AddHub(hub);
-                    }
-                }
-
-                IpGeoBase.RequestAsync(IPAddress.Parse(e.ExternalIpAddress), CityReceived);
+                _hubManager.FindHubs(IPAddress.Parse(e.ExternalIpAddress));
             }
         }
 
-        private void CityReceived(IpGeoBaseResponse e)
-        {
-            if (e.City != null)
-            {
-                LiveHubs.GetHubsAsync(e.City, HubsListReceived);
-                if (!string.IsNullOrEmpty(Settings.Hubs))
-                {
-                    LiveHubs.PostHubsAsync(e.City, Settings.Hubs);
-                }
-            }
-            else
-                _ao.Post((o) => new FrmHubList(this).Show(), null);
-        }
-
-        private void HubsListReceived(List<string> list)
-        {
-            if (list.Count > 0)
-            {
-                if (Settings.Hubs == null)
-                    Settings.Hubs = "";
-                else
-                    Settings.Hubs += ";";
-
-                Settings.Hubs += string.Join(";", list.Where(i => !Settings.Hubs.Contains(i)));
-                Settings.Hubs = Settings.Hubs.Trim(';');
-                Settings.Save();
-            }
-            list.ForEach(AddHub);
-        }
-
-        private void AddHub(string hubAddress)
-        {
-            if (_engine.Hubs.All().Any(h => h.Settings.HubAddress == hubAddress))
-                return;
-
-            var hub = _engine.Hubs.Add(hubAddress, Settings.Nickname);
-            hub.Settings.GetUsersList = false;
-        }
         
         private void InitializeEngine()
         {
@@ -219,6 +149,7 @@ namespace LiveDc
             _engine.Settings.AutoSelectPort = true;
             _engine.TagInfo.Version = "livedc";
 
+            _hubManager = new HubManager(_engine, this);
 
             if (File.Exists(SharePath))
             {
@@ -270,22 +201,12 @@ namespace LiveDc
 
             Settings.Nickname = "livedc" + Guid.NewGuid().ToString().GetMd5Hash().Substring(0, 8);
 
-            if (!string.IsNullOrEmpty(Settings.Hubs))
-            {
-                var hubs = Settings.Hubs.Split(';');
-
-                foreach (var hubAddress in hubs)
-                {
-                    AddHub(hubAddress);
-                }
-            }
-
             _engine.ActiveStatusChanged += EngineActivated;
 
             _engine.StartAsync();
             _engine.Connect();
         }
-
+        
         void SettingsClick(object sender, EventArgs e)
         {
 
@@ -304,7 +225,7 @@ namespace LiveDc
                 if (!_drive.IsReady)
                 {
                     MessageBox.Show("Не удалось подключить виртуальный диск. Попробуйте перезагрузить компьютер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return; 
+                    return;
                 }
 
                 if (_currentDownload != null)
@@ -312,6 +233,7 @@ namespace LiveDc
 
                 var magnet = Magnet.Parse((string)e.Data);
                 _currentDownload = _engine.DownloadFile(magnet);
+                _currentDownload.LogSegmentEvents = true;
 
                 new ThreadStart(FormThread).BeginInvoke(null, null);
             }
@@ -358,8 +280,7 @@ namespace LiveDc
                 _engine.RemoveDownload(_currentDownload);
                 _currentDownload = null;
             }
-
-
+            
             _ao.Post((o) => _statusForm.Hide(), null);
         }
 
@@ -442,7 +363,6 @@ namespace LiveDc
 
             if (_engine != null)
             {
-
                 var share = (MemoryShare)_engine.Share;
 
                 try
