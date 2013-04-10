@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace LiveDc.Helpers
 {
-    public class LiveHubs
+    public class LiveHubsApi
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
