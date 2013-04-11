@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using SharpDc.Structs;
 
@@ -9,6 +12,9 @@ namespace LiveDc.Notify
 {
     public class DcFileControl : Control
     {
+        private bool _hover;
+        private Image _icon;
+
         public Magnet Magnet { get; set; }
 
         public long DownloadSpeed { get; set; }
@@ -23,18 +29,97 @@ namespace LiveDc.Notify
 
         public string Status { get; set; }
 
+        public Image Icon
+        {
+            get { return _icon; }
+            set { 
+                _icon = value;
+                if (InvokeRequired)
+                    this.Invoke(new ThreadStart(Invalidate));
+                else
+                {
+                    Invalidate();
+                }
+            }
+        }
+
         public DcFileControl()
         {
-            SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.Opaque, true );
+            this.Height = 40;
+            this.Width = 100;
+            SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.FixedHeight, true );
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            _hover = true;
+            Invalidate();
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            _hover = false;
+            Invalidate();
+            base.OnMouseLeave(e);
+        }
+
+        protected override void OnParentChanged(EventArgs e)
+        {
+            Size = new Size(Parent.Width - Parent.Margin.Left - Parent.Margin.Right, Height);
+            
+            base.OnParentChanged(e);
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
+            //e.Graphics.FillRectangle(Brushes.Red, ClientRectangle);
             
+            //e.Graphics.DrawString(Magnet.FileName, Font, new SolidBrush(ForeColor), ClientRectangle.X + 5, ClientRectangle.Y + 5);
+            
+            if (_hover)
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(240,240,240)), ClientRectangle);
+            
+            if (Icon != null)
+            {
+                var iconRect = new Rectangle(5,5, 32, 32);
+                e.Graphics.DrawImage(Icon, iconRect);
+            }
 
+            var fileNameRect = ClientRectangle;
+            fileNameRect.X += 45;
+            fileNameRect.Y += 5;
+            fileNameRect.Width -= fileNameRect.X;
+            fileNameRect.Height = 20;
 
+            //e.Graphics.FillRectangle(Brushes.LightCoral, fileNameRect);
+
+            e.Graphics.DrawString(FitFileName(e.Graphics, Magnet.FileName, fileNameRect), Font, Brushes.Gray, fileNameRect);
             
             base.OnPaint(e);
+        }
+
+        private string FitFileName(Graphics g, string fullName, Rectangle rect)
+        {
+            var totalSize = TextRenderer.MeasureText(g, fullName, Font, rect.Size, TextFormatFlags.SingleLine);
+
+            if (totalSize.Width <= rect.Width)
+                return fullName;
+
+            var ext = Path.GetExtension(fullName);
+            var name = Path.GetFileNameWithoutExtension(fullName);
+            
+            for (int i = name.Length - 1; i >= 0; i--)
+            {
+                var n = name.Substring(0, i) + "..." + ext;
+
+                var curSize = g.MeasureString(n , Font);
+
+                if (curSize.Width <= rect.Width)
+                    return n;
+            }
+
+            return ext;
         }
 
     }
