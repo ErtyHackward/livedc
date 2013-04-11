@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using NotifyIconSample;
+using SharpDc.Structs;
 
 namespace LiveDc.Notify
 {
@@ -12,6 +14,34 @@ namespace LiveDc.Notify
         public FrmNotify()
         {
             InitializeComponent();
+
+            flowLayoutPanel1.Controls.Add(new DcFileControl() 
+            { 
+                Magnet = new Magnet("WTRHWRTHWRTHWRTHWTRHWTHWTRHWTR", 123000043, "game.of.thrones.s03e01.1080p.hdtv.Ac3.x264-got.mkv"),
+                CreateDate = DateTime.Now
+            });
+
+            flowLayoutPanel1.Controls.Add(new DcFileControl()
+            {
+                Magnet = new Magnet("TRTWERTWERTWERTWERTWERTWERT", 321000043, "game.of.thrones.s03e03.1080p.hdtv.Ac3.x264-got.mkv"),
+                CreateDate = DateTime.Now
+            });
+
+            NativeImageList.LargeExtensionImageLoaded += NativeImageList_LargeExtensionImageLoaded;
+
+            foreach (DcFileControl control in flowLayoutPanel1.Controls)
+            {
+                control.Icon = NativeImageList.TryGetLargeIcon(Path.GetExtension(control.Magnet.FileName));
+            }
+        }
+
+        void NativeImageList_LargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
+        {
+            foreach (DcFileControl item in flowLayoutPanel1.Controls)
+            {
+                if (Path.GetExtension(item.Magnet.FileName) == e.Extension)
+                    item.Icon = e.Icon;
+            }
         }
 
         public void DrawVisualStyleElementTaskbarBackgroundBottom1(PaintEventArgs e)

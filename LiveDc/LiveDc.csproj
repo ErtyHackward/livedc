@@ -118,9 +118,13 @@
       <DependentUpon>LiveClient.cs</DependentUpon>
     </Compile>
     <Compile Include="LiveDcDrive.cs" />
+    <Compile Include="NativeImageList.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="NLogManager.cs" />
     <Compile Include="Notify\Compatibility.cs" />
+    <Compile Include="Notify\DcFileControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Notify\FrmNotify.cs">
       <SubType>Form</SubType>
     </Compile>
