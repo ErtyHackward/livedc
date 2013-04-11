@@ -15,8 +15,10 @@ using LiveDc.Utilites;
 using SharpDc;
 using SharpDc.Connections;
 using SharpDc.Events;
+using SharpDc.Interfaces;
 using SharpDc.Logging;
 using SharpDc.Managers;
+using SharpDc.Messages;
 using SharpDc.Structs;
 using Win32;
 using DataReceivedEventArgs = Win32.DataReceivedEventArgs;
@@ -228,10 +230,20 @@ namespace LiveDc
                     return;
                 }
 
+                var magnet = Magnet.Parse((string)e.Data);
+
+                var existingItem = _engine.Share.SearchByTth(magnet.TTH);
+
+                if (existingItem != null)
+                {
+                    Process.Start(existingItem.Value.SystemPath);
+                    return;
+                }
+                
                 if (_currentDownload != null)
                     _engine.RemoveDownload(_currentDownload);
 
-                var magnet = Magnet.Parse((string)e.Data);
+                
                 _currentDownload = _engine.DownloadFile(magnet);
                 _currentDownload.LogSegmentEvents = true;
 

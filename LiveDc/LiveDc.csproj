@@ -120,6 +120,16 @@
     <Compile Include="LiveDcDrive.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="NLogManager.cs" />
+    <Compile Include="Notify\Compatibility.cs" />
+    <Compile Include="Notify\FrmNotify.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Notify\FrmNotify.designer.cs">
+      <DependentUpon>FrmNotify.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Notify\NativeMethods.cs" />
+    <Compile Include="Notify\WinAPI.cs" />
+    <Compile Include="Notify\WindowPositioning.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings.cs" />
@@ -136,6 +146,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmStatus.resx">
       <DependentUpon>FrmStatus.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Notify\FrmNotify.resx">
+      <DependentUpon>FrmNotify.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -175,6 +188,7 @@
     <None Include="Resources\livedc.ico" />
     <None Include="Resources\livedc_offline.ico" />
     <Content Include="livedc.ico" />
+    <None Include="Resources\settings.png" />
     <Content Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -206,7 +220,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Setup "C:\Program Files (x86)\Inno Setup 5\compil32.exe" /cc "$(SolutionDir)\Setup\livedc.iss"</PostBuildEvent>
+    <PostBuildEvent>if $(ConfigurationName) == Setup "C:\Program Files (x86)\Inno Setup 5\compil32.exe" /cc "$(SolutionDir)Setup\livedc.iss"
+if $(ConfigurationName) == Setup "C:\Windows\explorer.exe" $(SolutionDir)Setup\Output</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
