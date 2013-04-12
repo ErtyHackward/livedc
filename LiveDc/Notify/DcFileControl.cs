@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using SharpDc;
 using SharpDc.Structs;
 
 namespace LiveDc.Notify
@@ -35,7 +36,7 @@ namespace LiveDc.Notify
             set { 
                 _icon = value;
                 if (InvokeRequired)
-                    this.Invoke(new ThreadStart(Invalidate));
+                    Invoke(new ThreadStart(Invalidate));
                 else
                 {
                     Invalidate();
@@ -47,7 +48,7 @@ namespace LiveDc.Notify
         {
             this.Height = 40;
             this.Width = 100;
-            SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.FixedHeight, true );
+            SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.FixedHeight | ControlStyles.OptimizedDoubleBuffer, true );
         }
 
         protected override void OnMouseEnter(EventArgs e)
@@ -66,8 +67,10 @@ namespace LiveDc.Notify
 
         protected override void OnParentChanged(EventArgs e)
         {
-            Size = new Size(Parent.Width - Parent.Margin.Left - Parent.Margin.Right, Height);
-            
+            if (Parent != null)
+            {
+                Size = new Size(Parent.Width - Parent.Margin.Left - Parent.Margin.Right, Height);
+            }
             base.OnParentChanged(e);
         }
 
@@ -77,8 +80,20 @@ namespace LiveDc.Notify
             
             //e.Graphics.DrawString(Magnet.FileName, Font, new SolidBrush(ForeColor), ClientRectangle.X + 5, ClientRectangle.Y + 5);
             
+            // background
+
             if (_hover)
-                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(240,240,240)), ClientRectangle);
+                e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(240, 240, 240)), ClientRectangle);  
+
+            if (Progress > 0 && Progress < 1)
+            {
+                var color = _hover ? Color.FromArgb(144, 255, 162) : Color.FromArgb(211, 255, 218);
+
+                var rect = ClientRectangle;
+
+                rect.Width = (int)(rect.Width * Progress);
+                e.Graphics.FillRectangle(new SolidBrush(color), rect );
+            }            
             
             if (Icon != null)
             {
@@ -94,14 +109,31 @@ namespace LiveDc.Notify
 
             //e.Graphics.FillRectangle(Brushes.LightCoral, fileNameRect);
 
-            e.Graphics.DrawString(FitFileName(e.Graphics, Magnet.FileName, fileNameRect), Font, Brushes.Gray, fileNameRect);
+            e.Graphics.DrawString(FitFileName(e.Graphics, Magnet.FileName, fileNameRect), Font, Brushes.Black, fileNameRect);
+
+            var infoRect = ClientRectangle;
+            infoRect.X += 45;
+            infoRect.Y += 22;
+            infoRect.Width -= infoRect.X;
+            infoRect.Height = 20;
+
+            string infoText;
+
+            if (DownloadSpeed == 0)
+                infoText = "добавлен " + TimeFormatHelper.Format(CreateDate);
+            else
+            {
+                infoText = string.Format("{0}% {1} {2}/c", (int)(Progress * 100), Utils.FormatBytes(Magnet.Size), Utils.FormatBytes(DownloadSpeed));
+            }
+
+            e.Graphics.DrawString(infoText, Font, Brushes.Gray, infoRect);
             
             base.OnPaint(e);
         }
 
         private string FitFileName(Graphics g, string fullName, Rectangle rect)
         {
-            var totalSize = TextRenderer.MeasureText(g, fullName, Font, rect.Size, TextFormatFlags.SingleLine);
+            var totalSize = g.MeasureString(fullName, Font);
 
             if (totalSize.Width <= rect.Width)
                 return fullName;
