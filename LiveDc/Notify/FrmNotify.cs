@@ -1,41 +1,117 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using NotifyIconSample;
+using SharpDc;
+using SharpDc.Interfaces;
+using SharpDc.Managers;
 using SharpDc.Structs;
 
 namespace LiveDc.Notify
 {
     public partial class FrmNotify : Form
     {
-        public FrmNotify()
+        private readonly LiveClient _client;
+
+        public void AddItem(Magnet item, DateTime createDate)
         {
-            InitializeComponent();
+            historyLabel.Visible = false;
 
-            flowLayoutPanel1.Controls.Add(new DcFileControl() 
-            { 
-                Magnet = new Magnet("WTRHWRTHWRTHWRTHWTRHWTHWTRHWTR", 123000043, "game.of.thrones.s03e01.1080p.hdtv.Ac3.x264-got.mkv"),
-                CreateDate = DateTime.Now
-            });
-
-            flowLayoutPanel1.Controls.Add(new DcFileControl()
+            if (flowLayoutPanel1.Controls.Count > 2)
             {
-                Magnet = new Magnet("TRTWERTWERTWERTWERTWERTWERT", 321000043, "game.of.thrones.s03e03.1080p.hdtv.Ac3.x264-got.mkv"),
-                CreateDate = DateTime.Now
-            });
+                flowLayoutPanel1.Controls.RemoveAt(2);
+            }
 
-            NativeImageList.LargeExtensionImageLoaded += NativeImageList_LargeExtensionImageLoaded;
+            var dcItem = new DcFileControl()
+            {
+                Name = item.TTH,
+                Magnet = item,
+                CreateDate = createDate
+            };
+
+            dcItem.Icon = NativeImageList.TryGetLargeIcon(Path.GetExtension(dcItem.Magnet.FileName));
+            dcItem.ContextMenuStrip = contextMenuStrip1;
+            dcItem.DoubleClick += dcItem_DoubleClick;
+
+            flowLayoutPanel1.Controls.Add(dcItem);
+            //flowLayoutPanel1.Controls.SetChildIndex(dcItem, 0);
+        }
+
+
+
+        public FrmNotify(LiveClient client)
+        {
+            _client = client;
+            InitializeComponent();
+            
+            NativeImageList.LargeExtensionImageLoaded += NativeImageListLargeExtensionImageLoaded;
+
+            timer1.Tick += Timer1Tick;
+            timer1.Interval = 1000;
+            timer1.Start();
+
+            Activated += FrmNotify_Activated;
+
+        }
+
+        void FrmNotify_Activated(object sender, EventArgs e)
+        {
+            RefreshItems();
+        }
+
+        private void RefreshItems()
+        {
+            foreach (DcFileControl control in flowLayoutPanel1.Controls)
+            {
+                control.DoubleClick -= dcItem_DoubleClick;
+                control.ContextMenuStrip = null;
+            }
+
+            flowLayoutPanel1.Controls.Clear();
+            historyLabel.Visible = true;
+
+            foreach (var hItem in _client.History.Items().Take(3))
+            {
+                AddItem(hItem.Magnet, hItem.CreateDate);
+            }
+
+            UpdateItems();
+        }
+
+        private void UpdateItems()
+        {
+            if (_client == null)
+                return;
 
             foreach (DcFileControl control in flowLayoutPanel1.Controls)
             {
-                control.Icon = NativeImageList.TryGetLargeIcon(Path.GetExtension(control.Magnet.FileName));
+                var di = _client.Engine.DownloadManager.GetDownloadItem(control.Magnet.TTH);
+
+                if (di != null)
+                {
+                    control.DownloadedBytes = _client.Engine.DownloadManager.GetTotalDownloadBytes(di);
+                    control.DownloadSpeed = (long)_client.Engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == di);
+                }
+                else
+                {
+                    control.DownloadSpeed = 0;
+                }
+
+                control.Invalidate();
             }
         }
 
-        void NativeImageList_LargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
+        void Timer1Tick(object sender, EventArgs e)
+        {
+            UpdateItems();
+        }
+
+        void NativeImageListLargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
         {
             foreach (DcFileControl item in flowLayoutPanel1.Controls)
             {
@@ -166,6 +242,76 @@ namespace LiveDc.Notify
             e.Graphics.FillRectangle(Brushes.LightGray, rect);
 
 
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start(_client.Drive.DriveRoot);
+        }
+
+        private void открытьToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            _client.StartFile(FromMenu(sender).Magnet);
+        }
+
+        private DcFileControl FromMenu(object menuItem)
+        {
+            var item = (ToolStripMenuItem)menuItem;
+
+            var menu = (ContextMenuStrip)item.GetCurrentParent();
+
+            return (DcFileControl)menu.SourceControl;
+        }
+
+        private void найтиВПапкеToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var item = FromMenu(sender);
+
+            var path = Path.Combine(_client.Drive.DriveRoot, item.Magnet.FileName);
+
+            ShellHelper.FindFileInExplorer(path);
+        }
+
+        private void удалитьToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var item = FromMenu(sender);
+            _client.History.DeleteItem(item.Magnet.TTH);
+
+            var di = _client.Engine.DownloadManager.GetDownloadItem(item.Magnet.TTH);
+
+            if (di != null)
+            {
+                _client.Engine.RemoveDownload(di);
+            }
+
+            var shared = _client.Engine.Share.SearchByTth(item.Magnet.TTH);
+
+            if (shared != null)
+            {
+                _client.Engine.Share.RemoveFile(item.Magnet.TTH);
+                File.Delete(shared.Value.SystemPath);
+            }
+            
+            RefreshItems();
+        }
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Вы уверены, что хотите выйти?", "Подверждение", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                Application.Exit();
+            }
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Настроек пока нет...");
+        }
+
+        void dcItem_DoubleClick(object sender, EventArgs e)
+        {
+            var item = (DcFileControl)sender;
+            var path = Path.Combine(_client.Drive.DriveRoot, item.Magnet.FileName);
         }
     }
 }

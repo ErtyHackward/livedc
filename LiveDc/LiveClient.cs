@@ -41,7 +41,7 @@ namespace LiveDc
         private DownloadItem _currentDownload;
 
         private HubManager _hubManager;
-        
+
         public Settings Settings { get; private set; }
 
         public DcEngine Engine
@@ -49,10 +49,14 @@ namespace LiveDc
             get { return _engine; }
         }
 
+        public LiveHistoryManager History { get; private set; }
+
         public AsyncOperation AsyncOperation
         {
             get { return _ao; }
         }
+
+        public LiveDcDrive Drive { get { return _drive; } }
 
         private string SharePath { get { return Path.Combine(Settings.SettingsFolder, "share.xml"); } }
 
@@ -93,6 +97,9 @@ namespace LiveDc
 
             InitializeEngine();
 
+            History = new LiveHistoryManager(this);
+            History.Load();
+
             LiveCheckIp.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
 
             if (!Settings.ShownGreetingsTooltip)
@@ -103,6 +110,10 @@ namespace LiveDc
                 Settings.Save();
             }
 
+            if (!string.IsNullOrEmpty(Program.StartMagnet))
+            {
+                StartFile(Magnet.Parse(Program.StartMagnet));
+            }
         }
 
         void ApplicationApplicationExit(object sender, EventArgs e)
@@ -216,9 +227,23 @@ namespace LiveDc
 
         void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
         {
+            var magnet = Magnet.Parse((string)e.Data);
+            StartFile(magnet);
+        }
+
+        public void StartFile(Magnet magnet)
+        {
             try
             {
-                if (!_engine.Active)
+                var existingItem = _engine.Share.SearchByTth(magnet.TTH);
+
+                if (existingItem != null)
+                {
+                    Process.Start(existingItem.Value.SystemPath);
+                    return;
+                }
+
+                if (_hubManager.InitializationCompleted && !_engine.Active)
                 {
                     MessageBox.Show("Не удалось установить соединение ни с одним из хабов. Проверьте сетевое подключение.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
@@ -230,20 +255,17 @@ namespace LiveDc
                     return;
                 }
 
-                var magnet = Magnet.Parse((string)e.Data);
-
-                var existingItem = _engine.Share.SearchByTth(magnet.TTH);
-
-                if (existingItem != null)
+                if (_currentDownload != null && _currentDownload.Magnet.TTH == magnet.TTH)
                 {
-                    Process.Start(existingItem.Value.SystemPath);
+                    Process.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
                     return;
                 }
-                
+
                 if (_currentDownload != null)
                     _engine.RemoveDownload(_currentDownload);
 
-                
+                History.AddItem(magnet);
+
                 _currentDownload = _engine.DownloadFile(magnet);
                 _currentDownload.LogSegmentEvents = true;
 
@@ -257,9 +279,15 @@ namespace LiveDc
 
         private void FormThread()
         {
-            _ao.Post((o) => _statusForm.Show(), null);
+            _ao.Post((o) => { _statusForm.Show(); }, null);
 
             var sw = Stopwatch.StartNew();
+
+            while (!_hubManager.InitializationCompleted)
+            {
+                UpdateMessage("Подключение к хабам","");
+                Thread.Sleep(100);
+            }
 
             while (sw.Elapsed.Seconds < 20)
             {
@@ -372,6 +400,8 @@ namespace LiveDc
                 _drive.Unmount();
                 File.Delete(DriveLockPath);
             }
+
+            History.Save();
 
             if (_engine != null)
             {

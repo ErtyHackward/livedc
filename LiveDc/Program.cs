@@ -14,6 +14,8 @@ namespace LiveDc
     {
         private static LiveClient _client;
 
+        public static string StartMagnet;
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -53,11 +55,19 @@ namespace LiveDc
                             copyData.Channels.Add("LIVEDC");
                             copyData.Channels["LIVEDC"].Send(m.ToString());
                         }
+                        return;
                     }
-                    return;
+                    StartMagnet = arg;
                 }
             }
             #endregion
+
+            Process otherProc = RunningInstance();
+
+            if (otherProc != null)
+            {
+                return;
+            }
 
             StartApp();
         }

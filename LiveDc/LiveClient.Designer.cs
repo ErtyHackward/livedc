@@ -29,7 +29,7 @@ namespace LiveDc
             //appMenu.Items.Add("Настройки").Click += SettingsClick;
             appMenu.Items.Add("Выход").Click += ProgramExitClick;
 
-            _icon.ContextMenuStrip = appMenu;
+            //_icon.ContextMenuStrip = appMenu;
 
             _timer = new Timer();
             _timer.Interval = 1000;
@@ -39,27 +39,24 @@ namespace LiveDc
 
         private void _icon_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-            {
-                if ((DateTime.Now - _hideTime).TotalMilliseconds < 100)
-                    return;
+            if ((DateTime.Now - _hideTime).TotalMilliseconds < 300)
+                return;
 
-                if (_form == null)
-                {
-                    _form = new FrmNotify();
-                    _form.Deactivate += form_Deactivate;
-                    _form.UpdateWindowPos(_icon);
-                    _form.Show();
-                    _form.Hide();
-                }
-                else
-                {
-                    _form.UpdateWindowPos(_icon);
-                }
-                
+            if (_form == null)
+            {
+                _form = new FrmNotify(this);
+                _form.Deactivate += form_Deactivate;
+                _form.UpdateWindowPos(_icon);
                 _form.Show();
-                _form.Activate();
+                _form.Hide();
             }
+            else
+            {
+                _form.UpdateWindowPos(_icon);
+            }
+                
+            _form.Show();
+            _form.Activate();
         }
 
         private void form_Deactivate(object sender, EventArgs e)

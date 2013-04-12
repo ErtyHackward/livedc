@@ -28,7 +28,15 @@ namespace LiveDc.Forms
                 return;
             }
 
-            _hub = _client.Engine.Hubs.Add(hubText.Text, _client.Settings.Nickname);
+            try
+            {
+                _hub = _client.Engine.Hubs.Add(hubText.Text, _client.Settings.Nickname);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Попытка подключения не удалась. Проверьте введенный адрес.");
+                return;
+            }
 
             _hub.ConnectionStatusChanged += HubConnectionStatusChanged;
             _hub.ActiveStatusChanged += HubActiveStatusChanged;
@@ -56,6 +64,7 @@ namespace LiveDc.Forms
                 _client.AsyncOperation.Post((o) =>
                                                 {
                                                     statusLabel.Text = "Успешное подключение. Клиент готов к работе. Если желаете, можно добавить еще.";
+                                                    hubText.Text = "";
                                                     continueButton.Enabled = true;
                                                     addButton.Enabled = true;
                                                     hubText.Enabled = true;

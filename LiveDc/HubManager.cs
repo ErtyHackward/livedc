@@ -24,6 +24,8 @@ namespace LiveDc
         private List<string> _allHubs = new List<string>();
 
         private Settings Settings { get { return _client.Settings; } }
+
+        public bool InitializationCompleted { get; private set; }
         
         public HubManager(DcEngine engine, LiveClient client)
         {
@@ -32,6 +34,7 @@ namespace LiveDc
 
             _engine.Hubs.HubAdded += HubsHubAdded;
             _engine.Hubs.HubRemoved += HubsHubRemoved;
+            _engine.ActiveStatusChanged += _engine_ActiveStatusChanged;
 
             if (!string.IsNullOrEmpty(Settings.Hubs))
             {
@@ -42,6 +45,13 @@ namespace LiveDc
                     AddHub(hubAddress);
                 }
             }
+
+            
+        }
+
+        void _engine_ActiveStatusChanged(object sender, EventArgs e)
+        {
+            InitializationCompleted = true;
         }
 
         public void FindHubs(IPAddress externalIp)
@@ -155,6 +165,7 @@ namespace LiveDc
 
                 if (_failedHubs.Count == _engine.Hubs.Count && !_client.Settings.DontOverrideHubs)
                 {
+                    InitializationCompleted = true;
                     _client.Settings.DontOverrideHubs = true;
                     _client.AsyncOperation.Post((o) => new FrmHubList(_client).Show(), null);
                 }
