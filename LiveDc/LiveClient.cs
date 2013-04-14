@@ -3,22 +3,19 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Forms;
 using LiveDc.Helpers;
+using LiveDc.Managers;
+using LiveDc.Notify;
 using LiveDc.Properties;
-using LiveDc.Utilites;
 using SharpDc;
-using SharpDc.Connections;
-using SharpDc.Events;
 using SharpDc.Interfaces;
 using SharpDc.Logging;
 using SharpDc.Managers;
-using SharpDc.Messages;
 using SharpDc.Structs;
 using Win32;
 using DataReceivedEventArgs = Win32.DataReceivedEventArgs;
@@ -29,7 +26,8 @@ namespace LiveDc
     public partial class LiveClient
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-        
+
+        private DateTime _hideTime;
         private NotifyIcon _icon;
         private FrmStatus _statusForm;
         private Timer _timer;
@@ -39,6 +37,7 @@ namespace LiveDc
         private LiveDcDrive _drive;
         private CopyData _copyData;
         private DownloadItem _currentDownload;
+        private List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
 
         private HubManager _hubManager;
 
@@ -51,12 +50,16 @@ namespace LiveDc
 
         public LiveHistoryManager History { get; private set; }
 
+        public AutoUpdateManager AutoUpdate { get; private set; }
+        
         public AsyncOperation AsyncOperation
         {
             get { return _ao; }
         }
 
         public LiveDcDrive Drive { get { return _drive; } }
+
+        private string IncompletePath { get { return Path.Combine(Settings.SettingsFolder, "downloads.xml"); } }
 
         private string SharePath { get { return Path.Combine(Settings.SettingsFolder, "share.xml"); } }
 
@@ -67,6 +70,7 @@ namespace LiveDc
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
             Application.ApplicationExit += ApplicationApplicationExit;
             
+
             if (!WindowsHelper.IsMagnetHandlerAssigned)
             {
                 var res = WindowsHelper.RegisterMagnetHandler();
@@ -100,11 +104,14 @@ namespace LiveDc
             History = new LiveHistoryManager(this);
             History.Load();
 
-            LiveCheckIp.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
+            AutoUpdate = new AutoUpdateManager(this);
+            AutoUpdate.CheckUpdate();
+
+            LiveApi.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
 
             if (!Settings.ShownGreetingsTooltip)
             {
-                _icon.ShowBalloonTip(10000, "LiveDC", "Добро пожаловать! Наведите курсор на этот значок чтобы увидеть текущий статус работы.", ToolTipIcon.Info);
+                _icon.ShowBalloonTip(10000, "LiveDC", "Добро пожаловать! Нажмите на этот значок чтобы увидеть текущий статус работы.", ToolTipIcon.Info);
 
                 Settings.ShownGreetingsTooltip = true;
                 Settings.Save();
@@ -116,9 +123,54 @@ namespace LiveDc
             }
         }
 
+        private void _icon_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (_importantActions.Count > 0)
+            {
+                var action = _importantActions[0];
+
+                action.Item1();
+
+                _importantActions.RemoveAt(0);
+
+                UpdateTrayIcon();
+
+                return;
+            }
+
+
+            if ((DateTime.Now - _hideTime).TotalMilliseconds < 300)
+                return;
+
+            if (_form == null)
+            {
+                _form = new FrmNotify(this);
+                _form.Deactivate += form_Deactivate;
+                _form.UpdateWindowPos(_icon);
+                _form.Show();
+                _form.Hide();
+            }
+            else
+            {
+                _form.UpdateWindowPos(_icon);
+            }
+
+            _form.Show();
+            _form.Activate();
+        }
+
+        private void form_Deactivate(object sender, EventArgs e)
+        {
+            var form = (Form)sender;
+            form.Hide();
+            _hideTime = DateTime.Now;
+        }
+
         void ApplicationApplicationExit(object sender, EventArgs e)
         {
+            logger.Info("Preparing to exit...");
             Dispose();
+            logger.Info("Ready to exit");
         }
 
         private void PortCheckComplete(CheckIpResult e)
@@ -185,6 +237,22 @@ namespace LiveDc
             {
                 _engine.Settings.PathDownload = StorageHelper.GetBestSaveDirectory();
             }
+            else
+            {
+                _engine.Settings.PathDownload = Settings.StoragePath;
+            }
+
+            if (File.Exists(IncompletePath))
+            {
+                try
+                {
+                    _engine.DownloadManager.Load(IncompletePath);
+                }
+                catch (Exception x)
+                {
+                    logger.Error("Unable to load downloads {0}", x.Message);
+                }   
+            }
 
             #region Virtual drive
             char driveLetter;
@@ -219,14 +287,40 @@ namespace LiveDc
             _engine.StartAsync();
             _engine.Connect();
         }
-        
-        void SettingsClick(object sender, EventArgs e)
-        {
 
+        public void AddClickAction(Action action, string balloonText, string actionId = null)
+        {
+            AsyncOperation.Post(o => {
+                if (!string.IsNullOrEmpty(balloonText) && !Program.SilentMode)
+                    _icon.ShowBalloonTip(8000, "LiveDC", balloonText, ToolTipIcon.None);
+
+                _importantActions.Add(Tuple.Create(action, actionId));
+
+                UpdateTrayIcon();
+            }, null);
+        }
+
+        public void RemoveActionById(string id)
+        {
+            if (id == null) 
+                throw new ArgumentNullException("id");
+
+            _importantActions.RemoveAll(t => t.Item2 == id);
+
+            if (_importantActions.Count == 0)
+            {
+                AsyncOperation.Post(o => UpdateTrayIcon(), null);
+            }
         }
 
         void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
         {
+            if (e.Data.ToString() == "SHOW")
+            {
+                _icon.ShowBalloonTip(5000, "Я здесь!", "Клиент LiveDC уже запущен", ToolTipIcon.None);
+                return;
+            }
+
             var magnet = Magnet.Parse((string)e.Data);
             StartFile(magnet);
         }
@@ -255,15 +349,22 @@ namespace LiveDc
                     return;
                 }
 
-                if (_currentDownload != null && _currentDownload.Magnet.TTH == magnet.TTH)
+                var item = _engine.DownloadManager.GetDownloadItem(magnet.TTH);
+
+                if (_currentDownload != null && _currentDownload != item)
+                    _engine.PauseDownload(_currentDownload);
+
+                if (item != null)
                 {
-                    Process.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
+                    if (item.Priority == DownloadPriority.Pause)
+                        item.Priority = DownloadPriority.Normal;
+
+                    _currentDownload = item;
+
+                    ShellHelper.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
                     return;
                 }
-
-                if (_currentDownload != null)
-                    _engine.RemoveDownload(_currentDownload);
-
+                
                 History.AddItem(magnet);
 
                 _currentDownload = _engine.DownloadFile(magnet);
@@ -279,14 +380,23 @@ namespace LiveDc
 
         private void FormThread()
         {
-            _ao.Post((o) => { _statusForm.Show(); }, null);
+            _ao.Post((o) => _statusForm.Show(), null);
 
             var sw = Stopwatch.StartNew();
 
             while (!_hubManager.InitializationCompleted)
             {
-                UpdateMessage("Подключение к хабам","");
+                UpdateMessage("", "Подключение к хабам...");
                 Thread.Sleep(100);
+            }
+
+            if (_currentDownload.Sources.Count == 0)
+            {
+                while (_engine.SearchManager.CurrentSearch != null && _engine.SearchManager.CurrentSearch.Value.SearchRequest != _currentDownload.Magnet.TTH)
+                { 
+                    UpdateMessage("", string.Format("Поиск через {0} сек", (int)_engine.SearchManager.EstimateSearch(_currentDownload).TotalSeconds));
+                    Thread.Sleep(1000);
+                }
             }
 
             while (sw.Elapsed.Seconds < 20)
@@ -298,7 +408,7 @@ namespace LiveDc
                 else
                 {
                     UpdateMessage(string.Format("{0} ({1})", _currentDownload.Magnet.FileName, Utils.FormatBytes(_currentDownload.Magnet.Size)), " Открываю файл... ");
-                    Process.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
+                    ShellHelper.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
                     break;
                 }
 
@@ -350,6 +460,18 @@ namespace LiveDc
 
         void EngineActivated(object sender, EventArgs e)
         {
+            UpdateTrayIcon();
+            UpdateTrayText();
+        }
+
+        public void UpdateTrayIcon()
+        {
+            if (_importantActions.Count > 0)
+            {
+                _icon.Icon = Resources.livedc_action;
+                return;
+            }
+
             if (_engine.Active)
             {
                 _icon.Icon = Resources.livedc;
@@ -358,33 +480,31 @@ namespace LiveDc
             {
                 _icon.Icon = Resources.livedc_offline;
             }
-
-            UpdateTrayText();
         }
 
         private void UpdateTrayText()
         {
             var text = _engine.Active ? "Статус: в сети" : "Статус: отключен";
 
-            if (_currentDownload != null)
-            {
-                var fileName = _currentDownload.Magnet.FileName;
+            //if (_currentDownload != null)
+            //{
+            //    var fileName = _currentDownload.Magnet.FileName;
 
-                if (fileName.Length > 30)
-                {
-                    var name = Path.GetFileNameWithoutExtension(fileName);
-                    var ext = Path.GetExtension(fileName);
+            //    if (fileName.Length > 30)
+            //    {
+            //        var name = Path.GetFileNameWithoutExtension(fileName);
+            //        var ext = Path.GetExtension(fileName);
 
-                    fileName = name.Substring(0, 30 - ext.Length) + "..." + ext;
-                }
+            //        fileName = name.Substring(0, 30 - ext.Length) + "..." + ext;
+            //    }
 
-                text = string.Format("{0}\n{1}/{2} ({3}/с)\n{4} ",
-                    fileName,
-                    Utils.FormatBytes(_engine.DownloadManager.GetTotalDownloadBytes(_currentDownload)),
-                    Utils.FormatBytes(_currentDownload.Magnet.Size),
-                    Utils.FormatBytes(_engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == _currentDownload)),
-                    text);
-            }
+            //    text = string.Format("{0}\n{1}/{2} ({3}/с)\n{4} ",
+            //        fileName,
+            //        Utils.FormatBytes(_engine.DownloadManager.GetTotalDownloadBytes(_currentDownload)),
+            //        Utils.FormatBytes(_currentDownload.Magnet.Size),
+            //        Utils.FormatBytes(_engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == _currentDownload)),
+            //        text);
+            //}
             Fixes.SetNotifyIconText(_icon, text);
         }
 
@@ -402,9 +522,11 @@ namespace LiveDc
             }
 
             History.Save();
-
+            
             if (_engine != null)
             {
+                _engine.DownloadManager.Save(IncompletePath);
+                
                 var share = (MemoryShare)_engine.Share;
 
                 try

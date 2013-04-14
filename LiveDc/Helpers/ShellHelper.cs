@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 
-namespace LiveDc
+namespace LiveDc.Helpers
 {
     public static class ShellHelper
     {

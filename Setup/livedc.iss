@@ -27,7 +27,7 @@ AppVerName=LiveDC, 1.0.0
 AppPublisher=April32
 AppPublisherURL=http://april32.com
 AppSupportURL=http://april32.com
-AppUpdatesURL=http://april32.com
+AppUpdatesURL=http://livedc.april32.com
 LicenseFile=EULA.txt
 DisableProgramGroupPage=true
 ShowLanguageDialog=auto
@@ -43,6 +43,7 @@ OutputBaseFilename=setup_livedc
 Name: {group}\LiveDC; Filename: {app}\LiveDC.exe
 
 [Run]
+Filename: {app}\LiveDC.exe; Parameters: "-setstartup"; Description: {cm:AutoStartProgram,LiveDC}; Flags: postinstall skipifsilent
 Filename: {app}\LiveDC.exe; Description: {cm:LaunchProgram,LiveDC}; Flags: nowait postinstall skipifsilent
 
 [Code]

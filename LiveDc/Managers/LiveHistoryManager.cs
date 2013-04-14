@@ -4,7 +4,7 @@ using System.IO;
 using System.Xml.Serialization;
 using SharpDc.Structs;
 
-namespace LiveDc
+namespace LiveDc.Managers
 {
     public class LiveHistoryManager
     {

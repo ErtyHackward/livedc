@@ -1,17 +1,12 @@
 ﻿using System.Drawing;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
-namespace NotifyIconSample
+namespace LiveDc.Notify
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Windows;
-    using System.Windows.Forms;
-    using Rect = System.Drawing.Rectangle;
-
     /// <summary>
     /// Helper class for positioning the main window.
     /// </summary>
@@ -76,32 +71,32 @@ namespace NotifyIconSample
             TaskBarInfo taskbarinfo = GetTaskBarInfo();
 
             // retrieve notify icon location
-            Rect? nipositiontemp = GetNotifyIconRectangle(notifyicon);
+            Rectangle? nipositiontemp = GetNotifyIconRectangle(notifyicon);
 
             // if our functions can't find the rectangle, align it to a corner of the screen
-            Rect niposition;
+            Rectangle niposition;
             if (nipositiontemp == null)
             {
                 switch (taskbarinfo.Alignment)
                 {
                     case TaskBarAlignment.Bottom: // bottom right corner
-                        niposition = new Rect(taskbarinfo.Position.Right - 1, taskbarinfo.Position.Bottom - 1, 1, 1);
+                        niposition = new Rectangle(taskbarinfo.Position.Right - 1, taskbarinfo.Position.Bottom - 1, 1, 1);
                         break;
                     case TaskBarAlignment.Top: // top right corner
-                        niposition = new Rect(taskbarinfo.Position.Right - 1, taskbarinfo.Position.Top, 1, 1);
+                        niposition = new Rectangle(taskbarinfo.Position.Right - 1, taskbarinfo.Position.Top, 1, 1);
                         break;
                     case TaskBarAlignment.Right: // bottom right corner
-                        niposition = new Rect(taskbarinfo.Position.Right - 1, taskbarinfo.Position.Bottom - 1, 1, 1);
+                        niposition = new Rectangle(taskbarinfo.Position.Right - 1, taskbarinfo.Position.Bottom - 1, 1, 1);
                         break;
                     case TaskBarAlignment.Left: // bottom left corner
-                        niposition = new Rect(taskbarinfo.Position.Left, taskbarinfo.Position.Bottom - 1, 1, 1);
+                        niposition = new Rectangle(taskbarinfo.Position.Left, taskbarinfo.Position.Bottom - 1, 1, 1);
                         break;
                     default:
                         goto case TaskBarAlignment.Bottom;
                 }
             }
             else
-                niposition = (Rect)nipositiontemp;
+                niposition = (Rectangle)nipositiontemp;
 
             // check if notify icon is in the fly-out
             bool inflyout = IsNotifyIconInFlyOut(niposition, taskbarinfo.Position);
@@ -109,7 +104,7 @@ namespace NotifyIconSample
             // if the window is pinned open and in the fly-out (Windows 7 only),
             // we should position the window above the 'show hidden icons' button
             if (inflyout && pinned)
-                niposition = (Rect)GetNotifyAreaButtonRectangle();
+                niposition = (Rectangle)GetNotifyAreaButtonRectangle();
 
             // determine centre of notify icon
             Point nicentre = new Point(niposition.Left + (niposition.Width / 2), niposition.Top + (niposition.Height / 2));
@@ -118,7 +113,7 @@ namespace NotifyIconSample
             double edgeoffset = Compatibility.WindowEdgeOffset * dpi;
 
             // get working area bounds
-            Rect workarea = GetWorkingArea(niposition);
+            Rectangle workarea = GetWorkingArea(niposition);
 
             // calculate window position
             double windowleft = 0, windowtop = 0;
@@ -201,7 +196,7 @@ namespace NotifyIconSample
         /// </summary>
         /// <param name="hWnd">Handle of the window.</param>
         /// <returns>Rect containing window client area bounds.</returns>
-        public static Rect GetWindowClientAreaSize(IntPtr hWnd)
+        public static Rectangle GetWindowClientAreaSize(IntPtr hWnd)
         {
             NativeMethods.RECT result = new NativeMethods.RECT();
             if (NativeMethods.GetClientRect(hWnd, out result))
@@ -215,7 +210,7 @@ namespace NotifyIconSample
         /// </summary>
         /// <param name="hWnd">Handle of the window.</param>
         /// <returns>Rect containing window bounds.</returns>
-        public static Rect GetWindowSize(IntPtr hWnd)
+        public static Rectangle GetWindowSize(IntPtr hWnd)
         {
             NativeMethods.RECT result = new NativeMethods.RECT();
             if (NativeMethods.GetWindowRect(hWnd, out result))
@@ -233,7 +228,7 @@ namespace NotifyIconSample
         /// </summary>
         /// <param name="notifyicon">The NotifyIcon whose location should be retrieved.</param>
         /// <returns>The location of the specified NotifyIcon.</returns>
-        public static Rect? GetNotifyIconRectangle(NotifyIcon notifyicon)
+        public static Rectangle? GetNotifyIconRectangle(NotifyIcon notifyicon)
         {
             if (Compatibility.CurrentWindowsVersion == Compatibility.WindowsVersion.Windows7Plus)
                 return GetNotifyIconRectWindows7(notifyicon);
@@ -246,7 +241,7 @@ namespace NotifyIconSample
         /// </summary>
         /// <param name="notifyicon">The NotifyIcon whose location should be returned.</param>
         /// <returns>The location of the specified NotifyIcon. Null if the location could not be found.</returns>
-        public static Rect? GetNotifyIconRectWindows7(NotifyIcon notifyicon)
+        public static Rectangle? GetNotifyIconRectWindows7(NotifyIcon notifyicon)
         {
             if (Compatibility.CurrentWindowsVersion != Compatibility.WindowsVersion.Windows7Plus)
                 throw new PlatformNotSupportedException("This method can only be used under Windows 7 or later. Please use GetNotifyIconRectangleLegacy() if you use an earlier operating system.");
@@ -285,9 +280,9 @@ namespace NotifyIconSample
         /// </summary>
         /// <param name="notifyicon">The NotifyIcon whose location should be returned.</param>
         /// <returns>The location of the specified NotifyIcon.</returns>
-        public static Rect? GetNotifyIconRectLegacy(NotifyIcon notifyicon)
+        public static Rectangle? GetNotifyIconRectLegacy(NotifyIcon notifyicon)
         {
-            Rect? nirect = null;
+            Rectangle? nirect = null;
 
             FieldInfo idFieldInfo = notifyicon.GetType().GetField("id", BindingFlags.NonPublic | BindingFlags.Instance);
             int niid = (int)idFieldInfo.GetValue(notifyicon);
@@ -423,7 +418,7 @@ namespace NotifyIconSample
         /// Retrieves the rectangle of the 'Show Hidden Icons' button, or null if it can't be found.
         /// </summary>
         /// <returns>Rectangle containing bounds of 'Show Hidden Icons' button, or null if it can't be found.</returns>
-        public static Rect? GetNotifyAreaButtonRectangle()
+        public static Rectangle? GetNotifyAreaButtonRectangle()
         {
             // find the handle of the taskbar
             IntPtr taskbarparenthandle = NativeMethods.FindWindow("Shell_TrayWnd", null);
@@ -464,12 +459,12 @@ namespace NotifyIconSample
             if (Compatibility.CurrentWindowsVersion != Compatibility.WindowsVersion.Windows7Plus)
                 return false; // nothing to worry about in earlier versions
 
-            Rect? nirect = GetNotifyIconRectangle(notifyicon);
+            Rectangle? nirect = GetNotifyIconRectangle(notifyicon);
 
             if (nirect == null)
                 return false; // if we can't find the notify icon, return false
 
-            return IsNotifyIconInFlyOut((Rect)nirect, taskbarinfo.Position);
+            return IsNotifyIconInFlyOut((Rectangle)nirect, taskbarinfo.Position);
         }
 
         /// <summary>
@@ -479,7 +474,7 @@ namespace NotifyIconSample
         /// <param name="notifyiconrect">Rectangle of notify icon bounds.</param>
         /// <param name="taskbarrect">Rectangle of taskbar bounds.</param>
         /// <returns>True if the notify icon is in the fly-out, false if not.</returns>
-        public static bool IsNotifyIconInFlyOut(Rect notifyiconrect, Rect taskbarrect)
+        public static bool IsNotifyIconInFlyOut(Rectangle notifyiconrect, Rectangle taskbarrect)
         {
             if (Compatibility.CurrentWindowsVersion != Compatibility.WindowsVersion.Windows7Plus)
                 return false; // nothing to worry about in earlier versions
@@ -496,10 +491,10 @@ namespace NotifyIconSample
         /// <returns>True if the point is contained in the bounds, false otherwise.</returns>
         public static bool IsPointInNotifyIcon(Point point, NotifyIcon notifyicon)
         {
-            Rect? nirect = GetNotifyIconRectangle(notifyicon);
+            Rectangle? nirect = GetNotifyIconRectangle(notifyicon);
             if (nirect == null)
                 return false;
-            return ((Rect)nirect).Contains(point);
+            return ((Rectangle)nirect).Contains(point);
         }
 
         #endregion
@@ -550,7 +545,7 @@ namespace NotifyIconSample
             if (result == IntPtr.Zero)
                 throw new Exception("Could not retrieve taskbar information.");
 
-            Rect position = abdata.rc;
+            Rectangle position = abdata.rc;
 
             TaskBarAlignment alignment;
 
@@ -585,7 +580,7 @@ namespace NotifyIconSample
         /// </summary>
         /// <param name="rectangle">The rectangle that is located on the monitor whose working area should be returned.</param>
         /// <returns>A rectangle defining the working area of the monitor closest to containing the specified rectangle.</returns>
-        public static Rect GetWorkingArea(Rect rectangle)
+        public static Rectangle GetWorkingArea(Rectangle rectangle)
         {
             NativeMethods.RECT rect = (NativeMethods.RECT)rectangle;
             IntPtr monitorhandle = NativeMethods.MonitorFromRect(ref rect, NativeMethods.MONITOR_DEFAULTTONEAREST);
@@ -610,7 +605,7 @@ namespace NotifyIconSample
             /// <summary>
             /// Rectangle of taskbar bounds.
             /// </summary>
-            public Rect Position;
+            public Rectangle Position;
 
             /// <summary>
             /// Alignment of taskbar.
