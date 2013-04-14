@@ -33,7 +33,7 @@ namespace InnoSetupVersionUpdate
             {
                 if (lines[i].StartsWith("VersionInfoVersion"))
                 {
-                    prevVersion = lines[i].Substring(lines[i].IndexOf('=')).Trim();
+                    prevVersion = lines[i].Substring(lines[i].IndexOf('=')+1).Trim();
                     lines[i] = "VersionInfoVersion=" + version;
                 }
 
