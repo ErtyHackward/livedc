@@ -1,8 +1,10 @@
-﻿using System.Security;
+using System;
+using System.Diagnostics;
+using System.Security;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-namespace LiveDc
+namespace LiveDc.Helpers
 {
     public class WindowsHelper
     {
@@ -95,6 +97,70 @@ namespace LiveDc
                 return false;
             }
             catch (SecurityException)
+            {
+                return false;
+            }
+        }
+
+
+        public static bool RunAtSystemStart(bool value)
+        {
+            try
+            {
+                RegistryKey myKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run\", true);
+
+                if (value)
+                    myKey.SetValue(Application.ProductName, string.Format("\"{0}\" -autorun", Application.ExecutablePath));
+                else
+                    myKey.DeleteValue(Application.ProductName);
+                return true;
+            }
+            catch { 
+                return false;
+            }
+        }
+
+        public static bool IsInAutoRun
+        {
+            get
+            {
+                try
+                {
+                    return Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run\" + Application.ProductName, false) != null;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+        }
+
+        public static bool IsWinVistaOrHigher
+        {
+            get
+            {
+                OperatingSystem OS = Environment.OSVersion;
+                return (OS.Platform == PlatformID.Win32NT) && (OS.Version.Major >= 6);
+            }
+        }
+
+        public static bool RunElevated(string programm, string cmdargs)
+        {
+            var startInfo = new ProcessStartInfo();
+            startInfo.UseShellExecute = true;
+            startInfo.WorkingDirectory = Environment.CurrentDirectory;
+            startInfo.FileName = programm;
+            startInfo.Arguments = cmdargs;
+
+            if (IsWinVistaOrHigher)
+                startInfo.Verb = "runas";
+
+            try
+            {
+                Process p = Process.Start(startInfo);
+                return true;
+            }
+            catch (System.ComponentModel.Win32Exception)
             {
                 return false;
             }

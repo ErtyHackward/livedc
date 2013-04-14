@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace LiveDc
+namespace LiveDc.Helpers
 {
     public static class StringExtensions
     {

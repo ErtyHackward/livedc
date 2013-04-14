@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using LiveDc.Forms;
 using LiveDc.Helpers;
 using SharpDc;
 using SharpDc.Connections;
 using SharpDc.Events;
 
-namespace LiveDc
+namespace LiveDc.Managers
 {
     /// <summary>
     /// Allows to find hub addresses and share them between users
@@ -52,6 +51,11 @@ namespace LiveDc
         void _engine_ActiveStatusChanged(object sender, EventArgs e)
         {
             InitializationCompleted = true;
+
+            if (_client.Engine.Active)
+            {
+                _client.RemoveActionById("hub_fail");
+            }
         }
 
         public void FindHubs(IPAddress externalIp)
@@ -93,14 +97,14 @@ namespace LiveDc
 
             if (e.City != null)
             {
-                LiveHubsApi.GetHubsAsync(e.City, HubsListReceived);
+                LiveApi.GetHubsAsync(e.City, HubsListReceived);
                 if (!string.IsNullOrEmpty(Settings.Hubs))
                 {
-                    LiveHubsApi.PostHubsAsync(e.City, Settings.Hubs);
+                    LiveApi.PostHubsAsync(e.City, Settings.Hubs);
                 }
             }
             else
-                _client.AsyncOperation.Post((o) => new FrmHubList(_client).Show(), null);
+                ShowHubEditDialog();
         }
 
         private void HubsListReceived(List<string> list)
@@ -167,9 +171,14 @@ namespace LiveDc
                 {
                     InitializationCompleted = true;
                     _client.Settings.DontOverrideHubs = true;
-                    _client.AsyncOperation.Post((o) => new FrmHubList(_client).Show(), null);
+                    ShowHubEditDialog();
                 }
             }
+        }
+
+        private void ShowHubEditDialog()
+        {
+            _client.AddClickAction(() => new FrmHubList(_client).Show(),"Не удалось установить соединение ни с одним из хабов. Нажмите чтобы добавить хаб.", "hub_fail");
         }
     }
 }

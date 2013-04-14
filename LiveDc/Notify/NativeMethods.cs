@@ -1,13 +1,11 @@
 ﻿using System.Drawing;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
 
-namespace NotifyIconSample
+namespace LiveDc.Notify
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Windows;
-
     /// <summary>
     /// Contains native (P/Invoke) methods and related structs and enums.
     /// </summary>
@@ -87,6 +85,12 @@ namespace NotifyIconSample
         /// Sent to all top-level windows when Desktop Window Manager (DWM) composition has been enabled or disabled.
         /// </summary>
         public const int WM_DWMCOMPOSITIONCHANGED = 0x031E;
+
+        public const int WM_CLOSE = 0x0010;
+
+        public const int WM_QUERYENDSESSION = 0x11;
+        public const int ENDSESSION_CLOSEAPP = 0x1;
+        public const int WM_ENDSESSION = 0x16;
 
         /// <summary>
         /// In a client area.
@@ -446,6 +450,11 @@ namespace NotifyIconSample
             /// </summary>
             SM_CYSMICON = 50
         }
+
+        [DllImport("kernel32.dll")]
+        public static extern int RegisterApplicationRestart(
+            [MarshalAs(UnmanagedType.BStr)] string commandLineArgs,
+            int flags);
 
         /// <summary>
         /// Retrieves the coordinates of a window's client area. The client coordinates specify the upper-left and lower-right corners of the client area. Because client coordinates are relative to the upper-left corner of a window's client area, the coordinates of the upper-left corner are (0,0).

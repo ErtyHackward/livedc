@@ -1,7 +1,7 @@
-п»їusing System;
+using System;
 using System.Collections.Generic;
 
-namespace LiveDc
+namespace LiveDc.Helpers
 {
     public static class TimeFormatHelper
     {
@@ -11,22 +11,22 @@ namespace LiveDc
 
             if (diff.TotalMinutes < 0)
             {
-                return "РІ Р±СѓРґСѓС‰РµРј o_O";
+                return "в будущем o_O";
             }
 
             if (diff.TotalMinutes < 1)
             {
-                return "С‚РѕР»СЊРєРѕ С‡С‚Рѕ";
+                return "только что";
             }
 
             if (diff.TotalMinutes < 60)
             {
-                return FormatWord((int)diff.TotalMinutes, "РјРёРЅСѓС‚Сѓ", "РјРёРЅСѓС‚С‹", "РјРёРЅСѓС‚") + " РЅР°Р·Р°Рґ";
+                return FormatWord((int)diff.TotalMinutes, "минуту", "минуты", "минут") + " назад";
             }
 
             if (diff.TotalHours < 6)
             {
-                return FormatWord((int)diff.TotalHours, "С‡Р°СЃ", "С‡Р°СЃР°", "С‡Р°СЃРѕРІ") + " РЅР°Р·Р°Рґ";
+                return FormatWord((int)diff.TotalHours, "час", "часа", "часов") + " назад";
             }
 
             var pozavchera = DateTime.Now.Date.AddDays(-2);
@@ -35,33 +35,33 @@ namespace LiveDc
 
             if (time >= today)
             {
-                return "СЃРµРіРѕРґРЅСЏ " + GetTimeOfDayName(time.TimeOfDay);
+                return "сегодня " + GetTimeOfDayName(time.TimeOfDay);
             }
             if (time >= vchera)
             {
-                return "РІС‡РµСЂР° " + GetTimeOfDayName(time.TimeOfDay);
+                return "вчера " + GetTimeOfDayName(time.TimeOfDay);
             }
             if (time >= pozavchera)
             {
-                return "РїРѕР·Р°РІС‡РµСЂР° " + GetTimeOfDayName(time.TimeOfDay);
+                return "позавчера " + GetTimeOfDayName(time.TimeOfDay);
             }
 
             if (diff.TotalDays < 7)
-                return FormatWord((int)diff.TotalDays, "РґРµРЅСЊ", "РґРЅСЏ", "РґРЅРµР№") + " РЅР°Р·Р°Рґ";
+                return FormatWord((int)diff.TotalDays, "день", "дня", "дней") + " назад";
 
             return time.ToLongDateString();
         }
 
-        private static List<KeyValuePair<TimeSpan,string>> _dayTime = new List<KeyValuePair<TimeSpan, string>>();
+        private static List<KeyValuePair<TimeSpan, string>> _dayTime = new List<KeyValuePair<TimeSpan, string>>();
 
         static TimeFormatHelper()
         {
-            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("00:00"), "РїРѕР»РЅРѕС‡СЊ"));
-            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("01:00"), "РЅРѕС‡СЊСЋ"));
-            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("06:00"), "СѓС‚СЂРѕРј"));
-            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("12:00"), "РІ РѕР±РµРґ"));
-            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("14:00"), "РґРЅРµРј"));
-            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("18:00"), "РІРµС‡РµСЂРѕРј"));
+            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("00:00"), "полночь"));
+            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("01:00"), "ночью"));
+            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("06:00"), "утром"));
+            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("12:00"), "в обед"));
+            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("14:00"), "днем"));
+            _dayTime.Add(new KeyValuePair<TimeSpan, string>(TimeSpan.Parse("18:00"), "вечером"));
         }
 
         public static string GetTimeOfDayName(TimeSpan time)
@@ -74,11 +74,11 @@ namespace LiveDc
             return _dayTime[_dayTime.Count - 1].Value;
         }
 
-        // 1 РёСЃС‚РѕС‡РЅРёРє, 2 РёСЃС‚РѕС‡РЅРёРєР°, 5 РёСЃС‚РѕС‡РЅРёРєРѕРІ
+        // 1 источник, 2 источника, 5 источников
         public static string FormatWord(int value,
-                                string nominative, //РРјРµРЅРёС‚РµР»СЊРЅС‹Р№ РїР°РґРµР¶
-                                string genitiveSingular,//Р РѕРґРёС‚РµР»СЊРЅС‹Р№ РїР°РґРµР¶, РµРґРёРЅСЃС‚РІРµРЅРЅРѕРµ С‡РёСЃР»Рѕ
-                                string genitivePlural) //Р РѕРґРёС‚РµР»СЊРЅС‹Р№ РїР°РґРµР¶, РјРЅРѕР¶РµСЃС‚РІРµРЅРЅРѕРµ С‡РёСЃР»Рѕ
+                                string nominative, //Именительный падеж
+                                string genitiveSingular,//Родительный падеж, единственное число
+                                string genitivePlural) //Родительный падеж, множественное число
         {
 
             int[] formsTable = { 2, 0, 1, 1, 1, 2, 2, 2, 2, 2 };

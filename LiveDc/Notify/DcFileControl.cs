@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using LiveDc.Helpers;
 using SharpDc;
 using SharpDc.Structs;
 

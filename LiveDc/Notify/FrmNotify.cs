@@ -4,12 +4,13 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
-using NotifyIconSample;
-using SharpDc;
+using LiveDc.Forms;
+using LiveDc.Helpers;
+using LiveDc.Windows;
 using SharpDc.Interfaces;
-using SharpDc.Managers;
 using SharpDc.Structs;
 
 namespace LiveDc.Notify
@@ -17,6 +18,7 @@ namespace LiveDc.Notify
     public partial class FrmNotify : Form
     {
         private readonly LiveClient _client;
+        private FrmSearch _searchForm;
 
         public void AddItem(Magnet item, DateTime createDate)
         {
@@ -39,11 +41,8 @@ namespace LiveDc.Notify
             dcItem.DoubleClick += dcItem_DoubleClick;
 
             flowLayoutPanel1.Controls.Add(dcItem);
-            //flowLayoutPanel1.Controls.SetChildIndex(dcItem, 0);
         }
-
-
-
+        
         public FrmNotify(LiveClient client)
         {
             _client = client;
@@ -56,6 +55,8 @@ namespace LiveDc.Notify
             timer1.Start();
 
             Activated += FrmNotify_Activated;
+
+            label1.Text = "LiveDC " + Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + " beta";
 
         }
 
@@ -168,11 +169,6 @@ namespace LiveDc.Notify
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
             DrawVisualStyleElementTaskbarBackgroundBottom1(e);
-        }
-
-        private void Form1_Deactivate(object sender, EventArgs e)
-        {
-            this.Close();
         }
 
         private void Form1_Shown(object sender, EventArgs e)
@@ -305,13 +301,32 @@ namespace LiveDc.Notify
 
         private void pictureBox1_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Настроек пока нет...");
+            new FrmSettings(_client).ShowDialog();
         }
 
         void dcItem_DoubleClick(object sender, EventArgs e)
         {
             var item = (DcFileControl)sender;
-            var path = Path.Combine(_client.Drive.DriveRoot, item.Magnet.FileName);
+            _client.StartFile(item.Magnet);
+        }
+
+        private void pictureBox3_Click(object sender, EventArgs e)
+        {
+            if (_searchForm == null)
+            {
+                _searchForm = new FrmSearch(_client);
+                _searchForm.Closed += _searchForm_Closed;
+            }
+
+            _searchForm.Show();
+            _searchForm.Activate();
+
+        }
+
+        void _searchForm_Closed(object sender, EventArgs e)
+        {
+            _searchForm.Closed -= _searchForm_Closed;
+            _searchForm = null;
         }
     }
 }

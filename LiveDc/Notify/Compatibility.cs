@@ -1,13 +1,5 @@
-﻿namespace NotifyIconSample
+﻿namespace LiveDc.Notify
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using System.Text;
-    using System.Windows;
-    
     /// <summary>
     /// Provides helper fields for determining system settings, such as what version of Windows the user is running.
     /// </summary>
