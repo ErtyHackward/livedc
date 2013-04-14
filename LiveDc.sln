@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DokanNet", "..\dokan-net-0.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpDc", "..\sharpdc\SharpDc\SharpDc.csproj", "{660E074C-9BAC-4681-856E-1668862252CA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoSetupVersionUpdate", "InnoSetupVersionUpdate\InnoSetupVersionUpdate.csproj", "{BF9762B5-542F-46BB-B344-C464C8C2809B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,21 @@ Global
 		{660E074C-9BAC-4681-856E-1668862252CA}.Setup|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{660E074C-9BAC-4681-856E-1668862252CA}.Setup|Mixed Platforms.Build.0 = Release|Any CPU
 		{660E074C-9BAC-4681-856E-1668862252CA}.Setup|x86.ActiveCfg = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Release|x86.ActiveCfg = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Setup|Any CPU.ActiveCfg = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Setup|Any CPU.Build.0 = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Setup|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Setup|Mixed Platforms.Build.0 = Release|Any CPU
+		{BF9762B5-542F-46BB-B344-C464C8C2809B}.Setup|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

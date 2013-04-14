@@ -248,7 +248,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Setup "C:\Program Files (x86)\Inno Setup 5\compil32.exe" /cc $(SolutionDir)Setup\livedc.iss
+    <PostBuildEvent>if $(ConfigurationName) == Setup $(ProjectDir)bin\InnoSetupVersionUpdate.exe $(SolutionDir)Setup\livedc.iss $(TargetPath)
+
+if $(ConfigurationName) == Setup "C:\Program Files (x86)\Inno Setup 5\compil32.exe" /cc $(SolutionDir)Setup\livedc.iss
 
 if $(ConfigurationName) == Setup start C:\Windows\explorer.exe /select, $(SolutionDir)Setup\Output</PostBuildEvent>
   </PropertyGroup>
