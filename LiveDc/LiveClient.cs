@@ -116,6 +116,10 @@ namespace LiveDc
                 Settings.ShownGreetingsTooltip = true;
                 Settings.Save();
             }
+            else if (!Program.SilentMode)
+            {
+                _icon.ShowBalloonTip(10000, "LiveDC", "Клиент запущен.", ToolTipIcon.Info);
+            }
 
             if (!string.IsNullOrEmpty(Program.StartMagnet))
             {

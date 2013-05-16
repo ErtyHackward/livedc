@@ -60,6 +60,8 @@ namespace LiveDc.Forms
             {
                 _client.Settings.StoragePath = storagePathText.Text;
             }
+
+            Close();
         }
 
         private void cancelButton_Click(object sender, System.EventArgs e)
