@@ -126,7 +126,10 @@ namespace LiveDc.Helpers
             {
                 try
                 {
-                    return Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run\" + Application.ProductName, false) != null;
+                    using (var key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", false))
+                    {
+                        return key != null && key.GetValue(Application.ProductName) != null;
+                    }
                 }
                 catch (Exception)
                 {
