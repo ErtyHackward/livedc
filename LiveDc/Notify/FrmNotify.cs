@@ -247,7 +247,7 @@ namespace LiveDc.Notify
 
         private void открытьToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _client.StartFile(FromMenu(sender).Magnet);
+            _client.LaunchManager.StartFile(FromMenu(sender).Magnet);
         }
 
         private DcFileControl FromMenu(object menuItem)
@@ -307,7 +307,7 @@ namespace LiveDc.Notify
         void dcItem_DoubleClick(object sender, EventArgs e)
         {
             var item = (DcFileControl)sender;
-            _client.StartFile(item.Magnet);
+            _client.LaunchManager.StartFile(item.Magnet);
         }
 
         private void pictureBox3_Click(object sender, EventArgs e)

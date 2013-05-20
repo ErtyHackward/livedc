@@ -29,17 +29,18 @@ namespace LiveDc
 
         private DateTime _hideTime;
         private NotifyIcon _icon;
-        private FrmStatus _statusForm;
         private Timer _timer;
 
         private DcEngine _engine;
         private AsyncOperation _ao;
         private LiveDcDrive _drive;
         private CopyData _copyData;
-        private DownloadItem _currentDownload;
+        
         private List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
 
         private HubManager _hubManager;
+
+        public HubManager HubManager { get { return _hubManager; } }
 
         public Settings Settings { get; private set; }
 
@@ -58,6 +59,8 @@ namespace LiveDc
         }
 
         public LiveDcDrive Drive { get { return _drive; } }
+
+        public LaunchManager LaunchManager { get; set; }
 
         private string IncompletePath { get { return Path.Combine(Settings.SettingsFolder, "downloads.xml"); } }
 
@@ -94,7 +97,6 @@ namespace LiveDc
             _copyData.DataReceived += CopyDataDataReceived;
 
             _ao = AsyncOperationManager.CreateOperation(null);
-            _statusForm = new FrmStatus();
 
 
             Utils.FileSizeFormatProvider.BinaryModifiers = new[] { " Б", " КБ", " МБ", " ГБ", " ТБ", " ПБ" };
@@ -106,6 +108,8 @@ namespace LiveDc
 
             AutoUpdate = new AutoUpdateManager(this);
             AutoUpdate.CheckUpdate();
+
+            LaunchManager = new LaunchManager(this);
 
             LiveApi.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
 
@@ -123,9 +127,11 @@ namespace LiveDc
 
             if (!string.IsNullOrEmpty(Program.StartMagnet))
             {
-                StartFile(Magnet.Parse(Program.StartMagnet));
+                LaunchManager.StartFile(Magnet.Parse(Program.StartMagnet));
             }
         }
+
+        
 
         private void _icon_MouseClick(object sender, MouseEventArgs e)
         {
@@ -326,127 +332,9 @@ namespace LiveDc
             }
 
             var magnet = Magnet.Parse((string)e.Data);
-            StartFile(magnet);
+            LaunchManager.StartFile(magnet);
         }
-
-        public void StartFile(Magnet magnet)
-        {
-            try
-            {
-                var existingItem = _engine.Share.SearchByTth(magnet.TTH);
-
-                if (existingItem != null)
-                {
-                    Process.Start(existingItem.Value.SystemPath);
-                    return;
-                }
-
-                if (_hubManager.InitializationCompleted && !_engine.Active)
-                {
-                    MessageBox.Show("Не удалось установить соединение ни с одним из хабов. Проверьте сетевое подключение.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                if (!_drive.IsReady)
-                {
-                    MessageBox.Show("Не удалось подключить виртуальный диск. Попробуйте перезагрузить компьютер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                var item = _engine.DownloadManager.GetDownloadItem(magnet.TTH);
-
-                if (_currentDownload != null && _currentDownload != item)
-                    _engine.PauseDownload(_currentDownload);
-
-                if (item != null)
-                {
-                    if (item.Priority == DownloadPriority.Pause)
-                        item.Priority = DownloadPriority.Normal;
-
-                    _currentDownload = item;
-
-                    ShellHelper.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
-                    return;
-                }
-                
-                History.AddItem(magnet);
-
-                _currentDownload = _engine.DownloadFile(magnet);
-                _currentDownload.LogSegmentEvents = true;
-
-                new ThreadStart(FormThread).BeginInvoke(null, null);
-            }
-            catch (Exception x)
-            {
-                MessageBox.Show("Не удается начать загрузку: " + x.Message);
-            }
-        }
-
-        private void FormThread()
-        {
-            _ao.Post((o) => _statusForm.Show(), null);
-
-            var sw = Stopwatch.StartNew();
-
-            while (!_hubManager.InitializationCompleted)
-            {
-                UpdateMessage("", "Подключение к хабам...");
-                Thread.Sleep(100);
-            }
-
-            if (_currentDownload.Sources.Count == 0)
-            {
-                while (_engine.SearchManager.CurrentSearch != null && _engine.SearchManager.CurrentSearch.Value.SearchRequest != _currentDownload.Magnet.TTH)
-                { 
-                    UpdateMessage("", string.Format("Поиск через {0} сек", (int)_engine.SearchManager.EstimateSearch(_currentDownload).TotalSeconds));
-                    Thread.Sleep(1000);
-                }
-            }
-
-            while (sw.Elapsed.Seconds < 20)
-            {
-                if (_currentDownload.DoneSegmentsCount == 0)
-                {
-                    UpdateMessage(string.Format("{0} ({1})",_currentDownload.Magnet.FileName,Utils.FormatBytes(_currentDownload.Magnet.Size)), string.Format("Поиск. Найдено {0} источников ",_currentDownload.Sources.Count));
-                }
-                else
-                {
-                    UpdateMessage(string.Format("{0} ({1})", _currentDownload.Magnet.FileName, Utils.FormatBytes(_currentDownload.Magnet.Size)), " Открываю файл... ");
-                    ShellHelper.Start(Path.Combine(_drive.DriveRoot, _currentDownload.Magnet.FileName));
-                    break;
-                }
-
-                if (_statusForm.DialogResult == DialogResult.Cancel)
-                    break;
-
-                Thread.Sleep(100);
-            }
-
-            if (_currentDownload.DoneSegmentsCount == 0)
-            {
-                UpdateMessage(string.Format("{0} ({1})", _currentDownload.Magnet.FileName, Utils.FormatBytes(_currentDownload.Magnet.Size)), string.Format("Не удается начать загрузку. Источников {0}.", _currentDownload.Sources.Count));
-            }
-
-            Thread.Sleep(3000);
-
-            if (!_statusForm.Visible)
-            {
-                _engine.RemoveDownload(_currentDownload);
-                _currentDownload = null;
-            }
-            
-            _ao.Post((o) => _statusForm.Hide(), null);
-        }
-
-        private void UpdateMessage(string message, string status)
-        {
-            _ao.Post((o) =>
-                         {
-                             _statusForm.MainText = message;
-                             _statusForm.StatusText = status;
-                         }, null);
-        }
-
+        
         void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             if (_drive != null)
