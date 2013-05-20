@@ -35,13 +35,14 @@
             this.queueButton = new System.Windows.Forms.Button();
             this.iconPicture = new System.Windows.Forms.PictureBox();
             this.sizeLabel = new System.Windows.Forms.Label();
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.progressBar = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.iconPicture)).BeginInit();
             this.SuspendLayout();
             // 
             // cancelButton
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.Font = new System.Drawing.Font("Trebuchet MS", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.cancelButton.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.cancelButton.Location = new System.Drawing.Point(428, 153);
@@ -108,6 +109,7 @@
             this.iconPicture.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.iconPicture.Name = "iconPicture";
             this.iconPicture.Size = new System.Drawing.Size(64, 64);
+            this.iconPicture.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.iconPicture.TabIndex = 10;
             this.iconPicture.TabStop = false;
             // 
@@ -122,13 +124,14 @@
             this.sizeLabel.Text = "2,4 Gb";
             this.sizeLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // progressBar1
+            // progressBar
             // 
-            this.progressBar1.Location = new System.Drawing.Point(7, 122);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(529, 23);
-            this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            this.progressBar1.TabIndex = 12;
+            this.progressBar.Location = new System.Drawing.Point(7, 122);
+            this.progressBar.Name = "progressBar";
+            this.progressBar.Size = new System.Drawing.Size(529, 23);
+            this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            this.progressBar.TabIndex = 12;
+            this.progressBar.Value = 100;
             // 
             // FrmStatus
             // 
@@ -138,7 +141,7 @@
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(236)))), ((int)(((byte)(245)))));
             this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(543, 190);
-            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.progressBar);
             this.Controls.Add(this.sizeLabel);
             this.Controls.Add(this.iconPicture);
             this.Controls.Add(this.queueButton);
@@ -167,12 +170,12 @@
 
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Button queueButton;
-        private System.Windows.Forms.ProgressBar progressBar1;
         public System.Windows.Forms.Label statusLabel;
         public System.Windows.Forms.Label nameLabel;
         public System.Windows.Forms.Label sizeLabel;
         public System.Windows.Forms.PictureBox iconPicture;
         public System.Windows.Forms.Button startButton;
+        public System.Windows.Forms.ProgressBar progressBar;
 
     }
 }

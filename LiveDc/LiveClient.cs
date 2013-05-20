@@ -115,7 +115,7 @@ namespace LiveDc
 
             if (!Settings.ShownGreetingsTooltip)
             {
-                _icon.ShowBalloonTip(10000, "LiveDC", "Добро пожаловать! Нажмите на этот значок чтобы увидеть текущий статус работы.", ToolTipIcon.Info);
+                _icon.ShowBalloonTip(10000, "LiveDC", "Добро пожаловать! Нажмите здесь, чтобы увидеть текущий статус работы.", ToolTipIcon.Info);
 
                 Settings.ShownGreetingsTooltip = true;
                 Settings.Save();
@@ -130,9 +130,7 @@ namespace LiveDc
                 LaunchManager.StartFile(Magnet.Parse(Program.StartMagnet));
             }
         }
-
         
-
         private void _icon_MouseClick(object sender, MouseEventArgs e)
         {
             if (_importantActions.Count > 0)
@@ -185,6 +183,8 @@ namespace LiveDc
 
         private void PortCheckComplete(CheckIpResult e)
         {
+            logger.Info("Check port: {0} IsOpen:{1}", e.ExternalIpAddress, e.IsPortOpen);
+
             if (e.IsPortOpen)
             {
                 _engine.Settings.LocalAddress = e.ExternalIpAddress;
@@ -217,11 +217,20 @@ namespace LiveDc
                 }
                 File.Delete(DriveLockPath);
             }
-            
-            _engine = new DcEngine();
-            _engine.Settings.ActiveMode = Settings.ActiveMode;
-            _engine.Settings.UseSparseFiles = true;
-            _engine.Settings.AutoSelectPort = true;
+
+            var settings = EngineSettings.Default;
+
+            settings.ActiveMode = Settings.ActiveMode;
+            settings.UseSparseFiles = true;
+            settings.AutoSelectPort = true;
+
+            if (Settings.TCPPort != 0)
+                settings.TcpPort = Settings.TCPPort;
+
+            if (Settings.UDPPort != 0)
+                settings.UdpPort = Settings.UDPPort;
+
+            _engine = new DcEngine(settings);
             _engine.TagInfo.Version = "livedc";
 
             _hubManager = new HubManager(_engine, this);

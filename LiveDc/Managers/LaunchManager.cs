@@ -8,7 +8,7 @@ using LiveDc.Helpers;
 using SharpDc.Interfaces;
 using SharpDc.Structs;
 
-namespace LiveDc
+namespace LiveDc.Managers
 {
     public class LaunchManager
     {
@@ -116,7 +116,7 @@ namespace LiveDc
         {
             _liveClient.AsyncOperation.Post((o) => _statusForm.UpdateAndShow(), null);
 
-            var sw = Stopwatch.StartNew();
+            
 
             while (!_liveClient.HubManager.InitializationCompleted && !_cancel)
             {
@@ -126,12 +126,14 @@ namespace LiveDc
 
             if (_currentDownload.Sources.Count == 0)
             {
-                while (!_cancel && _liveClient.Engine.SearchManager.CurrentSearch != null && _liveClient.Engine.SearchManager.CurrentSearch.Value.SearchRequest != _currentDownload.Magnet.TTH)
+                while (!_cancel && _liveClient.Engine.SearchManager.EstimateSearch(_currentDownload) != TimeSpan.MaxValue)
                 {
                     UpdateMessage(string.Format("Поиск через {0} сек", (int)_liveClient.Engine.SearchManager.EstimateSearch(_currentDownload).TotalSeconds));
                     Thread.Sleep(100);
                 }
             }
+
+            var sw = Stopwatch.StartNew();
 
             while (sw.Elapsed.Seconds < 20 && !_cancel)
             {
@@ -142,10 +144,10 @@ namespace LiveDc
                 else
                 {
                     int timeout = 5;
-
-                    while (timeout-- >= 0)
+                    while (timeout-- > 0)
                     {
-                        _liveClient.AsyncOperation.Post(o => _statusForm.UpdateStartButton(timeout), null);
+                        UpdateMessage("Файл доступен. Запуск через " + timeout);
+                        _liveClient.AsyncOperation.Post(o => { _statusForm.UpdateStartButton(timeout); _statusForm.progressBar.Style = ProgressBarStyle.Continuous; }, null);
                         Thread.Sleep(1000);
                     }
                     OpenFile();
@@ -157,6 +159,7 @@ namespace LiveDc
 
             if (_currentDownload.DoneSegmentsCount == 0)
             {
+                _liveClient.AsyncOperation.Post(o => _statusForm.progressBar.Enabled = false, null);
                 UpdateMessage(string.Format("Не удается начать загрузку. Источников {0}.", _currentDownload.Sources.Count));
             }
 

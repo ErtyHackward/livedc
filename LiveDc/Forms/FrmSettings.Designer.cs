@@ -43,15 +43,23 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.autoupdateCheck = new System.Windows.Forms.CheckBox();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.label2 = new System.Windows.Forms.Label();
+            this.tcpPortNumeric = new System.Windows.Forms.NumericUpDown();
+            this.udpPortNumeric = new System.Windows.Forms.NumericUpDown();
+            this.label3 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tcpPortNumeric)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.udpPortNumeric)).BeginInit();
             this.SuspendLayout();
             // 
             // cancelButton
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(407, 258);
+            this.cancelButton.Location = new System.Drawing.Point(407, 345);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 0;
@@ -62,7 +70,7 @@
             // applyButton
             // 
             this.applyButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.applyButton.Location = new System.Drawing.Point(326, 258);
+            this.applyButton.Location = new System.Drawing.Point(326, 345);
             this.applyButton.Name = "applyButton";
             this.applyButton.Size = new System.Drawing.Size(75, 23);
             this.applyButton.TabIndex = 1;
@@ -189,13 +197,69 @@
             this.autoupdateCheck.Text = "Автоматически обновлять программу";
             this.autoupdateCheck.UseVisualStyleBackColor = true;
             // 
+            // groupBox3
+            // 
+            this.groupBox3.Controls.Add(this.udpPortNumeric);
+            this.groupBox3.Controls.Add(this.label3);
+            this.groupBox3.Controls.Add(this.tcpPortNumeric);
+            this.groupBox3.Controls.Add(this.label2);
+            this.groupBox3.Location = new System.Drawing.Point(12, 240);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(470, 78);
+            this.groupBox3.TabIndex = 11;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Соединения";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(19, 21);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(56, 13);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "Порт TCP";
+            // 
+            // tcpPortNumeric
+            // 
+            this.tcpPortNumeric.Location = new System.Drawing.Point(77, 19);
+            this.tcpPortNumeric.Maximum = new decimal(new int[] {
+            65536,
+            0,
+            0,
+            0});
+            this.tcpPortNumeric.Name = "tcpPortNumeric";
+            this.tcpPortNumeric.Size = new System.Drawing.Size(61, 20);
+            this.tcpPortNumeric.TabIndex = 1;
+            // 
+            // udpPortNumeric
+            // 
+            this.udpPortNumeric.Location = new System.Drawing.Point(77, 45);
+            this.udpPortNumeric.Maximum = new decimal(new int[] {
+            65536,
+            0,
+            0,
+            0});
+            this.udpPortNumeric.Name = "udpPortNumeric";
+            this.udpPortNumeric.Size = new System.Drawing.Size(61, 20);
+            this.udpPortNumeric.TabIndex = 3;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(17, 47);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(58, 13);
+            this.label3.TabIndex = 2;
+            this.label3.Text = "Порт UDP";
+            // 
             // FrmSettings
             // 
             this.AcceptButton = this.applyButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(494, 293);
+            this.ClientSize = new System.Drawing.Size(494, 380);
+            this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.applyButton);
@@ -213,6 +277,10 @@
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tcpPortNumeric)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.udpPortNumeric)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -232,5 +300,10 @@
         private System.Windows.Forms.CheckBox storageAutopruneCheck;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.NumericUpDown udpPortNumeric;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.NumericUpDown tcpPortNumeric;
+        private System.Windows.Forms.Label label2;
     }
 }

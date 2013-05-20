@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
 using System.Windows.Forms;
+using LiveDc.Managers;
 using LiveDc.Windows;
 using SharpDc;
 
@@ -62,7 +63,11 @@ namespace LiveDc.Forms
             nameLabel.Text = _launchManager.Magnet.FileName;
             sizeLabel.Text = Utils.FormatBytes(_launchManager.Magnet.Size);
 
+            progressBar.Enabled = true;
+            progressBar.Style = ProgressBarStyle.Marquee;
+
             statusLabel.Text = "";
+            UpdateStartButton();
             startButton.Enabled = false;
             Show();
         }

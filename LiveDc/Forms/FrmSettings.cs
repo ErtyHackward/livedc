@@ -19,6 +19,9 @@ namespace LiveDc.Forms
             autostartCheck.Checked = WindowsHelper.IsInAutoRun;
             storagePathText.Text = _client.Settings.StorageAutoSelect ? StorageHelper.GetBestSaveDirectory() : _client.Settings.StoragePath;
             storageAutoselectCheck.Checked = _client.Settings.StorageAutoSelect;
+
+            tcpPortNumeric.Value = _client.Settings.TCPPort;
+            udpPortNumeric.Value = _client.Settings.UDPPort;
         }
 
         private void storageSelectButton_Click(object sender, System.EventArgs e)
@@ -60,6 +63,20 @@ namespace LiveDc.Forms
             {
                 _client.Settings.StoragePath = storagePathText.Text;
             }
+
+            if (tcpPortNumeric.Value != 0)
+            {
+                _client.Settings.TCPPort = (int)tcpPortNumeric.Value;
+                _client.Engine.Settings.TcpPort = _client.Settings.TCPPort;
+            }
+
+            if (udpPortNumeric.Value != 0)
+            {
+                _client.Settings.UDPPort = (int)udpPortNumeric.Value;
+                _client.Engine.Settings.UdpPort = _client.Settings.UDPPort;
+            }
+
+            _client.Settings.Save();
 
             Close();
         }

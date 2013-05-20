@@ -129,7 +129,7 @@
     <Compile Include="Helpers\StrongDcHelper.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\WindowsHelper.cs" />
-    <Compile Include="LaunchManager.cs" />
+    <Compile Include="Managers\LaunchManager.cs" />
     <Compile Include="Managers\AutoUpdateManager.cs" />
     <Compile Include="Managers\HubManager.cs" />
     <Compile Include="LiveClient.cs" />

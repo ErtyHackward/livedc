@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Security;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -166,6 +167,22 @@ namespace LiveDc.Helpers
             catch (System.ComponentModel.Win32Exception)
             {
                 return false;
+            }
+        }
+
+        public static void ShortcutToDesktop(string linkName)
+        {
+            string deskDir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+
+            using (var writer = new StreamWriter(deskDir + "\\" + linkName + ".url"))
+            {
+                string app = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                writer.WriteLine("[InternetShortcut]");
+                writer.WriteLine("URL=file:///" + app);
+                writer.WriteLine("IconIndex=0");
+                string icon = app.Replace('\\', '/');
+                writer.WriteLine("IconFile=" + icon);
+                writer.Flush();
             }
         }
     }

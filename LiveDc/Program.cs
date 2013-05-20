@@ -16,7 +16,7 @@ namespace LiveDc
     {
         private static LiveClient _client;
 
-        public static DateTime BestBefore = DateTime.Parse("2013-06-14");
+        public static DateTime BestBefore = DateTime.Parse("2013-07-20");
 
         public static bool SilentMode = false;
 
@@ -48,6 +48,12 @@ namespace LiveDc
                     {
                         VistaSecurity.RestartElevated(args);
                     }
+                    return;
+                }
+
+                if (arg == "-createshortcut")
+                {
+                    WindowsHelper.ShortcutToDesktop("LiveDC");
                     return;
                 }
 
