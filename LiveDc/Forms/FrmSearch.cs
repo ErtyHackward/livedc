@@ -132,7 +132,7 @@ namespace LiveDc.Forms
                 var index = listView1.SelectedIndices[0];
                 var hsr = _list[index];
 
-                _client.StartFile(hsr.Magnet);
+                _client.LaunchManager.StartFile(hsr.Magnet);
             }
         }
 

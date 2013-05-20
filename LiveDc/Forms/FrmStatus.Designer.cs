@@ -28,156 +28,151 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.button1 = new System.Windows.Forms.Button();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.panel1.SuspendLayout();
+            this.cancelButton = new System.Windows.Forms.Button();
+            this.statusLabel = new System.Windows.Forms.Label();
+            this.nameLabel = new System.Windows.Forms.Label();
+            this.startButton = new System.Windows.Forms.Button();
+            this.queueButton = new System.Windows.Forms.Button();
+            this.iconPicture = new System.Windows.Forms.PictureBox();
+            this.sizeLabel = new System.Windows.Forms.Label();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            ((System.ComponentModel.ISupportInitialize)(this.iconPicture)).BeginInit();
             this.SuspendLayout();
             // 
-            // panel1
+            // cancelButton
             // 
-            this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(6)))), ((int)(((byte)(179)))), ((int)(((byte)(219)))));
-            this.panel1.Controls.Add(this.button1);
-            this.panel1.Controls.Add(this.label3);
-            this.panel1.Controls.Add(this.label2);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(4, 35);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(535, 115);
-            this.panel1.TabIndex = 4;
+            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.cancelButton.Font = new System.Drawing.Font("Trebuchet MS", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.cancelButton.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.cancelButton.Location = new System.Drawing.Point(428, 153);
+            this.cancelButton.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.cancelButton.Name = "cancelButton";
+            this.cancelButton.Size = new System.Drawing.Size(108, 28);
+            this.cancelButton.TabIndex = 6;
+            this.cancelButton.Text = "Отмена";
+            this.cancelButton.UseVisualStyleBackColor = true;
+            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
-            // button1
+            // statusLabel
             // 
-            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button1.Font = new System.Drawing.Font("Trebuchet MS", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button1.ForeColor = System.Drawing.Color.White;
-            this.button1.Location = new System.Drawing.Point(424, 89);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(108, 23);
-            this.button1.TabIndex = 6;
-            this.button1.Text = "Отмена";
-            this.button1.UseVisualStyleBackColor = true;
+            this.statusLabel.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.statusLabel.ForeColor = System.Drawing.Color.Black;
+            this.statusLabel.Location = new System.Drawing.Point(7, 71);
+            this.statusLabel.Name = "statusLabel";
+            this.statusLabel.Size = new System.Drawing.Size(524, 48);
+            this.statusLabel.TabIndex = 7;
+            this.statusLabel.Text = "Подготовка к просмотру";
+            this.statusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // label3
+            // nameLabel
             // 
-            this.label3.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label3.ForeColor = System.Drawing.Color.White;
-            this.label3.Location = new System.Drawing.Point(5, 36);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(511, 59);
-            this.label3.TabIndex = 7;
-            this.label3.Text = "label3";
-            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.nameLabel.Font = new System.Drawing.Font("Trebuchet MS", 8.25F, System.Drawing.FontStyle.Bold);
+            this.nameLabel.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.nameLabel.Location = new System.Drawing.Point(78, 16);
+            this.nameLabel.Name = "nameLabel";
+            this.nameLabel.Size = new System.Drawing.Size(454, 21);
+            this.nameLabel.TabIndex = 5;
+            this.nameLabel.Text = "Game.of.Thrones.s03e07.avi";
+            this.nameLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // label2
+            // startButton
             // 
-            this.label2.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(207)))), ((int)(((byte)(255)))));
-            this.label2.Location = new System.Drawing.Point(6, 9);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(515, 27);
-            this.label2.TabIndex = 5;
-            this.label2.Text = "film.avi (2,4 Gb)";
-            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.startButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.startButton.Enabled = false;
+            this.startButton.Font = new System.Drawing.Font("Trebuchet MS", 8.25F);
+            this.startButton.Location = new System.Drawing.Point(200, 153);
+            this.startButton.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.startButton.Name = "startButton";
+            this.startButton.Size = new System.Drawing.Size(128, 28);
+            this.startButton.TabIndex = 8;
+            this.startButton.Text = "Начать просмотр";
+            this.startButton.UseVisualStyleBackColor = true;
+            this.startButton.Click += new System.EventHandler(this.startButton_Click);
             // 
-            // label1
+            // queueButton
             // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label1.ForeColor = System.Drawing.Color.White;
-            this.label1.Location = new System.Drawing.Point(8, 5);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(69, 24);
-            this.label1.TabIndex = 4;
-            this.label1.Text = "LIVEDC";
+            this.queueButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.queueButton.Font = new System.Drawing.Font("Trebuchet MS", 8.25F);
+            this.queueButton.Location = new System.Drawing.Point(334, 153);
+            this.queueButton.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.queueButton.Name = "queueButton";
+            this.queueButton.Size = new System.Drawing.Size(87, 28);
+            this.queueButton.TabIndex = 9;
+            this.queueButton.Text = "В очередь";
+            this.queueButton.UseVisualStyleBackColor = true;
+            this.queueButton.Click += new System.EventHandler(this.queueButton_Click);
             // 
-            // label4
+            // iconPicture
             // 
-            this.label4.AutoSize = true;
-            this.label4.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(207)))), ((int)(((byte)(255)))));
-            this.label4.Location = new System.Drawing.Point(211, 5);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(41, 24);
-            this.label4.TabIndex = 5;
-            this.label4.Text = "ОТ ";
+            this.iconPicture.Location = new System.Drawing.Point(7, 6);
+            this.iconPicture.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.iconPicture.Name = "iconPicture";
+            this.iconPicture.Size = new System.Drawing.Size(64, 64);
+            this.iconPicture.TabIndex = 10;
+            this.iconPicture.TabStop = false;
             // 
-            // label5
+            // sizeLabel
             // 
-            this.label5.AutoSize = true;
-            this.label5.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label5.ForeColor = System.Drawing.Color.White;
-            this.label5.Location = new System.Drawing.Point(239, 5);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(151, 24);
-            this.label5.TabIndex = 8;
-            this.label5.Text = "ERTY HACKWARD";
+            this.sizeLabel.Font = new System.Drawing.Font("Trebuchet MS", 8.25F, System.Drawing.FontStyle.Bold);
+            this.sizeLabel.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.sizeLabel.Location = new System.Drawing.Point(78, 37);
+            this.sizeLabel.Name = "sizeLabel";
+            this.sizeLabel.Size = new System.Drawing.Size(454, 18);
+            this.sizeLabel.TabIndex = 11;
+            this.sizeLabel.Text = "2,4 Gb";
+            this.sizeLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // label6
+            // progressBar1
             // 
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label6.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(207)))), ((int)(((byte)(255)))));
-            this.label6.Location = new System.Drawing.Point(386, 5);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(119, 24);
-            this.label6.TabIndex = 9;
-            this.label6.Text = "ДИЗАЙН ОТ ";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Font = new System.Drawing.Font("Trebuchet MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label7.ForeColor = System.Drawing.Color.White;
-            this.label7.Location = new System.Drawing.Point(495, 5);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(48, 24);
-            this.label7.TabIndex = 10;
-            this.label7.Text = "RKIT";
+            this.progressBar1.Location = new System.Drawing.Point(7, 122);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(529, 23);
+            this.progressBar1.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            this.progressBar1.TabIndex = 12;
             // 
             // FrmStatus
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AcceptButton = this.startButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(2)))), ((int)(((byte)(161)))), ((int)(((byte)(198)))));
-            this.ClientSize = new System.Drawing.Size(543, 154);
-            this.ControlBox = false;
-            this.Controls.Add(this.label7);
-            this.Controls.Add(this.label6);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.panel1);
-            this.Controls.Add(this.label1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(222)))), ((int)(((byte)(236)))), ((int)(((byte)(245)))));
+            this.CancelButton = this.cancelButton;
+            this.ClientSize = new System.Drawing.Size(543, 190);
+            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.sizeLabel);
+            this.Controls.Add(this.iconPicture);
+            this.Controls.Add(this.queueButton);
+            this.Controls.Add(this.startButton);
+            this.Controls.Add(this.cancelButton);
+            this.Controls.Add(this.statusLabel);
+            this.Controls.Add(this.nameLabel);
+            this.Font = new System.Drawing.Font("Trebuchet MS", 8.25F);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "FrmStatus";
-            this.Padding = new System.Windows.Forms.Padding(4, 35, 4, 4);
+            this.Padding = new System.Windows.Forms.Padding(4, 43, 4, 5);
+            this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "LiveDC";
             this.TopMost = true;
-            this.panel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.iconPicture)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Button cancelButton;
+        private System.Windows.Forms.Button queueButton;
+        private System.Windows.Forms.ProgressBar progressBar1;
+        public System.Windows.Forms.Label statusLabel;
+        public System.Windows.Forms.Label nameLabel;
+        public System.Windows.Forms.Label sizeLabel;
+        public System.Windows.Forms.PictureBox iconPicture;
+        public System.Windows.Forms.Button startButton;
 
     }
 }
