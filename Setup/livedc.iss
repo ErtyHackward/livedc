@@ -16,14 +16,14 @@ Source: ..\LiveDC\bin\Release\*; DestDir: {app}; Excludes: *.dds,*.pdb,*.vshost.
 ;Source: Deps\PTN77F.ttf; DestDir: {fonts}; FontInstall: "PT Sans Narrow Bold"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Setup]
-VersionInfoVersion=1.0.2
+VersionInfoVersion=1.0.3
 VersionInfoCompany=LiveDC
 VersionInfoDescription=LiveDC
 VersionInfoCopyright=Vladislav Pozdnyakov, 2013
 VersionInfoProductName=LiveDC
 MinVersion=0,6.0.6000
 AppName=LiveDC
-AppVerName=LiveDC, 1.0.2
+AppVerName=LiveDC, 1.0.3
 AppPublisher=April32
 AppPublisherURL=http://april32.com
 AppSupportURL=http://april32.com
@@ -43,7 +43,8 @@ OutputBaseFilename=setup_livedc
 Name: {group}\LiveDC; Filename: {app}\LiveDC.exe
 
 [Run]
-Filename: {app}\LiveDC.exe; Parameters: "-setstartup"; Description: {cm:AutoStartProgram,LiveDC}; Flags: postinstall skipifsilent
+Filename: {app}\LiveDC.exe; Parameters: -createshortcut; Description: {cm:CreateDesktopIcon,LiveDC}; Flags: postinstall
+Filename: {app}\LiveDC.exe; Parameters: -setstartup; Description: {cm:AutoStartProgram,LiveDC}; Flags: postinstall
 Filename: {app}\LiveDC.exe; Description: {cm:LaunchProgram,LiveDC}; Flags: nowait postinstall skipifsilent
 
 [Code]
@@ -56,7 +57,7 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
-var 
+var
 	ProcessMsgPage: TOutputProgressWizardPage;
 	ResultCode: Integer;
 begin
@@ -64,9 +65,9 @@ begin
   begin
     	ProcessMsgPage := CreateOutputProgressPage(CustomMessage('postprocess'),CustomMessage('postprocess'));
 		ProcessMsgPage.Show;
-				
+
 		Exec('netsh', ExpandConstant('advfirewall firewall add rule name="LiveDC" dir=in action=allow program="{app}\LiveDC.exe" enable=yes'),'', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-		
+
 		ProcessMsgPage.Hide;
   end;
 end;

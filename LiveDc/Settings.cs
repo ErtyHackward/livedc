@@ -40,6 +40,10 @@ namespace LiveDc
 
         public bool DontOverrideHubs { get; set; }
 
+        public int TCPPort { get; set; }
+
+        public int UDPPort { get; set; }
+
         #endregion
 
         public string SettingsFilePath
@@ -143,5 +147,7 @@ namespace LiveDc
                 logger.Error("Failed to read settings {0}", x);
             }
         }
+
+        
     }
 }
