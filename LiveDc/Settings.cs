@@ -44,6 +44,8 @@ namespace LiveDc
 
         public int UDPPort { get; set; }
 
+        public string City { get; set; }
+
         #endregion
 
         public string SettingsFilePath

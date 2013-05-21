@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using LiveDc.Helpers;
 using LiveDc.Properties;
 using SharpDc.Connections;
 
@@ -60,6 +61,9 @@ namespace LiveDc.Forms
 
                 _client.Settings.Hubs += hubText.Text;
                 _client.Settings.Save();
+
+                if (!string.IsNullOrEmpty(_client.Settings.City))
+                    LiveApi.PostHubsAsync(_client.Settings.City, hubText.Text);
 
                 _client.AsyncOperation.Post((o) =>
                                                 {

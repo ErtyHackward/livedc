@@ -95,6 +95,8 @@ namespace LiveDc.Managers
             e.City = "Кемерово";
 #endif
 
+            Settings.City = e.City;
+
             if (e.City != null)
             {
                 LiveApi.GetHubsAsync(e.City, HubsListReceived);

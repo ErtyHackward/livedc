@@ -22,6 +22,8 @@ namespace LiveDc.Forms
 
             tcpPortNumeric.Value = _client.Settings.TCPPort;
             udpPortNumeric.Value = _client.Settings.UDPPort;
+
+            storageAutoselectCheck_Click(null, null);
         }
 
         private void storageSelectButton_Click(object sender, System.EventArgs e)
