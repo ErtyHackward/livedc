@@ -91,6 +91,8 @@ namespace LiveDc
 
             LogManager.LogManagerInstance = new NLogManager();
 
+            logger.Info("------------------------------starting");
+            
             _copyData = new CopyData();
             _copyData.CreateHandle(new CreateParams());
             _copyData.Channels.Add("LIVEDC");

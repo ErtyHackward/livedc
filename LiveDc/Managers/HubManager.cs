@@ -15,6 +15,8 @@ namespace LiveDc.Managers
     /// </summary>
     public class HubManager
     {
+        private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
         private readonly DcEngine _engine;
         private readonly LiveClient _client;
 
@@ -95,6 +97,8 @@ namespace LiveDc.Managers
             e.City = "Кемерово";
 #endif
 
+            logger.Info("It seems we are in {0}", e.City);
+
             Settings.City = e.City;
 
             if (e.City != null)
@@ -121,14 +125,21 @@ namespace LiveDc.Managers
                 Settings.Hubs += string.Join(";", list.Where(i => !Settings.Hubs.Contains(i)));
                 Settings.Hubs = Settings.Hubs.Trim(';');
                 Settings.Save();
+
+                list.ForEach(AddHub);
             }
-            list.ForEach(AddHub);
+            else
+            {
+                ShowHubEditDialog();
+            }
         }
 
         private void AddHub(string hubAddress)
         {
             if (_engine.Hubs.All().Any(h => h.Settings.HubAddress == hubAddress))
                 return;
+
+            logger.Info("Adding hub {0}", hubAddress);
 
             var hub = _engine.Hubs.Add(hubAddress, Settings.Nickname);
             hub.Settings.GetUsersList = false;
@@ -144,6 +155,7 @@ namespace LiveDc.Managers
         {
             e.Hub.ConnectionStatusChanged += HubOnConnectionStatusChanged;
             e.Hub.ActiveStatusChanged += HubActiveStatusChanged;
+            logger.Info("Hub added {0}", e.Hub.Settings.HubAddress);
         }
 
         void HubActiveStatusChanged(object sender, EventArgs e)
@@ -160,9 +172,13 @@ namespace LiveDc.Managers
 
         private void HubOnConnectionStatusChanged(object sender, ConnectionStatusEventArgs e)
         {
+            var hub = (HubConnection)sender;
+
+            logger.Info("Hub connection status {0} {1} {2}", hub.Settings.HubAddress, e.Status, e.Exception);
+
             if (e.Status == ConnectionStatus.Disconnected)
             {
-                var hub = (HubConnection)sender;
+                
                 lock (_failedHubs)
                 {
                     if (!_failedHubs.Contains(hub))
