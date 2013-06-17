@@ -39,7 +39,7 @@ namespace LiveDc.Managers
 
             if (!string.IsNullOrEmpty(Settings.Hubs))
             {
-                var hubs = Settings.Hubs.Split(';');
+                var hubs = Settings.Hubs.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (var hubAddress in hubs)
                 {

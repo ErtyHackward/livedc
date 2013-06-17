@@ -138,6 +138,7 @@
     </Compile>
     <Compile Include="LiveDcDrive.cs" />
     <Compile Include="Managers\LiveHistoryManager.cs" />
+    <Compile Include="Managers\StatisticsManager.cs" />
     <Compile Include="NLogManager.cs" />
     <Compile Include="Notify\Compatibility.cs" />
     <Compile Include="Notify\DcFileControl.cs">
