@@ -12,6 +12,7 @@ namespace LiveDc.Forms
     public partial class FrmStatus : Form
     {
         private readonly LaunchManager _launchManager;
+        private IStartItem _startItem;
 
         public FrmStatus(LaunchManager launchManager)
         {
@@ -26,7 +27,7 @@ namespace LiveDc.Forms
 
         void NativeImageList_LargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
         {
-            if (_launchManager.Magnet.FileName != null && e.Extension.ToLower() == Path.GetExtension(_launchManager.Magnet.FileName).ToLower())
+            if (_startItem.Magnet.FileName != null && e.Extension.ToLower() == Path.GetExtension(_startItem.Magnet.FileName).ToLower())
             {
                 _launchManager.Client.AsyncOperation.Post(o => iconPicture.Image = e.Icon, null);
             }
@@ -56,12 +57,13 @@ namespace LiveDc.Forms
             Hide();
         }
 
-        public void UpdateAndShow()
+        public void UpdateAndShow(IStartItem startItem)
         {
-            iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(_launchManager.Magnet.FileName));
+            _startItem = startItem;
+            iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(startItem.Magnet.FileName));
 
-            nameLabel.Text = _launchManager.Magnet.FileName;
-            sizeLabel.Text = Utils.FormatBytes(_launchManager.Magnet.Size);
+            nameLabel.Text = startItem.Magnet.FileName;
+            sizeLabel.Text = Utils.FormatBytes(startItem.Magnet.Size);
 
             progressBar.Enabled = true;
             progressBar.Style = ProgressBarStyle.Marquee;
@@ -76,7 +78,7 @@ namespace LiveDc.Forms
         {
             string label = "";
 
-            switch (Path.GetExtension(_launchManager.Magnet.FileName).ToLower())
+            switch (Path.GetExtension(_startItem.Magnet.FileName).ToLower())
             {
                 case ".avi":
                 case ".mov":
