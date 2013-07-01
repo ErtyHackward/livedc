@@ -8,11 +8,10 @@ namespace LiveDc.Managers
 {
     public class LiveHistoryManager
     {
-        private readonly LiveClient _client;
-        private XmlSerializer _xml;
+        private readonly XmlSerializer _xml;
         private List<LiveHistoryItem> _historyList = new List<LiveHistoryItem>();
 
-        private string HistoryFilePath { get { return Path.Combine(_client.Settings.SettingsFolder, "history.xml"); } }
+        private string HistoryFilePath { get { return Path.Combine(Settings.SettingsFolder, "history.xml"); } }
         
         public event EventHandler HistoryChanged;
 
@@ -22,9 +21,8 @@ namespace LiveDc.Managers
             if (handler != null) handler(this, EventArgs.Empty);
         }
 
-        public LiveHistoryManager(LiveClient client)
+        public LiveHistoryManager()
         {
-            _client = client;
             _xml = new XmlSerializer(typeof(List<LiveHistoryItem>));
         }
 

@@ -7,53 +7,37 @@ namespace LiveDc
     public class Settings
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
-        private string _folderName = "LiveDC";
-
-        private string _fileName = "livedc.ini";
+        private static string _folderName = "LiveDC";
+        private static string _fileName = "livedc.ini";
 
         #region Settings
 
         public bool Autostart { get; set; }
-
         public string StoragePath { get; set; }
-
         public bool StorageAutoSelect { get; set; }
-
         public bool StorageAutoPrune { get; set; }
-
         public bool IdleEconomy { get; set; }
-
         public bool AutoUpdate { get; set; }
-
         public string Hubs { get; set; }
-
         public bool ActiveMode { get; set; }
-
         public string IPAddress { get; set; }
-
         public string Nickname { get; set; }
-
         public string VirtualDriveLetter { get; set; }
-
         public bool ShownGreetingsTooltip { get; set; }
-
         public bool DontOverrideHubs { get; set; }
-
         public int TCPPort { get; set; }
-
         public int UDPPort { get; set; }
-
         public string City { get; set; }
+        public int TorrentTcpPort { get; set; }
 
         #endregion
 
-        public string SettingsFilePath
+        public static string SettingsFilePath
         {
             get { return Path.Combine(SettingsFolder, _fileName); }
         }
 
-        public string SettingsFolder
+        public static string SettingsFolder
         {
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), _folderName); }
         }
@@ -149,7 +133,5 @@ namespace LiveDc
                 logger.Error("Failed to read settings {0}", x);
             }
         }
-
-        
     }
 }

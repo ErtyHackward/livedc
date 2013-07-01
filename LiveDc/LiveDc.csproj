@@ -131,7 +131,7 @@
     <Compile Include="Helpers\WindowsHelper.cs" />
     <Compile Include="Managers\LaunchManager.cs" />
     <Compile Include="Managers\AutoUpdateManager.cs" />
-    <Compile Include="Managers\HubManager.cs" />
+    <Compile Include="Managers\DcHubManager.cs" />
     <Compile Include="LiveClient.cs" />
     <Compile Include="LiveClient.Designer.cs">
       <DependentUpon>LiveClient.cs</DependentUpon>
@@ -155,8 +155,12 @@
     <Compile Include="Notify\WindowPositioning.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Providers\DcProvider.cs" />
+    <Compile Include="Providers\IP2PProvider.cs" />
+    <Compile Include="Providers\TorrentProvider.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
+    <Compile Include="StartItem.cs" />
     <Compile Include="Utilites\VistaSecurity.cs" />
     <Compile Include="Windows\CopyData.cs" />
     <Compile Include="Windows\EnumWindows.cs" />

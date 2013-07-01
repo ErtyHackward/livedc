@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
+using LiveDc.Managers;
+using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc;
 using SharpDc.Managers;
@@ -18,6 +14,7 @@ namespace LiveDc.Forms
     public partial class FrmSearch : Form
     {
         private readonly LiveClient _client;
+        private readonly DcProvider _dcProvider;
 
         private DateTime _lastUpdate;
 
@@ -27,17 +24,18 @@ namespace LiveDc.Forms
 
         private IComparer<HubSearchResult> _comparer;
 
-        public FrmSearch(LiveClient client)
+        public FrmSearch(LiveClient client, DcProvider dcProvider)
         {
             _client = client;
+            _dcProvider = dcProvider;
             InitializeComponent();
 
             _comparer = new SourceComparer();
             
             NativeImageList.SetListViewIconIndex(listView1.Handle);
 
-            _client.Engine.SearchManager.SearchStarted += SearchManager_SearchStarted;
-            _client.Engine.SearchManager.SearchResult += SearchManager_SearchResult;
+            _dcProvider.Engine.SearchManager.SearchStarted += SearchManager_SearchStarted;
+            _dcProvider.Engine.SearchManager.SearchResult += SearchManager_SearchResult;
         }
 
         void SearchManager_SearchResult(object sender, SearchManagerResultEventArgs e)
@@ -104,7 +102,7 @@ namespace LiveDc.Forms
 
         private void button1_Click(object sender, EventArgs e)
         {
-            _client.Engine.SearchManager.Search(new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any });
+            _dcProvider.Engine.SearchManager.Search(new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any });
         }
 
         private void listView1_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
@@ -135,8 +133,6 @@ namespace LiveDc.Forms
                 _client.LaunchManager.StartFile(hsr.Magnet);
             }
         }
-
-
     }
 
     public class ListViewNoFlicker : ListView
