@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using LiveDc.Forms;
 using LiveDc.Helpers;
 using LiveDc.Managers;
 using LiveDc.Notify;
@@ -35,8 +36,9 @@ namespace LiveDc
         private CopyData _copyData;
         private List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
         private List<IP2PProvider> _providers = new List<IP2PProvider>();
-
-
+        private IStartItem _startItem;
+        private FrmStatus _statusForm;
+        
         private string DriveLockPath { get { return Path.Combine(Settings.SettingsFolder, "drive.lck"); } }
 
         public Settings Settings { get; private set; }
@@ -44,7 +46,6 @@ namespace LiveDc
         public AutoUpdateManager AutoUpdate { get; private set; }
         public AsyncOperation AsyncOperation { get { return _ao; } }
         public LiveDcDrive Drive { get { return _drive; } }
-        public LaunchManager LaunchManager { get; set; }
         public IEnumerable<IP2PProvider> Providers { get { return _providers; } }
         
         public LiveClient()
@@ -72,7 +73,7 @@ namespace LiveDc
 
             Utils.FileSizeFormatProvider.BinaryModifiers = new[] { " Б", " КБ", " МБ", " ГБ", " ТБ", " ПБ" };
 
-            _providers.Add(new DcProvider());
+            _providers.Add(new DcProvider(Settings, this));
             _providers.Add(new TorrentProvider());
 
             InitializeEngine();
@@ -82,8 +83,6 @@ namespace LiveDc
 
             AutoUpdate = new AutoUpdateManager(this);
             AutoUpdate.CheckUpdate();
-
-            LaunchManager = new LaunchManager(this);
             
             if (!Settings.ShownGreetingsTooltip)
             {
@@ -99,7 +98,7 @@ namespace LiveDc
 
             if (!string.IsNullOrEmpty(Program.StartMagnet))
             {
-                LaunchManager.StartFile(Magnet.Parse(Program.StartMagnet));
+                StartFile(Magnet.Parse(Program.StartMagnet));
             }
         }
         
@@ -141,7 +140,7 @@ namespace LiveDc
             _hideTime = DateTime.Now;
         }
 
-        void ApplicationApplicationExit(object sender, EventArgs e)
+        private void ApplicationApplicationExit(object sender, EventArgs e)
         {
             logger.Info("Preparing to exit...");
             Dispose();
@@ -222,7 +221,7 @@ namespace LiveDc
             }
         }
 
-        void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
+        private void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data.ToString() == "SHOW")
             {
@@ -231,10 +230,10 @@ namespace LiveDc
             }
 
             var magnet = Magnet.Parse((string)e.Data);
-            LaunchManager.StartFile(magnet);
+            StartFile(magnet);
         }
-        
-        void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+
+        private void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             if (_drive != null)
             {
@@ -244,12 +243,12 @@ namespace LiveDc
             }
         }
 
-        void ProgramExitClick(object sender, EventArgs e)
+        private void ProgramExitClick(object sender, EventArgs e)
         {
             Application.Exit();
         }
 
-        void EngineActivated(object sender, EventArgs e)
+        private void EngineActivated(object sender, EventArgs e)
         {
             UpdateTrayIcon();
             UpdateTrayText();
@@ -279,12 +278,37 @@ namespace LiveDc
             Fixes.SetNotifyIconText(_icon, text);
         }
 
-        void TimerTick(object sender, EventArgs e)
+        private void TimerTick(object sender, EventArgs e)
         {
             UpdateTrayText();
         }
+
+        public void StartFile(Magnet magnet)
+        {
+            if (!Drive.IsReady)
+            {
+                MessageBox.Show("Не удалось подключить виртуальный диск. Попробуйте перезагрузить компьютер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                var provider = Providers.First(p => p.CanHandle(magnet));
+
+                _startItem = provider.StartItem(magnet);
+
+                if (_statusForm == null)
+                    _statusForm = new FrmStatus(_ao);
+
+                _statusForm.UpdateAndShow(_startItem);
+            }
+            catch (Exception x)
+            {
+                MessageBox.Show("Не удается начать загрузку: " + x.Message);
+            }
+        }
         
-        internal void Dispose()
+        public void Dispose()
         {
             if (_drive != null)
             {

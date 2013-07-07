@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using LiveDc.Forms;
 using LiveDc.Helpers;
+using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc.Interfaces;
 using SharpDc.Structs;
@@ -247,7 +248,7 @@ namespace LiveDc.Notify
 
         private void открытьToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _client.LaunchManager.StartFile(FromMenu(sender).Magnet);
+            _client.StartFile(FromMenu(sender).Magnet);
         }
 
         private DcFileControl FromMenu(object menuItem)
@@ -307,14 +308,14 @@ namespace LiveDc.Notify
         void dcItem_DoubleClick(object sender, EventArgs e)
         {
             var item = (DcFileControl)sender;
-            _client.LaunchManager.StartFile(item.Magnet);
+            _client.StartFile(item.Magnet);
         }
 
         private void pictureBox3_Click(object sender, EventArgs e)
         {
             if (_searchForm == null)
             {
-                _searchForm = new FrmSearch(_client);
+                _searchForm = new FrmSearch(_client, _client.Providers.OfType<DcProvider>().First());
                 _searchForm.Closed += _searchForm_Closed;
             }
 
