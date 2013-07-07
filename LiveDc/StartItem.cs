@@ -36,16 +36,39 @@ namespace LiveDc
         /// Dispose will no longer stop download of the item
         /// </summary>
         void AddToQueue();
+
+        void OpenFile();
+
+        /// <summary>
+        /// Indicates current progress 
+        /// float.Nan means no progress
+        /// float.PositiveInfinity means waiting animation
+        /// [0;1] current progress
+        /// </summary>
+        float Progress { get; }
     }
 
+    /// <summary>
+    /// Handles DC file download startup
+    /// </summary>
     public class DcStartItem : IStartItem
     {
+        private bool _cancel;
+        private bool _addToQueue;
+        private bool _started;
+
         private readonly Magnet _magnet;
         private readonly DcProvider _provider;
         private DownloadItem _currentDownload;
 
+        public Magnet Magnet { get { return _magnet; } }
+        public bool ReadyToStart { get; private set; }
+        public string StatusMessage { get; private set; }
+        public float Progress { get; private set; }
+
         public DcStartItem(Magnet magnet, DcProvider provider)
         {
+            Progress = float.PositiveInfinity;
             _magnet = magnet;
             _provider = provider;
             var existingItem = _provider.Engine.Share.SearchByTth(magnet.TTH);
@@ -74,11 +97,11 @@ namespace LiveDc
 
                 _currentDownload = item;
 
-                ShellHelper.Start(Path.Combine(_liveClient.Drive.DriveRoot, _currentDownload.Magnet.FileName));
+                ShellHelper.Start(Path.Combine(_provider.LiveClient.Drive.DriveRoot, _currentDownload.Magnet.FileName));
                 return;
             }
 
-            _liveClient.History.AddItem(magnet);
+            _provider.LiveClient.History.AddItem(magnet);
 
             _currentDownload = _provider.Engine.DownloadFile(magnet);
             _currentDownload.LogSegmentEvents = true;
@@ -88,19 +111,17 @@ namespace LiveDc
 
         private void FormThread()
         {
-            _liveClient.AsyncOperation.Post((o) => _statusForm.UpdateAndShow(), null);
-
-            while (!_liveClient.HubManager.InitializationCompleted && !_cancel)
+            while (!_provider.HubManager.InitializationCompleted && !_cancel)
             {
-                UpdateMessage("Подключение к хабам...");
+                StatusMessage = "Подключение к хабам...";
                 Thread.Sleep(100);
             }
 
             if (_currentDownload.Sources.Count == 0)
             {
-                while (!_cancel && _liveClient.Engine.SearchManager.EstimateSearch(_currentDownload) != TimeSpan.MaxValue)
+                while (!_cancel && _provider.Engine.SearchManager.EstimateSearch(_currentDownload) != TimeSpan.MaxValue)
                 {
-                    UpdateMessage(string.Format("Поиск через {0} сек", (int)_liveClient.Engine.SearchManager.EstimateSearch(_currentDownload).TotalSeconds));
+                    StatusMessage = string.Format("Поиск через {0} сек", (int)_provider.Engine.SearchManager.EstimateSearch(_currentDownload).TotalSeconds);
                     Thread.Sleep(100);
                 }
             }
@@ -111,15 +132,15 @@ namespace LiveDc
             {
                 if (_currentDownload.DoneSegmentsCount == 0)
                 {
-                    UpdateMessage(string.Format("Идет поиск. Найдено {0} источников", _currentDownload.Sources.Count));
+                    StatusMessage = string.Format("Идет поиск. Найдено {0} источников", _currentDownload.Sources.Count);
                 }
                 else
                 {
                     int timeout = 5;
                     while (timeout-- > 0)
                     {
-                        UpdateMessage("Файл доступен. Запуск через " + timeout);
-                        _liveClient.AsyncOperation.Post(o => { _statusForm.UpdateStartButton(timeout); _statusForm.progressBar.Style = ProgressBarStyle.Continuous; }, null);
+                        StatusMessage = "Файл доступен. Запуск через " + timeout;
+                        Progress = 1f;
                         Thread.Sleep(1000);
                     }
                     OpenFile();
@@ -131,33 +152,51 @@ namespace LiveDc
 
             if (_currentDownload.DoneSegmentsCount == 0)
             {
-                _liveClient.AsyncOperation.Post(o => _statusForm.progressBar.Enabled = false, null);
-                UpdateMessage(string.Format("Не удается начать загрузку. Источников {0}.", _currentDownload.Sources.Count));
+                Progress = float.NaN;
+                StatusMessage = string.Format("Не удается начать загрузку. Источников {0}.", _currentDownload.Sources.Count);
             }
 
             while (!_cancel && !_started)
             {
                 if (_currentDownload.DoneSegmentsCount != 0)
-                    _liveClient.AsyncOperation.Post(o => _statusForm.UpdateStartButton(), null);
+                    ReadyToStart = true;
 
                 Thread.Sleep(100);
             }
 
             if (_cancel && !_addToQueue)
             {
-                _liveClient.Engine.RemoveDownload(_currentDownload);
+                _provider.Engine.RemoveDownload(_currentDownload);
                 _currentDownload = null;
             }
         }
 
-        public void Dispose()
+        public void OpenFile()
         {
-            throw new NotImplementedException();
+            if (_started || _addToQueue)
+                return;
+
+            _started = true;
+
+            StatusMessage = "Открываю файл...";
+            ShellHelper.Start(Path.Combine(_provider.LiveClient.Drive.DriveRoot, _currentDownload.Magnet.FileName));
         }
 
-        public Magnet Magnet { get { return _magnet; } }
-        public bool ReadyToStart { get; private set; }
-        public string StatusMessage { get; private set; }
+        
+
+        public void Dispose()
+        {
+            _cancel = true;
+        }
+        
+        /// <summary>
+        /// Puts this item to be downloaded in background
+        /// Dispose will no longer stop download of the item
+        /// </summary>
+        public void AddToQueue()
+        {
+            _addToQueue = true;
+        }
     }
 
     public class TorrentStartItem : IStartItem
@@ -170,5 +209,16 @@ namespace LiveDc
         public Magnet Magnet { get; private set; }
         public bool ReadyToStart { get; private set; }
         public string StatusMessage { get; private set; }
+        public void AddToQueue()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OpenFile()
+        {
+            throw new NotImplementedException();
+        }
+
+        public float Progress { get; private set; }
     }
 }

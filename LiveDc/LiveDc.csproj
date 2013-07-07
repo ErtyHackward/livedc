@@ -129,7 +129,6 @@
     <Compile Include="Helpers\StrongDcHelper.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\WindowsHelper.cs" />
-    <Compile Include="Managers\LaunchManager.cs" />
     <Compile Include="Managers\AutoUpdateManager.cs" />
     <Compile Include="Managers\DcHubManager.cs" />
     <Compile Include="LiveClient.cs" />
@@ -209,6 +208,14 @@
     <ProjectReference Include="..\..\dokan-net-0.6.0\DokanNet\DokanNet.csproj">
       <Project>{A09B408A-26A0-4FF8-83D5-6E1B1DA5F63C}</Project>
       <Name>DokanNet</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\monotorrent-master\src\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
+      <Project>{7a2a7e73-fd43-4171-aa34-da413d35459e}</Project>
+      <Name>MonoTorrent.Dht</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\monotorrent-master\src\MonoTorrent\MonoTorrent.csproj">
+      <Project>{411a9e0e-fdc6-4e25-828a-0c2cd1cd96f8}</Project>
+      <Name>MonoTorrent</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\sharpdc\SharpDc\SharpDc.csproj">
       <Project>{660e074c-9bac-4681-856e-1668862252ca}</Project>

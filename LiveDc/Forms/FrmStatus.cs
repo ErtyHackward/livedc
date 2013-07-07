@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Text;
+using System.ComponentModel;
 using System.IO;
 using System.Windows.Forms;
-using LiveDc.Managers;
 using LiveDc.Windows;
 using SharpDc;
 
@@ -11,15 +9,13 @@ namespace LiveDc.Forms
 {
     public partial class FrmStatus : Form
     {
-        private readonly LaunchManager _launchManager;
+        private readonly AsyncOperation _ao;
         private IStartItem _startItem;
-
-        public FrmStatus(LaunchManager launchManager)
+        
+        public FrmStatus(AsyncOperation ao)
         {
-            if (launchManager == null) 
-                throw new ArgumentNullException("launchManager");
+            _ao = ao;
 
-            _launchManager = launchManager;
             InitializeComponent();
             Closing += FrmStatus_Closing;
             NativeImageList.LargeExtensionImageLoaded += NativeImageList_LargeExtensionImageLoaded;
@@ -29,31 +25,32 @@ namespace LiveDc.Forms
         {
             if (_startItem.Magnet.FileName != null && e.Extension.ToLower() == Path.GetExtension(_startItem.Magnet.FileName).ToLower())
             {
-                _launchManager.Client.AsyncOperation.Post(o => iconPicture.Image = e.Icon, null);
+                _ao.Post(o => iconPicture.Image = e.Icon, null);
             }
         }
 
         void FrmStatus_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            _launchManager.Cancel();
+            _startItem.Dispose();
             Hide();
         }
 
         private void cancelButton_Click(object sender, EventArgs e)
         {
-            _launchManager.Cancel();
+            _startItem.Dispose();
             Hide();
         }
 
         private void startButton_Click(object sender, EventArgs e)
         {
-            _launchManager.OpenFile();
+            _startItem.OpenFile();
+            Hide();
         }
 
         private void queueButton_Click(object sender, EventArgs e)
         {
-            _launchManager.AddToQueue();
+            _startItem.AddToQueue();
             Hide();
         }
 

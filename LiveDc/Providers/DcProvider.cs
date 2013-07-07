@@ -25,6 +25,7 @@ namespace LiveDc.Providers
         public DcEngine Engine { get { return _engine; } }
         public DcHubManager HubManager { get { return _hubManager; } }
         public bool Online { get { return _engine.Active; } }
+        public LiveClient LiveClient { get { return _client; } }
 
         public event EventHandler StatusChanged;
 
@@ -110,7 +111,7 @@ namespace LiveDc.Providers
             _engine = new DcEngine(settings);
             _engine.TagInfo.Version = "livedc";
 
-            _hubManager = new DcHubManager(_engine, _client);
+            _hubManager = new DcHubManager(this, _client);
 
             if (File.Exists(SharePath))
             {
