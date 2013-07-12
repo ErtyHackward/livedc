@@ -4,7 +4,9 @@ using System.IO;
 using System.Net;
 using LiveDc.Helpers;
 using LiveDc.Managers;
+using LiveDc.Notify;
 using SharpDc;
+using SharpDc.Interfaces;
 using SharpDc.Managers;
 using SharpDc.Structs;
 
@@ -44,11 +46,9 @@ namespace LiveDc.Providers
                 WindowsHelper.RegisterMagnetHandler();
             }
 
-            LiveApi.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
+            LiveApi.CheckPortAsync(settings.TCPPort, PortCheckComplete);
         }
-
         
-
         /// <summary>
         /// Groups shared files and currently downloading ones
         /// </summary>
@@ -92,6 +92,39 @@ namespace LiveDc.Providers
         public string GetRealPath(Magnet magnet)
         {
             throw new NotImplementedException();
+        }
+
+        public void UpdateFileItem(DcFileControl control)
+        {
+            var di = Engine.DownloadManager.GetDownloadItem(control.Magnet.TTH);
+
+            if (di != null)
+            {
+                control.DownloadedBytes = Engine.DownloadManager.GetTotalDownloadBytes(di);
+                control.DownloadSpeed = (long)Engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == di);
+            }
+            else
+            {
+                control.DownloadSpeed = 0;
+            }
+        }
+
+        public void DeleteFile(Magnet magnet)
+        {
+            var di = Engine.DownloadManager.GetDownloadItem(magnet.TTH);
+
+            if (di != null)
+            {
+                Engine.RemoveDownload(di);
+            }
+
+            var shared = Engine.Share.SearchByTth(magnet.TTH);
+
+            if (shared != null)
+            {
+                Engine.Share.RemoveFile(magnet.TTH);
+                File.Delete(shared.Value.SystemPath);
+            }
         }
 
         public void Initialize()

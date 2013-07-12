@@ -92,18 +92,7 @@ namespace LiveDc.Notify
 
             foreach (DcFileControl control in flowLayoutPanel1.Controls)
             {
-                var di = _client.Engine.DownloadManager.GetDownloadItem(control.Magnet.TTH);
-
-                if (di != null)
-                {
-                    control.DownloadedBytes = _client.Engine.DownloadManager.GetTotalDownloadBytes(di);
-                    control.DownloadSpeed = (long)_client.Engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == di);
-                }
-                else
-                {
-                    control.DownloadSpeed = 0;
-                }
-
+                _client.UpdateFileItem(control);
                 control.Invalidate();
             }
         }
@@ -272,22 +261,8 @@ namespace LiveDc.Notify
         private void удалитьToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var item = FromMenu(sender);
-            _client.History.DeleteItem(item.Magnet.TTH);
 
-            var di = _client.Engine.DownloadManager.GetDownloadItem(item.Magnet.TTH);
-
-            if (di != null)
-            {
-                _client.Engine.RemoveDownload(di);
-            }
-
-            var shared = _client.Engine.Share.SearchByTth(item.Magnet.TTH);
-
-            if (shared != null)
-            {
-                _client.Engine.Share.RemoveFile(item.Magnet.TTH);
-                File.Delete(shared.Value.SystemPath);
-            }
+            _client.DeleteItem(item.Magnet);
             
             RefreshItems();
         }
