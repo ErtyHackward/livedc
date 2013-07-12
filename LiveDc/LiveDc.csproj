@@ -157,6 +157,7 @@
     <Compile Include="Providers\DcProvider.cs" />
     <Compile Include="Providers\IP2PProvider.cs" />
     <Compile Include="Providers\TorrentProvider.cs" />
+    <Compile Include="Providers\TorrentStream.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
     <Compile Include="StartItem.cs" />

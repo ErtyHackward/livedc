@@ -165,7 +165,7 @@ namespace LiveDc
                 File.Delete(DriveLockPath);
             }
 
-            // init providers here
+            _providers.ForEach(p => p.Initialize());
 
             #region Virtual drive
             char driveLetter;
@@ -322,6 +322,22 @@ namespace LiveDc
 
             if (_icon != null)
                 _icon.Visible = false;
+        }
+
+        public void UpdateFileItem(DcFileControl control)
+        {
+            var provider = _providers.First(p => p.CanHandle(control.Magnet));
+
+            provider.UpdateFileItem(control);
+        }
+
+        public void DeleteItem(Magnet magnet)
+        {
+            var provider = _providers.First(p => p.CanHandle(magnet));
+
+            provider.DeleteFile(magnet);
+
+            History.DeleteItem(magnet.TTH);
         }
     }
 

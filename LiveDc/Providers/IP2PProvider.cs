@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using LiveDc.Notify;
 using SharpDc.Structs;
 
 namespace LiveDc.Providers
@@ -61,5 +62,19 @@ namespace LiveDc.Providers
         /// <param name="magnet"></param>
         /// <returns></returns>
         string GetRealPath(Magnet magnet);
+
+        /// <summary>
+        /// Updates view information for a file
+        /// </summary>
+        /// <param name="control"></param>
+        void UpdateFileItem(DcFileControl control);
+
+        /// <summary>
+        /// Completely removes file from the app
+        /// Stops seeding
+        /// Deletes data from the hard drive
+        /// </summary>
+        /// <param name="magnet"></param>
+        void DeleteFile(Magnet magnet);
     }
 }
