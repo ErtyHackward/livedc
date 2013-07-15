@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Windows.Forms;
+using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc;
 

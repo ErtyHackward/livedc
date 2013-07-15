@@ -91,6 +91,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\FrmTorrentFiles.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmTorrentFiles.Designer.cs">
+      <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Providers\DcStartItem.cs" />
     <Compile Include="Forms\FrmHubList.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -129,6 +136,7 @@
     <Compile Include="Helpers\StrongDcHelper.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\WindowsHelper.cs" />
+    <Compile Include="Providers\IStartItem.cs" />
     <Compile Include="Managers\AutoUpdateManager.cs" />
     <Compile Include="Managers\DcHubManager.cs" />
     <Compile Include="LiveClient.cs" />
@@ -160,7 +168,8 @@
     <Compile Include="Providers\TorrentStream.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
-    <Compile Include="StartItem.cs" />
+    <Compile Include="Providers\StartItem.cs" />
+    <Compile Include="Providers\TorrentStartItem.cs" />
     <Compile Include="Utilites\VistaSecurity.cs" />
     <Compile Include="Windows\CopyData.cs" />
     <Compile Include="Windows\EnumWindows.cs" />
@@ -177,6 +186,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmStatus.resx">
       <DependentUpon>FrmStatus.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FrmTorrentFiles.resx">
+      <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Notify\FrmNotify.resx">
       <DependentUpon>FrmNotify.cs</DependentUpon>

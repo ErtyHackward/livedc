@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Helpers;
-using LiveDc.Managers;
 using LiveDc.Providers;
 using SharpDc.Interfaces;
 using SharpDc.Structs;
@@ -15,67 +11,24 @@ using SharpDc.Structs;
 namespace LiveDc
 {
     /// <summary>
-    /// Describes GUI-protocol interaction object at the stage of file bootstap
-    /// </summary>
-    public interface IStartItem : IDisposable
-    {
-        Magnet Magnet { get; }
-
-        /// <summary>
-        /// Indicates if file data is available
-        /// </summary>
-        bool ReadyToStart { get; }
-
-        /// <summary>
-        /// Gets current status message
-        /// </summary>
-        string StatusMessage { get; }
-
-        /// <summary>
-        /// Puts this item to be downloaded in background
-        /// Dispose will no longer stop download of the item
-        /// </summary>
-        void AddToQueue();
-
-        void OpenFile();
-
-        /// <summary>
-        /// Indicates current progress 
-        /// float.Nan means no progress
-        /// float.PositiveInfinity means waiting animation
-        /// [0;1] current progress
-        /// </summary>
-        float Progress { get; }
-    }
-
-    /// <summary>
     /// Handles DC file download startup
     /// </summary>
-    public class DcStartItem : IStartItem
+    public class DcStartItem : StartItem
     {
-        private bool _cancel;
-        private bool _addToQueue;
-        private bool _started;
-
-        private readonly Magnet _magnet;
         private readonly DcProvider _provider;
         private DownloadItem _currentDownload;
-
-        public Magnet Magnet { get { return _magnet; } }
-        public bool ReadyToStart { get; private set; }
-        public string StatusMessage { get; private set; }
-        public float Progress { get; private set; }
-
+        
         public DcStartItem(Magnet magnet, DcProvider provider)
         {
             Progress = float.PositiveInfinity;
-            _magnet = magnet;
+            Magnet = magnet;
             _provider = provider;
             var existingItem = _provider.Engine.Share.SearchByTth(magnet.TTH);
 
             if (existingItem != null)
             {
-                Process.Start(existingItem.Value.SystemPath);
+                ReadyToStart = true;
+                ShellHelper.Start(existingItem.Value.SystemPath);
                 return;
             }
 
@@ -96,7 +49,7 @@ namespace LiveDc
                     item.Priority = DownloadPriority.Normal;
 
                 _currentDownload = item;
-
+                ReadyToStart = true;
                 ShellHelper.Start(Path.Combine(_provider.LiveClient.Drive.DriveRoot, _currentDownload.Magnet.FileName));
                 return;
             }
@@ -119,7 +72,7 @@ namespace LiveDc
 
             if (_currentDownload.Sources.Count == 0)
             {
-                while (!_cancel && _provider.Engine.SearchManager.EstimateSearch(_currentDownload) != TimeSpan.MaxValue)
+                while (UserWaits() && _provider.Engine.SearchManager.EstimateSearch(_currentDownload) != TimeSpan.MaxValue)
                 {
                     StatusMessage = string.Format("Поиск через {0} сек", (int)_provider.Engine.SearchManager.EstimateSearch(_currentDownload).TotalSeconds);
                     Thread.Sleep(100);
@@ -128,7 +81,7 @@ namespace LiveDc
 
             var sw = Stopwatch.StartNew();
 
-            while (sw.Elapsed.Seconds < 20 && !_cancel)
+            while (sw.Elapsed.Seconds < 20 && UserWaits())
             {
                 if (_currentDownload.DoneSegmentsCount == 0)
                 {
@@ -136,14 +89,7 @@ namespace LiveDc
                 }
                 else
                 {
-                    int timeout = 5;
-                    while (timeout-- > 0)
-                    {
-                        StatusMessage = "Файл доступен. Запуск через " + timeout;
-                        Progress = 1f;
-                        Thread.Sleep(1000);
-                    }
-                    OpenFile();
+                    StartIn5Seconds();
                     break;
                 }
 
@@ -159,7 +105,10 @@ namespace LiveDc
             while (!_cancel && !_started)
             {
                 if (_currentDownload.DoneSegmentsCount != 0)
+                {
                     ReadyToStart = true;
+                    StatusMessage = "Файл готов к работе";
+                }
 
                 Thread.Sleep(100);
             }
@@ -171,7 +120,7 @@ namespace LiveDc
             }
         }
 
-        public void OpenFile()
+        public override void OpenFile()
         {
             if (_started || _addToQueue)
                 return;
@@ -181,44 +130,5 @@ namespace LiveDc
             StatusMessage = "Открываю файл...";
             ShellHelper.Start(Path.Combine(_provider.LiveClient.Drive.DriveRoot, _currentDownload.Magnet.FileName));
         }
-
-        
-
-        public void Dispose()
-        {
-            _cancel = true;
-        }
-        
-        /// <summary>
-        /// Puts this item to be downloaded in background
-        /// Dispose will no longer stop download of the item
-        /// </summary>
-        public void AddToQueue()
-        {
-            _addToQueue = true;
-        }
-    }
-
-    public class TorrentStartItem : IStartItem
-    {
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Magnet Magnet { get; private set; }
-        public bool ReadyToStart { get; private set; }
-        public string StatusMessage { get; private set; }
-        public void AddToQueue()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OpenFile()
-        {
-            throw new NotImplementedException();
-        }
-
-        public float Progress { get; private set; }
     }
 }

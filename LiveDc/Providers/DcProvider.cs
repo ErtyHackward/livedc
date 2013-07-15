@@ -45,8 +45,6 @@ namespace LiveDc.Providers
             {
                 WindowsHelper.RegisterMagnetHandler();
             }
-
-            LiveApi.CheckPortAsync(settings.TCPPort, PortCheckComplete);
         }
         
         /// <summary>
@@ -76,7 +74,7 @@ namespace LiveDc.Providers
 
         public bool CanHandle(Magnet magnet)
         {
-            return !string.IsNullOrEmpty(magnet.TTH) && magnet.TTH.Length == 39;
+            return !string.IsNullOrEmpty(magnet.TTH);
         }
 
         public IStartItem StartItem(Magnet magnet)
@@ -190,6 +188,8 @@ namespace LiveDc.Providers
 
             _engine.StartAsync();
             _engine.Connect();
+
+            LiveApi.CheckPortAsync(Settings.TCPPort, PortCheckComplete);
         }
 
         public void Dispose()
