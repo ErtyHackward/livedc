@@ -24,6 +24,7 @@ namespace LiveDc.Windows
     {
         public string Extension { get; set; }
         public Image Icon { get; set; }
+        public int Index { get; set; }
     }
 
     static class NativeImageList
@@ -55,16 +56,25 @@ namespace LiveDc.Windows
         private static readonly int _directoryIconIndex;
         private static readonly IntPtr _largeImageList;
         private static readonly IntPtr _smallImageList;
-        private static readonly Hashtable _imageIndexCache = new Hashtable();
+        private static readonly Dictionary<string, int> _imageIndexCache = new Dictionary<string, int>();
         private static readonly Dictionary<string, Image> _imageCache = new Dictionary<string, Image>();
         private static readonly Dictionary<string, Image> _bigImageCache = new Dictionary<string, Image>();
-        private static readonly List<string> _pendingItems = new List<string>();
+        private static readonly List<string> _pendingLargeItems = new List<string>();
+        private static readonly List<string> _pendingSmallItems = new List<string>();
 
         public static event EventHandler<NativeImageListEventArgs> LargeExtensionImageLoaded;
 
         private static void OnLargeExtensionImageLoaded(NativeImageListEventArgs e)
         {
             var handler = LargeExtensionImageLoaded;
+            if (handler != null) handler(null, e);
+        }
+
+        public static event EventHandler<NativeImageListEventArgs> SmallExtensionImageLoaded;
+
+        private static void OnSmallExtensionImageLoaded(NativeImageListEventArgs e)
+        {
+            var handler = SmallExtensionImageLoaded;
             if (handler != null) handler(null, e);
         }
 
@@ -94,6 +104,9 @@ namespace LiveDc.Windows
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        extern static bool DestroyIcon(IntPtr handle);
+
         #endregion DLLImport
 
         public static void SetListViewIconIndex(IntPtr controlHandle)
@@ -106,6 +119,24 @@ namespace LiveDc.Windows
         {
             SendMessage(controlHandle, TVM_SETIMAGELIST, (IntPtr)TVSIL_NORMAL, _smallImageList);
             SendMessage(controlHandle, TVM_SETIMAGELIST, (IntPtr)TVSIL_STATE, _smallImageList);
+        }
+
+        public static int TryFileIconIndex(string fileName)
+        {
+            string ext = Path.GetExtension(fileName);
+            int index;
+            lock (_imageIndexCache)
+            {
+                if (!_imageIndexCache.TryGetValue(ext, out index))
+                {
+                    if (_pendingSmallItems.Contains(ext))
+                        return -1;
+
+                    _pendingSmallItems.Add(ext);
+                    new ThreadStart(() => FileIconIndex(ext)).BeginInvoke(null, null);
+                }
+                return index;
+            }
         }
 
         public static int FileIconIndex(string fileName)
@@ -125,11 +156,11 @@ namespace LiveDc.Windows
                 Image img;
                 if (!_bigImageCache.TryGetValue(ext, out img))
                 {
-                    if (_pendingItems.Contains(ext))
+                    if (_pendingLargeItems.Contains(ext))
                         return img;
 
-                    _pendingItems.Add(ext);
-                    new ThreadStart(delegate { GetLargeFileIcon(ext); }).BeginInvoke(null, null);
+                    _pendingLargeItems.Add(ext);
+                    new ThreadStart(() => GetLargeFileIcon(ext)).BeginInvoke(null, null);
                 }
 
                 return img;
@@ -150,41 +181,78 @@ namespace LiveDc.Windows
             SHFILEINFO shinfo = new SHFILEINFO();
             SHGetFileInfo(ext, isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf(shinfo),
                             SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES);
-
-            Image i = Icon.FromHandle(shinfo.hIcon).ToBitmap();
-            lock (_bigImageCache)
+            
+            Icon icon = null;
+            try
             {
-                _bigImageCache.Add(ext, i);
-                _pendingItems.Remove(ext);
+                icon = Icon.FromHandle(shinfo.hIcon);
+            
+                Image i = icon.ToBitmap();
+                lock (_bigImageCache)
+                {
+                    _bigImageCache.Add(ext, i);
+                    _pendingLargeItems.Remove(ext);
+                }
+
+                OnLargeExtensionImageLoaded(new NativeImageListEventArgs { Extension = ext, Icon = i });
+                return i;
+            }
+            finally
+            {
+                if (icon != null)
+                    DestroyIcon(icon.Handle);
             }
 
-            OnLargeExtensionImageLoaded(new NativeImageListEventArgs { Extension = ext, Icon = i });
-
-            return i;
+            
         }
 
         public static Image GetFileIcon(string ext, bool isDirectory = false)
         {
+            Image i;
             lock (_imageCache)
             {
                 if (_imageCache.ContainsKey(ext))
                 {
                     return _imageCache[ext];
                 }
+            }
 
-                SHFILEINFO shinfo = new SHFILEINFO();
-                SHGetFileInfo(ext, isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf(shinfo),
-                              SHGFI_ICON | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES);
 
-                Image i = Icon.FromHandle(shinfo.hIcon).ToBitmap();
-                _imageCache.Add(ext, i);
+            SHFILEINFO shinfo = new SHFILEINFO();
+            SHGetFileInfo(ext, isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf(shinfo),
+                            SHGFI_ICON | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX);
+
+            Icon icon = null;
+            try
+            {
+                icon = Icon.FromHandle(shinfo.hIcon);
+                i = icon.ToBitmap();
+
+                lock (_imageCache)
+                {
+                    if (!_imageCache.ContainsKey(ext))
+                    {
+                        _imageCache.Add(ext, i);
+                    }
+                }
+
+                lock (_imageIndexCache)
+                {
+                    if (!_imageIndexCache.ContainsKey(ext))
+                    {
+                        _imageIndexCache.Add(ext, shinfo.iIcon);
+                    }
+                }
+
+                OnSmallExtensionImageLoaded(new NativeImageListEventArgs { Extension = ext, Icon = i, Index = shinfo.iIcon });
                 return i;
             }
+            finally
+            {
+                if (icon != null)
+                    DestroyIcon(icon.Handle);
+            }
         }
-
-
-
-
 
         private static int FileIconIndex(string fileName, bool isDirectory)
         {
@@ -193,18 +261,44 @@ namespace LiveDc.Windows
             {
                 if (_imageIndexCache.ContainsKey(ext))
                 {
-                    return (int)_imageIndexCache[ext];
+                    return _imageIndexCache[ext];
                 }
-                else
-                {
-                    SHFILEINFO fileInfo = new SHFILEINFO();
-                    SHGetFileInfo(fileName, isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL,
-                        ref fileInfo,
-                        Marshal.SizeOf(fileInfo), SHGFI_SYSICONINDEX | SHGFI_USEFILEATTRIBUTES);
+            }
 
-                    _imageIndexCache.Add(ext, fileInfo.iIcon);
-                    return fileInfo.iIcon;
+            SHFILEINFO shinfo = new SHFILEINFO();
+            SHGetFileInfo(fileName, isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL,
+                          ref shinfo, Marshal.SizeOf(shinfo), SHGFI_SYSICONINDEX | SHGFI_USEFILEATTRIBUTES);
+
+            Image i;
+            Icon icon = null;
+            try
+            {
+                icon = Icon.FromHandle(shinfo.hIcon);
+                i = icon.ToBitmap();
+
+                lock (_imageCache)
+                {
+                    if (!_imageCache.ContainsKey(ext))
+                    {
+                        _imageCache.Add(ext, i);
+                    }
                 }
+
+                lock (_imageIndexCache)
+                {
+                    if (!_imageIndexCache.ContainsKey(ext))
+                    {
+                        _imageIndexCache.Add(ext, shinfo.iIcon);
+                    }
+                }
+
+                OnSmallExtensionImageLoaded(new NativeImageListEventArgs { Extension = ext, Icon = i, Index = shinfo.iIcon });
+                return shinfo.iIcon;
+            }
+            finally
+            {
+                if (icon != null)
+                    DestroyIcon(icon.Handle);
             }
         }
     }

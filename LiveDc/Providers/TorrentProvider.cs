@@ -4,8 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Windows.Forms;
 using LiveDc.Helpers;
 using LiveDc.Notify;
+using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
 using MonoTorrent.Client.Encryption;
@@ -19,16 +21,16 @@ namespace LiveDc.Providers
 {
     public class TorrentProvider : IP2PProvider
     {
-        private readonly LiveClient _client;
-
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private List<TorrentManager> _torrents = new List<TorrentManager>();
+        private readonly LiveClient _client;
+        private readonly List<TorrentManager> _torrents = new List<TorrentManager>();
         private ClientEngine _engine;
+        private TorrentSettings _torrentDefaults;
 
         private string TorrentFastResumePath { get { return Path.Combine(Settings.SettingsFolder, "fastresume.data"); } }
         private string TorrentDhtNodesPath { get { return Path.Combine(Settings.SettingsFolder, "dhtnodes.data"); } }
-        private string TorrentsFolder { get { return Path.Combine(Settings.SettingsFolder, "Torrents"); } }
+        public string TorrentsFolder { get { return Path.Combine(Settings.SettingsFolder, "Torrents"); } }
         
         public event EventHandler StatusChanged;
 
@@ -37,26 +39,45 @@ namespace LiveDc.Providers
         /// </summary>
         public bool Online { get { return true; } }
 
+        public List<TorrentManager> Torrents { get { return _torrents; } }
+
+        public LiveClient Client { get { return _client; } }
+
+        public TorrentSettings TorrentDefaults
+        {
+            get { return _torrentDefaults; }
+        }
+
         public TorrentProvider(LiveClient client)
         {
             _client = client;
+
+            string programName;
+            string programPath;
+
+            WindowsHelper.GetProgramAssociatedWithExt(false, ".torrent", out programName, out programPath);
+
+            if (programPath != Application.ExecutablePath)
+            {
+                WindowsHelper.RegisterExtension(false, "LiveDC", ".torrent");
+            }
         }
 
         public void Initialize()
         {
-            string downloadsPath = _client.Settings.StorageAutoSelect ? StorageHelper.GetBestSaveDirectory() : _client.Settings.StoragePath;
+            string downloadsPath = Client.Settings.StorageAutoSelect ? StorageHelper.GetBestSaveDirectory() : Client.Settings.StoragePath;
 
 
-            var engineSettings = new EngineSettings(downloadsPath, _client.Settings.TorrentTcpPort)
+            var engineSettings = new EngineSettings(downloadsPath, Client.Settings.TorrentTcpPort)
                                      {
                                          PreferEncryption = false,
                                          AllowedEncryption = EncryptionTypes.All
                                      };
 
-            var torrentDefaults = new TorrentSettings(4, 30, 0, 0);
+            _torrentDefaults = new TorrentSettings(4, 30, 0, 0);
 
             _engine = new ClientEngine(engineSettings);
-            _engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, _client.Settings.TorrentTcpPort));
+            _engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, Client.Settings.TorrentTcpPort));
             byte[] nodes = null;
             try
             {
@@ -67,7 +88,7 @@ namespace LiveDc.Providers
                 logger.Info("No existing dht nodes could be loaded");
             }
 
-            var dhtListner = new DhtListener(new IPEndPoint(IPAddress.Any, _client.Settings.TorrentTcpPort));
+            var dhtListner = new DhtListener(new IPEndPoint(IPAddress.Any, Client.Settings.TorrentTcpPort));
             var dht = new DhtEngine(dhtListner);
             _engine.RegisterDht(dht);
             dhtListner.Start();
@@ -107,7 +128,7 @@ namespace LiveDc.Providers
                         continue;
                     }
 
-                    var manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                    var manager = new TorrentManager(torrent, downloadsPath, TorrentDefaults);
                     if (fastResume.ContainsKey(torrent.InfoHash.ToHex()))
                         manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex()]));
                     _engine.Register(manager);
@@ -133,9 +154,15 @@ namespace LiveDc.Providers
             }
         }
 
+        private TorrentManager FindByMagnet(Magnet magnet)
+        {
+            var infoHash = magnet.ToInfoHash();
+            return _torrents.FirstOrDefault( t=> t.InfoHash == infoHash);
+        }
+
         public Stream GetStream(Magnet magnet)
         {
-            throw new NotImplementedException();
+            return new TorrentStream(FindByMagnet(magnet), magnet.FileName);
         }
 
         public bool CanHandle(Magnet magnet)
@@ -145,27 +172,47 @@ namespace LiveDc.Providers
 
         public IStartItem StartItem(Magnet magnet)
         {
-            throw new NotImplementedException();
+            return new TorrentStartItem(this, magnet);
         }
 
         public string GetVirtualPath(Magnet magnet)
         {
-            throw new NotImplementedException();
+            return Path.Combine(Client.Drive.DriveRoot, Path.GetFileName(magnet.FileName));
         }
 
         public string GetRealPath(Magnet magnet)
         {
-            throw new NotImplementedException();
+            var manager = FindByMagnet(magnet);
+            return Path.Combine(manager.SavePath, magnet.FileName);
         }
 
         public void UpdateFileItem(DcFileControl control)
         {
-            throw new NotImplementedException();
+            var manager = FindByMagnet(control.Magnet);
+            var file = manager.Torrent.Files.First(f => f.Path == control.Magnet.FileName);
+
+            var doneSegments = manager.Bitfield.Clone();
+
+            doneSegments.And(file.BitField);
+            
+            control.DownloadSpeed = manager.Monitor.DownloadSpeed;
+            control.DownloadedBytes = (long)doneSegments.TrueCount * manager.Torrent.PieceLength;
         }
 
         public void DeleteFile(Magnet magnet)
         {
-            throw new NotImplementedException();
+            var manager = FindByMagnet(magnet);
+            var file = manager.Torrent.Files.First(f => f.Path == magnet.FileName);
+
+            file.Priority = Priority.DoNotDownload;
+            manager.Engine.DiskManager.Flush(manager);
+            File.Delete(file.FullPath);
+
+            if (manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
+            {
+                manager.Dispose();
+                _torrents.Remove(manager);
+            }
         }
 
         public void Dispose()
@@ -189,6 +236,23 @@ namespace LiveDc.Providers
             _engine.Dispose();
 
             logger.Info("Torrents provider is disposed");
+        }
+    }
+
+    public static class MagnetExtensions
+    {
+        public static InfoHash ToInfoHash(this Magnet magnet)
+        {
+            if (string.IsNullOrEmpty(magnet.BTIH))
+                throw new InvalidDataException("Unable to create InfoHash. Expected bit torrent info hash but null or empty");
+
+            if (magnet.BTIH.Length == 40)
+                return InfoHash.FromHex(magnet.BTIH);
+
+            if (magnet.BTIH.Length == 32)
+                return InfoHash.FromBase32(magnet.BTIH);
+
+            throw new InvalidDataException("Unknown type of hash provided. Expected BTIH of length 32 or 40 chars");
         }
     }
 }

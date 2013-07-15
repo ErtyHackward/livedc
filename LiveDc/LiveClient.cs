@@ -74,7 +74,7 @@ namespace LiveDc
             Utils.FileSizeFormatProvider.BinaryModifiers = new[] { " Б", " КБ", " МБ", " ГБ", " ТБ", " ПБ" };
 
             _providers.Add(new DcProvider(Settings, this));
-            _providers.Add(new TorrentProvider());
+            _providers.Add(new TorrentProvider(this));
 
             InitializeEngine();
 
@@ -300,7 +300,8 @@ namespace LiveDc
                 if (_statusForm == null)
                     _statusForm = new FrmStatus(_ao);
 
-                _statusForm.UpdateAndShow(_startItem);
+                if (!_startItem.ReadyToStart)
+                    _statusForm.UpdateAndShow(_startItem);
             }
             catch (Exception x)
             {
