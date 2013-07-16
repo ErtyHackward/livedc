@@ -11,6 +11,7 @@ using LiveDc.Managers;
 using LiveDc.Notify;
 using LiveDc.Properties;
 using LiveDc.Providers;
+using MonoTorrent.Common;
 using SharpDc;
 using SharpDc.Logging;
 using SharpDc.Structs;
@@ -223,14 +224,25 @@ namespace LiveDc
 
         private void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (e.Data.ToString() == "SHOW")
+            var data = e.Data.ToString();
+
+            if (data == "SHOW")
             {
                 _icon.ShowBalloonTip(5000, "Я здесь!", "Клиент LiveDC уже запущен", ToolTipIcon.None);
                 return;
             }
 
-            var magnet = Magnet.Parse((string)e.Data);
-            StartFile(magnet);
+            if (data.StartsWith("magnet:"))
+            {
+                var magnet = Magnet.Parse(data);
+                StartFile(magnet);
+                return;
+            }
+
+            if (data.EndsWith(".torrent"))
+            {
+                StartFile(data);
+            }
         }
 
         private void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -281,6 +293,33 @@ namespace LiveDc
         private void TimerTick(object sender, EventArgs e)
         {
             UpdateTrayText();
+        }
+
+        public void StartFile(string torrentFilePath)
+        {
+            if (!Drive.IsReady)
+            {
+                MessageBox.Show("Не удалось подключить виртуальный диск. Попробуйте перезагрузить компьютер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                var torrent = Torrent.Load(torrentFilePath);
+                var torrentProvider = Providers.OfType<TorrentProvider>().First();
+
+                _startItem = torrentProvider.StartItem(torrent);
+
+                if (_statusForm == null)
+                    _statusForm = new FrmStatus(_ao);
+
+                if (!_startItem.ReadyToStart)
+                    _statusForm.UpdateAndShow(_startItem);
+            }
+            catch (Exception x)
+            {
+                MessageBox.Show("Произошла ошибка при попытке запуска торрент файла: " + x.Message);
+            }
         }
 
         public void StartFile(Magnet magnet)

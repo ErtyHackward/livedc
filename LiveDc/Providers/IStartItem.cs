@@ -38,5 +38,10 @@ namespace LiveDc.Providers
         /// [0;1] current progress
         /// </summary>
         float Progress { get; }
+
+        /// <summary>
+        /// Indicates that form should close itself
+        /// </summary>
+        bool Closed { get; }
     }
 }

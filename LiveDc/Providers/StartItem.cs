@@ -13,6 +13,7 @@ namespace LiveDc.Providers
         public Magnet Magnet { get; protected set; }
         public bool ReadyToStart { get; protected set; }
         public string StatusMessage { get; protected set; }
+        public bool Closed { get; protected set; }
 
         public void AddToQueue()
         {
@@ -37,6 +38,7 @@ namespace LiveDc.Providers
                 Thread.Sleep(1000);
             }
             OpenFile();
+            Closed = true;
         }
 
         public bool UserWaits()

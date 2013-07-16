@@ -58,10 +58,19 @@ namespace LiveDc.Forms
         public void UpdateAndShow(IStartItem startItem)
         {
             _startItem = startItem;
-            iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(startItem.Magnet.FileName));
 
-            nameLabel.Text = startItem.Magnet.FileName;
-            sizeLabel.Text = Utils.FormatBytes(startItem.Magnet.Size);
+            if (!string.IsNullOrEmpty(startItem.Magnet.FileName))
+            {
+                iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(startItem.Magnet.FileName));
+                nameLabel.Text = startItem.Magnet.FileName;
+                sizeLabel.Text = Utils.FormatBytes(startItem.Magnet.Size);
+            }
+            else
+            {
+                iconPicture.Image = null;
+                nameLabel.Text = null;
+                sizeLabel.Text = null;
+            }
 
             progressBar.Enabled = true;
             progressBar.Style = ProgressBarStyle.Marquee;
@@ -74,22 +83,29 @@ namespace LiveDc.Forms
 
         public void UpdateStartButton(int timeout = -1)
         {
-            string label = "";
+            string label;
 
-            switch (Path.GetExtension(_startItem.Magnet.FileName).ToLower())
+            if (!string.IsNullOrEmpty(_startItem.Magnet.FileName))
             {
-                case ".avi":
-                case ".mov":
-                case ".mkv":
-                case ".3gp":
-                case ".wmv":
-                case ".mpg":
-                case ".ts":
-                    label = "Начать просмотр";
-                    break;
-                default:
-                    label = "Открыть";
-                    break;
+                switch (Path.GetExtension(_startItem.Magnet.FileName).ToLower())
+                {
+                    case ".avi":
+                    case ".mov":
+                    case ".mkv":
+                    case ".3gp":
+                    case ".wmv":
+                    case ".mpg":
+                    case ".ts":
+                        label = "Начать просмотр";
+                        break;
+                    default:
+                        label = "Открыть";
+                        break;
+                }
+            }
+            else
+            {
+                label = "Открыть";
             }
 
             startButton.Enabled = true;
@@ -97,6 +113,38 @@ namespace LiveDc.Forms
                 startButton.Text = string.Format("{0} ({1})", label, timeout);
             else
                 startButton.Text = label;
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            startButton.Enabled = _startItem.ReadyToStart;
+            statusLabel.Text = _startItem.StatusMessage;
+
+            if (float.IsNaN(_startItem.Progress))
+            {
+                progressBar.Enabled = false;
+            }
+            else if (float.IsPositiveInfinity(_startItem.Progress))
+            {
+                progressBar.Enabled = true;
+                progressBar.Style = ProgressBarStyle.Marquee;
+            }
+            else
+            {
+                progressBar.Enabled = true;
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = (int)(100 * _startItem.Progress);
+            }
+
+            if (string.IsNullOrEmpty(nameLabel.Text) && !string.IsNullOrEmpty(_startItem.Magnet.FileName))
+            {
+                iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(_startItem.Magnet.FileName));
+                nameLabel.Text = _startItem.Magnet.FileName;
+                sizeLabel.Text = Utils.FormatBytes(_startItem.Magnet.Size);
+            }
+
+            if (_startItem.Closed)
+                Close();
         }
     }
 }

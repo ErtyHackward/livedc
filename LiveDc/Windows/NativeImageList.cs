@@ -267,7 +267,7 @@ namespace LiveDc.Windows
 
             SHFILEINFO shinfo = new SHFILEINFO();
             SHGetFileInfo(fileName, isDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL,
-                          ref shinfo, Marshal.SizeOf(shinfo), SHGFI_SYSICONINDEX | SHGFI_USEFILEATTRIBUTES);
+                          ref shinfo, Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_SYSICONINDEX | SHGFI_USEFILEATTRIBUTES);
 
             Image i;
             Icon icon = null;
