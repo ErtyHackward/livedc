@@ -221,6 +221,8 @@ namespace LiveDc.Helpers
         /// <returns></returns>
         public static bool RegisterExtension(bool isGlobal, string programName, string extension, string executionFormat = "", bool allowRollback = false)
         {
+            if (string.IsNullOrEmpty(extension)) 
+                throw new ArgumentNullException("extension");
             var key = isGlobal ? Registry.ClassesRoot : Registry.CurrentUser;
             string basePath = isGlobal ? "" : "SOFTWARE\\Classes\\";
             if (string.IsNullOrEmpty(executionFormat))
@@ -294,6 +296,12 @@ namespace LiveDc.Helpers
                     r.Close();
                 }
                 key.Close();
+
+                // delete explorer info HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.{EXT}
+                key = Registry.CurrentUser;
+                key.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" + extension);
+                
+
                 return true;
             }
             catch (UnauthorizedAccessException)

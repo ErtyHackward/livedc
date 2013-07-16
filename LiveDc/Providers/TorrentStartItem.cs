@@ -2,6 +2,8 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Windows.Forms;
+using LiveDc.Forms;
 using LiveDc.Helpers;
 using MonoTorrent;
 using MonoTorrent.Client;
@@ -16,7 +18,7 @@ namespace LiveDc.Providers
         private TorrentManager _torrent;
         private TorrentFile _file;
         
-        public TorrentStartItem(TorrentProvider torrentProvider, Magnet magnet)
+        public TorrentStartItem(TorrentProvider torrentProvider, Magnet magnet, Torrent torrent = null)
         {
             Progress = float.PositiveInfinity;
             _torrentProvider = torrentProvider;
@@ -27,13 +29,46 @@ namespace LiveDc.Providers
             _torrent = _torrentProvider.Torrents.FirstOrDefault(t => t.InfoHash == ml.InfoHash);
             if (_torrent == null)
             {
-                _torrent = new TorrentManager(ml, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults, _torrentProvider.TorrentsFolder);
+                if (torrent != null)
+                {
+                    _torrent = new TorrentManager(torrent, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults);
+                }
+                else
+                    _torrent = new TorrentManager(ml, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults, _torrentProvider.TorrentsFolder);
+
+                _torrentProvider.Torrents.Add(_torrent);
+                _torrentProvider.Engine.Register(_torrent);
+                _torrent.Start();
+            }
+            else
+            {
+                // check if the file is downloaded completely
+                if (_file.BitField.TrueCount == _file.BitField.Length)
+                {
+                    Closed = true;
+                    ShellHelper.Start(_file.FullPath);
+                    return;
+                }
             }
             
+            new ThreadStart(FormThread).BeginInvoke(null, null);
+        }
+
+        private void FormThread()
+        {
+            while (_torrent.State != TorrentState.Downloading)
+            {
+                // we have created the torrent from the InfoHash, to continue we need to receive torrent file first
+                StatusMessage = "Поиск сведений о загрузке";
+
+                if (!UserWaits())
+                    return;
+            }
+
             // update priorities
             foreach (var torrentFile in _torrent.Torrent.Files)
             {
-                if (torrentFile.Path == magnet.FileName)
+                if (!string.IsNullOrEmpty(Magnet.FileName) && torrentFile.Path == Magnet.FileName)
                 {
                     torrentFile.Priority = Priority.Immediate;
                     _file = torrentFile;
@@ -42,22 +77,45 @@ namespace LiveDc.Providers
                     torrentFile.Priority = Priority.DoNotDownload;
             }
 
-            // check if the file is downloaded completely
-            var doneSegments = _torrent.Bitfield.Clone();
-            if (doneSegments.And(_file.BitField).TrueCount == _file.BitField.Length)
+
+            bool updateMagnetFileName = false;
+            if (_file == null)
             {
-                ReadyToStart = true;
-                ShellHelper.Start(_file.FullPath);
-                return;
+                if (_torrent.Torrent.Files.Length == 1)
+                {
+                    _file = _torrent.Torrent.Files[0];
+                    updateMagnetFileName = true;
+                }
+                else
+                {
+                    var form = new FrmTorrentFiles(_torrent.Torrent);
+
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+                        _file = form.SelectedFile;
+                        updateMagnetFileName = true;
+                    }
+                    else
+                    {
+                        Progress = float.NaN;
+                        StatusMessage = "Операция отменена";
+                        Closed = true;
+                        return;
+                    }
+                }
             }
 
-            _torrentProvider.Client.History.AddItem(magnet);
+            if (updateMagnetFileName || string.IsNullOrEmpty(Magnet.FileName))
+            {
+                var magnet = Magnet;
+                magnet.FileName = _file.Path;
+                Magnet = magnet;
+            }
 
-            new ThreadStart(FormThread).BeginInvoke(null, null);
-        }
+            _torrentProvider.Client.History.AddItem(Magnet);
 
-        private void FormThread()
-        {
+            _file.Priority = Priority.Immediate;
+            
             var sw = Stopwatch.StartNew();
 
             while (_file.BytesDownloaded < 1024 * 1024 && sw.Elapsed.TotalSeconds < 30 && UserWaits())

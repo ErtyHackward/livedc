@@ -7,6 +7,7 @@ using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Helpers;
 using LiveDc.Notify;
+using LiveDc.Utilites;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -43,6 +44,8 @@ namespace LiveDc.Providers
 
         public LiveClient Client { get { return _client; } }
 
+        public ClientEngine Engine { get { return _engine; } }
+
         public TorrentSettings TorrentDefaults
         {
             get { return _torrentDefaults; }
@@ -60,6 +63,13 @@ namespace LiveDc.Providers
             if (programPath != Application.ExecutablePath)
             {
                 WindowsHelper.RegisterExtension(false, "LiveDC", ".torrent");
+            }
+
+            WindowsHelper.GetProgramAssociatedWithExt(true, ".torrent", out programName, out programPath);
+
+            if (programPath != Application.ExecutablePath && VistaSecurity.IsAdmin())
+            {
+                WindowsHelper.RegisterExtension(true, "LiveDC", ".torrent");
             }
         }
 
@@ -148,7 +158,7 @@ namespace LiveDc.Providers
                         FileName = torrentFile.Path, 
                         Size = torrentFile.Length,
                         Trackers = torrentManager.Torrent.AnnounceUrls.SelectMany(t => t.AsEnumerable()).ToArray(),
-                        BTIH = torrentManager.InfoHash.ToString(),
+                        BTIH = torrentManager.InfoHash.ToHex(),
                     };
                 }
             }
@@ -157,7 +167,7 @@ namespace LiveDc.Providers
         private TorrentManager FindByMagnet(Magnet magnet)
         {
             var infoHash = magnet.ToInfoHash();
-            return _torrents.FirstOrDefault( t=> t.InfoHash == infoHash);
+            return _torrents.FirstOrDefault(t => t.InfoHash == infoHash);
         }
 
         public Stream GetStream(Magnet magnet)
@@ -175,6 +185,11 @@ namespace LiveDc.Providers
             return new TorrentStartItem(this, magnet);
         }
 
+        public IStartItem StartItem(Torrent torrent)
+        {
+            return new TorrentStartItem(this, new Magnet { BTIH = torrent.InfoHash.ToHex()}, torrent);
+        }
+
         public string GetVirtualPath(Magnet magnet)
         {
             return Path.Combine(Client.Drive.DriveRoot, Path.GetFileName(magnet.FileName));
@@ -189,14 +204,13 @@ namespace LiveDc.Providers
         public void UpdateFileItem(DcFileControl control)
         {
             var manager = FindByMagnet(control.Magnet);
-            var file = manager.Torrent.Files.First(f => f.Path == control.Magnet.FileName);
+            if (manager != null)
+            {
+                var file = manager.Torrent.Files.First(f => f.Path == control.Magnet.FileName);
 
-            var doneSegments = manager.Bitfield.Clone();
-
-            doneSegments.And(file.BitField);
-            
-            control.DownloadSpeed = manager.Monitor.DownloadSpeed;
-            control.DownloadedBytes = (long)doneSegments.TrueCount * manager.Torrent.PieceLength;
+                control.DownloadSpeed = manager.Monitor.DownloadSpeed;
+                control.DownloadedBytes = file.BytesDownloaded;
+            }
         }
 
         public void DeleteFile(Magnet magnet)

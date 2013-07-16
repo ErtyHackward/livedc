@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.cancelButton = new System.Windows.Forms.Button();
             this.statusLabel = new System.Windows.Forms.Label();
             this.nameLabel = new System.Windows.Forms.Label();
@@ -36,6 +37,7 @@
             this.iconPicture = new System.Windows.Forms.PictureBox();
             this.sizeLabel = new System.Windows.Forms.Label();
             this.progressBar = new System.Windows.Forms.ProgressBar();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.iconPicture)).BeginInit();
             this.SuspendLayout();
             // 
@@ -133,6 +135,11 @@
             this.progressBar.TabIndex = 12;
             this.progressBar.Value = 100;
             // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // FrmStatus
             // 
             this.AcceptButton = this.startButton;
@@ -160,7 +167,6 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "LiveDC";
-            this.TopMost = true;
             ((System.ComponentModel.ISupportInitialize)(this.iconPicture)).EndInit();
             this.ResumeLayout(false);
 
@@ -176,6 +182,7 @@
         public System.Windows.Forms.PictureBox iconPicture;
         public System.Windows.Forms.Button startButton;
         public System.Windows.Forms.ProgressBar progressBar;
+        private System.Windows.Forms.Timer timer1;
 
     }
 }

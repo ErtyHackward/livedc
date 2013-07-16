@@ -27,7 +27,7 @@ namespace LiveDc
 
             if (existingItem != null)
             {
-                ReadyToStart = true;
+                Closed = true;
                 ShellHelper.Start(existingItem.Value.SystemPath);
                 return;
             }
@@ -49,7 +49,7 @@ namespace LiveDc
                     item.Priority = DownloadPriority.Normal;
 
                 _currentDownload = item;
-                ReadyToStart = true;
+                Closed = true;
                 ShellHelper.Start(Path.Combine(_provider.LiveClient.Drive.DriveRoot, _currentDownload.Magnet.FileName));
                 return;
             }
