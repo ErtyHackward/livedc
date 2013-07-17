@@ -78,5 +78,11 @@ namespace LiveDc.Forms
             DialogResult = DialogResult.OK;
             this.Close();
         }
+
+        private void listView1_DoubleClick(object sender, EventArgs e)
+        {
+            if (listView1.SelectedItems.Count > 0)
+                openButton_Click(null, null);
+        }
     }
 }

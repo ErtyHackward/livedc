@@ -172,6 +172,9 @@ namespace LiveDc.Providers
 
         public Stream GetStream(Magnet magnet)
         {
+            if (!CanHandle(magnet))
+                return null;
+
             return new TorrentStream(FindByMagnet(magnet), magnet.FileName);
         }
 
@@ -187,7 +190,7 @@ namespace LiveDc.Providers
 
         public IStartItem StartItem(Torrent torrent)
         {
-            return new TorrentStartItem(this, new Magnet { BTIH = torrent.InfoHash.ToHex()}, torrent);
+            return new TorrentStartItem(this, new Magnet { BTIH = torrent.InfoHash.ToHex() }, torrent);
         }
 
         public string GetVirtualPath(Magnet magnet)
@@ -216,16 +219,24 @@ namespace LiveDc.Providers
         public void DeleteFile(Magnet magnet)
         {
             var manager = FindByMagnet(magnet);
-            var file = manager.Torrent.Files.First(f => f.Path == magnet.FileName);
-
-            file.Priority = Priority.DoNotDownload;
-            manager.Engine.DiskManager.Flush(manager);
-            File.Delete(file.FullPath);
-
-            if (manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
+            if (manager != null)
             {
-                manager.Dispose();
-                _torrents.Remove(manager);
+                manager.Stop();
+
+                var file = manager.Torrent.Files.First(f => f.Path == magnet.FileName);
+                file.Priority = Priority.DoNotDownload;
+                while (manager.State != TorrentState.Stopped)
+                {
+                    Thread.Sleep(100);
+                }
+
+                File.Delete(file.FullPath);
+
+                if (manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
+                {
+                    manager.Dispose();
+                    _torrents.Remove(manager);
+                }
             }
         }
 

@@ -32,6 +32,11 @@ namespace LiveDc.Providers
                 if (torrent != null)
                 {
                     _torrent = new TorrentManager(torrent, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults);
+
+                    foreach (var torrentFile in _torrent.Torrent.Files)
+                    {
+                        torrentFile.Priority = Priority.DoNotDownload;
+                    }
                 }
                 else
                     _torrent = new TorrentManager(ml, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults, _torrentProvider.TorrentsFolder);
@@ -42,6 +47,8 @@ namespace LiveDc.Providers
             }
             else
             {
+                _file = _torrent.Torrent.Files.First(f => f.Path == magnet.FileName);
+
                 // check if the file is downloaded completely
                 if (_file.BitField.TrueCount == _file.BitField.Length)
                 {
@@ -56,13 +63,15 @@ namespace LiveDc.Providers
 
         private void FormThread()
         {
-            while (_torrent.State != TorrentState.Downloading)
+            while (_torrent.Torrent == null)
             {
                 // we have created the torrent from the InfoHash, to continue we need to receive torrent file first
                 StatusMessage = "Поиск сведений о загрузке";
 
                 if (!UserWaits())
                     return;
+
+                Thread.Sleep(100);
             }
 
             // update priorities
@@ -105,10 +114,11 @@ namespace LiveDc.Providers
                 }
             }
 
-            if (updateMagnetFileName || string.IsNullOrEmpty(Magnet.FileName))
+            if (updateMagnetFileName || string.IsNullOrEmpty(Magnet.FileName) || Magnet.Size == 0)
             {
                 var magnet = Magnet;
                 magnet.FileName = _file.Path;
+                magnet.Size = _file.Length;
                 Magnet = magnet;
             }
 
@@ -118,9 +128,9 @@ namespace LiveDc.Providers
             
             var sw = Stopwatch.StartNew();
 
-            while (_file.BytesDownloaded < 1024 * 1024 && sw.Elapsed.TotalSeconds < 30 && UserWaits())
+            while (_file.BytesDownloaded < 1024 * 1024 && sw.Elapsed.TotalSeconds < 120 && UserWaits())
             {
-                StatusMessage = string.Format("Поиск источников... ({0})", _torrent.Peers.Available);
+                StatusMessage = string.Format("Поиск источников... ({0})", _torrent.OpenConnections);
                 Thread.Sleep(500);
             }
 

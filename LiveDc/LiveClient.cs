@@ -187,6 +187,7 @@ namespace LiveDc
 
             _drive = new LiveDcDrive(_providers);
             _drive.MountAsync(driveLetter);
+            StorageHelper.OwnDrive = char.ToUpper(driveLetter) + ":\\";
 
             if (!Directory.Exists(Path.GetDirectoryName(DriveLockPath)))
                 Directory.CreateDirectory(Path.GetDirectoryName(DriveLockPath));

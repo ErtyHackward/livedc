@@ -29,11 +29,11 @@
         private void InitializeComponent()
         {
             this.listView1 = new System.Windows.Forms.ListView();
+            this.fileColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.sizeColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.label1 = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
             this.openButton = new System.Windows.Forms.Button();
-            this.fileColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.sizeColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
             // 
             // listView1
@@ -54,6 +54,17 @@
             this.listView1.UseCompatibleStateImageBehavior = false;
             this.listView1.View = System.Windows.Forms.View.Details;
             this.listView1.SelectedIndexChanged += new System.EventHandler(this.listView1_SelectedIndexChanged);
+            this.listView1.DoubleClick += new System.EventHandler(this.listView1_DoubleClick);
+            // 
+            // fileColumn
+            // 
+            this.fileColumn.Text = "Имя файла";
+            this.fileColumn.Width = 447;
+            // 
+            // sizeColumn
+            // 
+            this.sizeColumn.Text = "Размер";
+            this.sizeColumn.Width = 73;
             // 
             // label1
             // 
@@ -86,16 +97,6 @@
             this.openButton.Text = "Открыть";
             this.openButton.UseVisualStyleBackColor = true;
             this.openButton.Click += new System.EventHandler(this.openButton_Click);
-            // 
-            // fileColumn
-            // 
-            this.fileColumn.Text = "Имя файла";
-            this.fileColumn.Width = 447;
-            // 
-            // sizeColumn
-            // 
-            this.sizeColumn.Text = "Размер";
-            this.sizeColumn.Width = 73;
             // 
             // FrmTorrentFiles
             // 

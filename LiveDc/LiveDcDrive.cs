@@ -180,10 +180,13 @@ namespace LiveDc
 
                     var magnet = AllMagnets().FirstOrDefault(m => m.FileName == pureFileName);
 
-                    if (!string.IsNullOrEmpty(magnet.TTH))
-                    {
-                        stream = _providers.Select(p => p.GetStream(magnet)).First(s => s != null);
+                    stream = _providers.Select(p => p.GetStream(magnet)).First(s => s != null);
+
+                    if (stream != null)
                         _openedFiles.Add(filename, stream);
+                    else
+                    {
+                        logger.Error("Unable to create stream from {0}", magnet.ToString());
                     }
                 }
             }
