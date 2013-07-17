@@ -69,6 +69,9 @@ namespace LiveDc.Providers
 
         public Stream GetStream(Magnet magnet)
         {
+            if (!CanHandle(magnet))
+                return null;
+
             return _engine.GetStream(magnet);
         }
 
