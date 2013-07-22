@@ -79,6 +79,7 @@ namespace LiveDc.Forms
             UpdateStartButton();
             startButton.Enabled = false;
             Show();
+            Activate();
         }
 
         public void UpdateStartButton(int timeout = -1)
