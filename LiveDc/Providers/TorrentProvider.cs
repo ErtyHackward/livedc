@@ -141,9 +141,7 @@ namespace LiveDc.Providers
                     var manager = new TorrentManager(torrent, downloadsPath, TorrentDefaults);
                     if (fastResume.ContainsKey(torrent.InfoHash.ToHex()))
                         manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex()]));
-                    _engine.Register(manager);
-
-                    _torrents.Add(manager);
+                    RegisterTorrent(manager);
                 }
             }
         }
@@ -162,6 +160,25 @@ namespace LiveDc.Providers
                     };
                 }
             }
+        }
+
+        public void RegisterTorrent(TorrentManager torrent)
+        {
+            torrent.ChangePicker(CreateSlidingPicker(torrent));
+            _engine.Register(torrent);
+            _torrents.Add(torrent);
+        }
+
+        private PiecePicker CreateSlidingPicker(TorrentManager torrent)
+        {
+            PiecePicker picker;
+            if (ClientEngine.SupportsEndgameMode)
+                picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), torrent.Torrent.PieceLength / Piece.BlockSize, torrent);
+            else
+                picker = new StandardPicker();
+            picker = new SlidingWindowPicker(picker);
+            picker = new PriorityPicker(picker);
+            return picker;
         }
 
         private TorrentManager FindByMagnet(Magnet magnet)
@@ -230,7 +247,8 @@ namespace LiveDc.Providers
                     Thread.Sleep(100);
                 }
 
-                File.Delete(file.FullPath);
+                if (File.Exists(file.FullPath))
+                    File.Delete(file.FullPath);
 
                 if (manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
                 {

@@ -41,8 +41,7 @@ namespace LiveDc.Providers
                 else
                     _torrent = new TorrentManager(ml, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults, _torrentProvider.TorrentsFolder);
 
-                _torrentProvider.Torrents.Add(_torrent);
-                _torrentProvider.Engine.Register(_torrent);
+                _torrentProvider.RegisterTorrent(_torrent);
                 _torrent.Start();
             }
             else
