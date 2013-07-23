@@ -297,11 +297,14 @@ namespace LiveDc.Helpers
                 }
                 key.Close();
 
-                // delete explorer info HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.{EXT}
-                key = Registry.CurrentUser;
-                key.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" + extension);
+                try
+                {
+                    // delete explorer info HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.{EXT}
+                    key = Registry.CurrentUser;
+                    key.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" + extension);
+                }
+                catch (Exception) { }
                 
-
                 return true;
             }
             catch (UnauthorizedAccessException)

@@ -169,6 +169,19 @@ namespace LiveDc
             return 0;
         }
 
+        public void CloseFileStream(string fullPath)
+        {
+            lock (_openedFiles)
+            {
+                Stream stream;
+                if (_openedFiles.TryGetValue(fullPath, out stream))
+                {
+                    stream.Dispose();
+                    _openedFiles.Remove(fullPath);
+                }
+            }
+        }
+
         public int ReadFile(string filename, byte[] buffer, ref uint readBytes, long offset, DokanFileInfo info)
         {
             Stream stream;
