@@ -129,7 +129,7 @@ namespace LiveDc.Providers
 
             while (_file.BytesDownloaded < 1024 * 1024 && sw.Elapsed.TotalSeconds < 120 && UserWaits())
             {
-                StatusMessage = string.Format("Поиск источников... ({0})", _torrent.OpenConnections);
+                StatusMessage = string.Format("Поиск источников... ({0}, {1})", _torrent.OpenConnections, _torrent.Peers.Available);
                 Thread.Sleep(500);
             }
 

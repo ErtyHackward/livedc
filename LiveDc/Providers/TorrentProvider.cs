@@ -247,12 +247,15 @@ namespace LiveDc.Providers
                     Thread.Sleep(100);
                 }
 
+                _client.Drive.CloseFileStream("\\" + file.Path);
+
                 if (File.Exists(file.FullPath))
                     File.Delete(file.FullPath);
 
                 if (manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
                 {
                     manager.Dispose();
+                    _engine.Unregister(manager);
                     _torrents.Remove(manager);
                 }
             }
