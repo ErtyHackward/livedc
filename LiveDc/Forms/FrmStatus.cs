@@ -24,7 +24,7 @@ namespace LiveDc.Forms
 
         void NativeImageList_LargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
         {
-            if (_startItem.Magnet.FileName != null && e.Extension.ToLower() == Path.GetExtension(_startItem.Magnet.FileName).ToLower())
+            if (_startItem != null && _startItem.Magnet.FileName != null && e.Extension.ToLower() == Path.GetExtension(_startItem.Magnet.FileName).ToLower())
             {
                 _ao.Post(o => iconPicture.Image = e.Icon, null);
             }
@@ -118,6 +118,9 @@ namespace LiveDc.Forms
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            if (_startItem == null)
+                return;
+            
             startButton.Enabled = _startItem.ReadyToStart;
             statusLabel.Text = _startItem.StatusMessage;
 
@@ -144,8 +147,14 @@ namespace LiveDc.Forms
                 sizeLabel.Text = Utils.FormatBytes(_startItem.Magnet.Size);
             }
 
+            if (!_startItem.Closed)
+                _startItem.MainThreadAction(this);
+
             if (_startItem.Closed)
+            {
                 Close();
+                _startItem = null;
+            }
         }
     }
 }

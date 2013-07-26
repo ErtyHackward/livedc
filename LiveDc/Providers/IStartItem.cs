@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Windows.Forms;
 using SharpDc.Structs;
 
 namespace LiveDc.Providers
@@ -43,5 +44,12 @@ namespace LiveDc.Providers
         /// Indicates that form should close itself
         /// </summary>
         bool Closed { get; }
+
+        /// <summary>
+        /// Allows to perform custom action in the main thread
+        /// (select one file from the torrent file)
+        /// </summary>
+        /// <param name="active"></param>
+        void MainThreadAction(Form active);
     }
 }

@@ -164,7 +164,6 @@
             this.Name = "FrmStatus";
             this.Padding = new System.Windows.Forms.Padding(4, 43, 4, 5);
             this.ShowIcon = false;
-            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "LiveDC";
             ((System.ComponentModel.ISupportInitialize)(this.iconPicture)).EndInit();
