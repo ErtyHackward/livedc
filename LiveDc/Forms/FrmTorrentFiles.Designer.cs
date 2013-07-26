@@ -111,6 +111,7 @@
             this.Controls.Add(this.listView1);
             this.Name = "FrmTorrentFiles";
             this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Выбор файла";
             this.ResumeLayout(false);

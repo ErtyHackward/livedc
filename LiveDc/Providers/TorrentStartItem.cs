@@ -17,7 +17,8 @@ namespace LiveDc.Providers
         private TorrentProvider _torrentProvider;
         private TorrentManager _torrent;
         private TorrentFile _file;
-        
+        private FrmTorrentFiles _filesForm;
+
         public TorrentStartItem(TorrentProvider torrentProvider, Magnet magnet, Torrent torrent = null)
         {
             Progress = float.PositiveInfinity;
@@ -96,20 +97,16 @@ namespace LiveDc.Providers
                 }
                 else
                 {
-                    var form = new FrmTorrentFiles(_torrent.Torrent);
+                    StatusMessage = "Выбор файла...";
+                    while (_file == null)
+                    {
+                        Thread.Sleep(100);
 
-                    if (form.ShowDialog() == DialogResult.OK)
-                    {
-                        _file = form.SelectedFile;
-                        updateMagnetFileName = true;
+                        if (Closed)
+                            return;
                     }
-                    else
-                    {
-                        Progress = float.NaN;
-                        StatusMessage = "Операция отменена";
-                        Closed = true;
-                        return;
-                    }
+                    
+                    updateMagnetFileName = true;
                 }
             }
 
@@ -156,6 +153,30 @@ namespace LiveDc.Providers
             if (_cancel && !_addToQueue)
             {
                 _torrentProvider.DeleteFile(Magnet);
+            }
+        }
+
+        public override void MainThreadAction(Form active)
+        {
+            if (_filesForm != null)
+                return;
+
+            if (_file == null && _torrent != null)
+            {
+                _filesForm = new FrmTorrentFiles(_torrent.Torrent);
+
+                if (_filesForm.ShowDialog(active) == DialogResult.OK)
+                {
+                    _file = _filesForm.SelectedFile;
+                }
+                else
+                {
+                    Progress = float.NaN;
+                    StatusMessage = "Операция отменена";
+                    Closed = true;
+                }
+
+                _filesForm = null;
             }
         }
 

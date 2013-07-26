@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using System.Windows.Forms;
 using SharpDc.Structs;
 
 namespace LiveDc.Providers
@@ -45,6 +46,11 @@ namespace LiveDc.Providers
         {
             return !_cancel && !_addToQueue;
         }
-        
+
+        public virtual void MainThreadAction(Form active)
+        {
+
+        }
+
     }
 }

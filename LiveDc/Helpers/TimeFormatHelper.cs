@@ -95,5 +95,30 @@ namespace LiveDc.Helpers
                     return string.Format("{0} {1}", value, genitivePlural);
             }
         }
+
+        public static string FormatInterval(this TimeSpan timeSpan)
+        {
+            if (timeSpan.TotalSeconds < 0)
+            {
+                return string.Format("{0} ms", Math.Round(timeSpan.TotalMilliseconds));
+            }
+
+            if (timeSpan.TotalSeconds < 10)
+            {
+                return string.Format("{0} s", Math.Round(timeSpan.TotalSeconds, 2));
+            }
+
+            if (timeSpan.TotalMinutes < 0)
+            {
+                return string.Format("{0} s", Math.Round(timeSpan.TotalSeconds));
+            }
+
+            if (timeSpan.TotalHours < 0)
+            {
+                return string.Format("{0} m", Math.Round(timeSpan.TotalMinutes));
+            }
+
+            return timeSpan.ToString();
+        }
     }
 }

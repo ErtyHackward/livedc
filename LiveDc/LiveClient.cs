@@ -11,12 +11,13 @@ using LiveDc.Managers;
 using LiveDc.Notify;
 using LiveDc.Properties;
 using LiveDc.Providers;
+using MonoTorrent;
 using MonoTorrent.Common;
 using SharpDc;
-using SharpDc.Logging;
 using SharpDc.Structs;
 using Win32;
 using DataReceivedEventArgs = Win32.DataReceivedEventArgs;
+using LogManager = SharpDc.Logging.LogManager;
 using Timer = System.Windows.Forms.Timer;
 
 namespace LiveDc
@@ -61,6 +62,7 @@ namespace LiveDc
                 Settings.Load();
 
             LogManager.LogManagerInstance = new NLogManager();
+            MonoTorrent.LogManager.LogManagerInstance = new TorrentNLogManager();
 
             logger.Info("------------------------------starting");
             
