@@ -15,6 +15,7 @@ using MonoTorrent.Client.Encryption;
 using MonoTorrent.Common;
 using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
+using SharpDc.Connections;
 using SharpDc.Structs;
 using EngineSettings = MonoTorrent.Client.EngineSettings;
 
@@ -77,6 +78,17 @@ namespace LiveDc.Providers
         {
             string downloadsPath = Client.Settings.StorageAutoSelect ? StorageHelper.GetBestSaveDirectory() : Client.Settings.StoragePath;
 
+            if (Client.Settings.TorrentTcpPort == 0)
+            {
+                var r = new Random();
+                int port;
+                while (!TcpConnectionListener.IsPortFree(port = r.Next(6881, 7000)))
+                {
+                        
+                }
+                logger.Info("Auto selected torrent port: {0}", port);
+                Client.Settings.TorrentTcpPort = port;
+            }
 
             var engineSettings = new EngineSettings(downloadsPath, Client.Settings.TorrentTcpPort)
                                      {
@@ -84,7 +96,7 @@ namespace LiveDc.Providers
                                          AllowedEncryption = EncryptionTypes.All
                                      };
 
-            _torrentDefaults = new TorrentSettings(4, 30, 0, 0);
+            _torrentDefaults = new TorrentSettings(4, 50, 0, 0);
 
             _engine = new ClientEngine(engineSettings);
             _engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, Client.Settings.TorrentTcpPort));

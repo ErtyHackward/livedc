@@ -47,14 +47,17 @@ namespace LiveDc.Providers
             }
             else
             {
-                _file = _torrent.Torrent.Files.First(f => f.Path == magnet.FileName);
-
-                // check if the file is downloaded completely
-                if (_file.BitField.TrueCount == _file.BitField.Length)
+                if (!string.IsNullOrEmpty(magnet.FileName))
                 {
-                    Closed = true;
-                    ShellHelper.Start(_file.FullPath);
-                    return;
+                    _file = _torrent.Torrent.Files.First(f => f.Path == magnet.FileName);
+
+                    // check if the file is downloaded completely
+                    if (_file.BitField.TrueCount == _file.BitField.Length)
+                    {
+                        Closed = true;
+                        ShellHelper.Start(_file.FullPath);
+                        return;
+                    }
                 }
             }
             

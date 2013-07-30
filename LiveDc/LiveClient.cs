@@ -11,7 +11,6 @@ using LiveDc.Managers;
 using LiveDc.Notify;
 using LiveDc.Properties;
 using LiveDc.Providers;
-using MonoTorrent;
 using MonoTorrent.Common;
 using SharpDc;
 using SharpDc.Structs;
