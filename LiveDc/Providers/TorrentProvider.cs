@@ -127,7 +127,10 @@ namespace LiveDc.Providers
             BEncodedDictionary fastResume;
             try
             {
-                fastResume = BEncodedValue.Decode<BEncodedDictionary>(File.ReadAllBytes(TorrentFastResumePath));
+                if (File.Exists(TorrentFastResumePath))
+                    fastResume = BEncodedValue.Decode<BEncodedDictionary>(File.ReadAllBytes(TorrentFastResumePath));
+                else
+                    fastResume = new BEncodedDictionary();
             }
             catch
             {
@@ -176,9 +179,25 @@ namespace LiveDc.Providers
 
         public void RegisterTorrent(TorrentManager torrent)
         {
-            torrent.ChangePicker(CreateSlidingPicker(torrent));
+            if (torrent.HasMetadata)
+                torrent.ChangePicker(CreateSlidingPicker(torrent));
+            else
+                torrent.MetadataReceived += TorrentOnMetadataReceived;
+
             _engine.Register(torrent);
             _torrents.Add(torrent);
+        }
+
+        private void TorrentOnMetadataReceived(object sender, EventArgs eventArgs)
+        {
+            var manager = (TorrentManager)sender;
+            manager.ChangePicker(CreateSlidingPicker(manager));
+            manager.MetadataReceived -= TorrentOnMetadataReceived;
+
+            foreach (var torrentFile in manager.Torrent.Files)
+            {
+                torrentFile.Priority = Priority.DoNotDownload;
+            }
         }
 
         private PiecePicker CreateSlidingPicker(TorrentManager torrent)
@@ -250,7 +269,7 @@ namespace LiveDc.Providers
             var manager = FindByMagnet(magnet);
             if (manager != null)
             {
-                manager.Stop();
+                manager.BeginStop();
 
                 var file = manager.Torrent.Files.First(f => f.Path == magnet.FileName);
                 file.Priority = Priority.DoNotDownload;
@@ -264,12 +283,22 @@ namespace LiveDc.Providers
                 if (File.Exists(file.FullPath))
                     File.Delete(file.FullPath);
 
-                if (manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
-                {
-                    manager.Dispose();
-                    _engine.Unregister(manager);
-                    _torrents.Remove(manager);
-                }
+                CancelTorrent(manager);
+            }
+        }
+
+        /// <summary>
+        /// Removes torrent manager from the engine if no one file is downloading
+        /// </summary>
+        /// <param name="manager"></param>
+        public void CancelTorrent(TorrentManager manager)
+        {
+            if (manager.Torrent == null || manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
+            {
+                manager.Stop();
+                _engine.Unregister(manager);
+                _torrents.Remove(manager);
+                manager.Dispose();
             }
         }
 
@@ -279,14 +308,21 @@ namespace LiveDc.Providers
             var fastResume = new BEncodedDictionary();
             foreach (var t in _torrents)
             {
-                t.Stop();
+                t.BeginStop();
                 while (t.State != TorrentState.Stopped)
                 {
-                    logger.Info("{0} is {1}", t.Torrent.Name, t.State);
                     Thread.Sleep(250);
                 }
 
-                fastResume.Add(t.Torrent.InfoHash.ToHex(), t.SaveFastResume().Encode());
+                try
+                {
+                    fastResume.Add(t.Torrent.InfoHash.ToHex(), t.SaveFastResume().Encode());
+                }
+                catch (Exception x)
+                {
+                    logger.Error("Unable to save the torrent {0}: {1}", t.Torrent.Name, x.Message);
+                }
+                
             }
             
             File.WriteAllBytes(TorrentDhtNodesPath, _engine.DhtEngine.SaveNodes());

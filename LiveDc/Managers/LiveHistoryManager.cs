@@ -56,14 +56,14 @@ namespace LiveDc.Managers
 
         public void AddItem(Magnet magnet)
         {
-            DeleteItem(magnet.TTH);
+            DeleteItem(magnet);
             _historyList.Add(new LiveHistoryItem { CreateDate = DateTime.Now, Magnet = magnet });
             OnHistoryChanged();
         }
 
-        public void DeleteItem(string tth)
+        public void DeleteItem(Magnet magnet)
         {
-            var index = _historyList.FindIndex(i => i.Magnet.TTH == tth);
+            var index = _historyList.FindIndex(i => i.Magnet.Equals(magnet));
 
             if (index != -1)
             {
