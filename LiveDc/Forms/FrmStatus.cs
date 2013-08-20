@@ -63,7 +63,15 @@ namespace LiveDc.Forms
             {
                 iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(startItem.Magnet.FileName));
                 nameLabel.Text = startItem.Magnet.FileName;
-                sizeLabel.Text = Utils.FormatBytes(startItem.Magnet.Size);
+
+                if (startItem.Magnet.Size != 0)
+                {
+                    sizeLabel.Text = Utils.FormatBytes(startItem.Magnet.Size);
+                }
+                else
+                {
+                    sizeLabel.Text = null;
+                }
             }
             else
             {
@@ -140,10 +148,14 @@ namespace LiveDc.Forms
                 progressBar.Value = (int)(100 * _startItem.Progress);
             }
 
-            if (string.IsNullOrEmpty(nameLabel.Text) && !string.IsNullOrEmpty(_startItem.Magnet.FileName))
+            if (nameLabel.Text != _startItem.Magnet.FileName)
             {
                 iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(_startItem.Magnet.FileName));
                 nameLabel.Text = _startItem.Magnet.FileName;
+            }
+
+            if (string.IsNullOrEmpty(sizeLabel.Text) && _startItem.Magnet.Size != 0)
+            {
                 sizeLabel.Text = Utils.FormatBytes(_startItem.Magnet.Size);
             }
 

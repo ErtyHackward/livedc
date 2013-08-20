@@ -379,7 +379,7 @@ namespace LiveDc
 
             provider.DeleteFile(magnet);
 
-            History.DeleteItem(magnet.TTH);
+            History.DeleteItem(magnet);
         }
     }
 

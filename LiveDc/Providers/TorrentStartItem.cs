@@ -8,6 +8,7 @@ using LiveDc.Helpers;
 using MonoTorrent;
 using MonoTorrent.Client;
 using MonoTorrent.Common;
+using SharpDc;
 using SharpDc.Structs;
 
 namespace LiveDc.Providers
@@ -15,7 +16,7 @@ namespace LiveDc.Providers
     public class TorrentStartItem : StartItem
     {
         private TorrentProvider _torrentProvider;
-        private TorrentManager _torrent;
+        private TorrentManager _manager;
         private TorrentFile _file;
         private FrmTorrentFiles _filesForm;
 
@@ -27,32 +28,32 @@ namespace LiveDc.Providers
             var ml = new MagnetLink(magnet.ToString());
 
             // find or create torrent
-            _torrent = _torrentProvider.Torrents.FirstOrDefault(t => t.InfoHash == ml.InfoHash);
-            if (_torrent == null)
+            _manager = _torrentProvider.Torrents.FirstOrDefault(t => t.InfoHash == ml.InfoHash);
+            if (_manager == null)
             {
                 if (torrent != null)
                 {
-                    _torrent = new TorrentManager(torrent, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults);
+                    _manager = new TorrentManager(torrent, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults);
 
-                    foreach (var torrentFile in _torrent.Torrent.Files)
+                    foreach (var torrentFile in _manager.Torrent.Files)
                     {
                         torrentFile.Priority = Priority.DoNotDownload;
                     }
                 }
                 else
-                    _torrent = new TorrentManager(ml, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults, _torrentProvider.TorrentsFolder);
+                    _manager = new TorrentManager(ml, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults, _torrentProvider.TorrentsFolder);
 
-                _torrentProvider.RegisterTorrent(_torrent);
-                _torrent.Start();
+                _torrentProvider.RegisterTorrent(_manager);
+                _manager.Start();
             }
             else
             {
                 if (!string.IsNullOrEmpty(magnet.FileName))
                 {
-                    _file = _torrent.Torrent.Files.First(f => f.Path == magnet.FileName);
-
+                    _file = _manager.Torrent.Files.FirstOrDefault(f => f.Path == magnet.FileName);
+                    
                     // check if the file is downloaded completely
-                    if (_file.BitField.TrueCount == _file.BitField.Length)
+                    if (_file != null && _file.BitField.TrueCount == _file.BitField.Length)
                     {
                         Closed = true;
                         ShellHelper.Start(_file.FullPath);
@@ -66,19 +67,22 @@ namespace LiveDc.Providers
 
         private void FormThread()
         {
-            while (_torrent.Torrent == null)
+            while (!_manager.HasMetadata)
             {
                 // we have created the torrent from the InfoHash, to continue we need to receive torrent file first
-                StatusMessage = "Поиск сведений о загрузке";
+                StatusMessage = "Поиск метаданных...";
 
                 if (!UserWaits())
+                {
+                    _torrentProvider.CancelTorrent(_manager);
                     return;
+                }
 
                 Thread.Sleep(100);
             }
 
             // update priorities
-            foreach (var torrentFile in _torrent.Torrent.Files)
+            foreach (var torrentFile in _manager.Torrent.Files)
             {
                 if (!string.IsNullOrEmpty(Magnet.FileName) && torrentFile.Path == Magnet.FileName)
                 {
@@ -93,9 +97,9 @@ namespace LiveDc.Providers
             bool updateMagnetFileName = false;
             if (_file == null)
             {
-                if (_torrent.Torrent.Files.Length == 1)
+                if (_manager.Torrent.Files.Length == 1)
                 {
-                    _file = _torrent.Torrent.Files[0];
+                    _file = _manager.Torrent.Files[0];
                     updateMagnetFileName = true;
                 }
                 else
@@ -106,7 +110,10 @@ namespace LiveDc.Providers
                         Thread.Sleep(100);
 
                         if (Closed)
+                        {
+                            _torrentProvider.CancelTorrent(_manager);
                             return;
+                        }
                     }
                     
                     updateMagnetFileName = true;
@@ -129,7 +136,7 @@ namespace LiveDc.Providers
 
             while (_file.BytesDownloaded < 1024 * 1024 && sw.Elapsed.TotalSeconds < 120 && UserWaits())
             {
-                StatusMessage = string.Format("Поиск источников... ({0}, {1})", _torrent.OpenConnections, _torrent.Peers.Available);
+                StatusMessage = string.Format("Загрузка данных... {0}", _manager.Monitor.DownloadSpeed != 0 ? Utils.FormatBytes(_manager.Monitor.DownloadSpeed) + "/c" : "");
                 Thread.Sleep(500);
             }
 
@@ -139,7 +146,7 @@ namespace LiveDc.Providers
                 return;
             }
 
-            StatusMessage = "Не удается начать загрузку. Источники: " + _torrent.Peers.Available;
+            StatusMessage = "Не удается начать загрузку. Источники: " + _manager.Peers.Available;
             Progress = float.NaN;
 
             while (!_cancel && !_started)
@@ -156,6 +163,7 @@ namespace LiveDc.Providers
             if (_cancel && !_addToQueue)
             {
                 _torrentProvider.DeleteFile(Magnet);
+                _torrentProvider.Client.History.DeleteItem(Magnet);
             }
         }
 
@@ -164,9 +172,9 @@ namespace LiveDc.Providers
             if (_filesForm != null)
                 return;
 
-            if (_file == null && _torrent != null)
+            if (_file == null && _manager != null && _manager.HasMetadata && _manager.Torrent.Files.Length > 1)
             {
-                _filesForm = new FrmTorrentFiles(_torrent.Torrent);
+                _filesForm = new FrmTorrentFiles(_manager.Torrent);
 
                 if (_filesForm.ShowDialog(active) == DialogResult.OK)
                 {

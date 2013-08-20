@@ -117,6 +117,7 @@ namespace LiveDc
             {
                 _provider.Engine.RemoveDownload(_currentDownload);
                 _currentDownload = null;
+                _provider.LiveClient.History.DeleteItem(Magnet);
             }
         }
 
