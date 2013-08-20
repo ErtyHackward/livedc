@@ -31,10 +31,10 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmSearch));
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
-            this.listView1 = new LiveDc.Forms.ListViewNoFlicker();
-            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.resultsListView = new LiveDc.Forms.ListViewNoFlicker();
+            this.fileNameColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.sourcesColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.sizeColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
             // 
             // textBox1
@@ -57,42 +57,42 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // listView1
+            // resultsListView
             // 
-            this.listView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.resultsListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeader1,
-            this.columnHeader2,
-            this.columnHeader3});
-            this.listView1.FullRowSelect = true;
-            this.listView1.GridLines = true;
-            this.listView1.Location = new System.Drawing.Point(13, 37);
-            this.listView1.MultiSelect = false;
-            this.listView1.Name = "listView1";
-            this.listView1.Size = new System.Drawing.Size(629, 405);
-            this.listView1.TabIndex = 2;
-            this.listView1.UseCompatibleStateImageBehavior = false;
-            this.listView1.View = System.Windows.Forms.View.Details;
-            this.listView1.VirtualMode = true;
-            this.listView1.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView1_ColumnClick);
-            this.listView1.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView1_RetrieveVirtualItem);
-            this.listView1.DoubleClick += new System.EventHandler(this.listView1_DoubleClick);
+            this.resultsListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.fileNameColumn,
+            this.sourcesColumn,
+            this.sizeColumn});
+            this.resultsListView.FullRowSelect = true;
+            this.resultsListView.GridLines = true;
+            this.resultsListView.Location = new System.Drawing.Point(13, 37);
+            this.resultsListView.MultiSelect = false;
+            this.resultsListView.Name = "resultsListView";
+            this.resultsListView.Size = new System.Drawing.Size(629, 405);
+            this.resultsListView.TabIndex = 2;
+            this.resultsListView.UseCompatibleStateImageBehavior = false;
+            this.resultsListView.View = System.Windows.Forms.View.Details;
+            this.resultsListView.VirtualMode = true;
+            this.resultsListView.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView1_ColumnClick);
+            this.resultsListView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView1_RetrieveVirtualItem);
+            this.resultsListView.DoubleClick += new System.EventHandler(this.listView1_DoubleClick);
             // 
-            // columnHeader1
+            // fileNameColumn
             // 
-            this.columnHeader1.Text = "Имя файла";
-            this.columnHeader1.Width = 462;
+            this.fileNameColumn.Text = "Имя файла";
+            this.fileNameColumn.Width = 462;
             // 
-            // columnHeader2
+            // sourcesColumn
             // 
-            this.columnHeader2.Text = "Источники";
-            this.columnHeader2.Width = 80;
+            this.sourcesColumn.Text = "Источники";
+            this.sourcesColumn.Width = 80;
             // 
-            // columnHeader3
+            // sizeColumn
             // 
-            this.columnHeader3.Text = "Размер";
+            this.sizeColumn.Text = "Размер";
             // 
             // FrmSearch
             // 
@@ -100,7 +100,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(654, 454);
-            this.Controls.Add(this.listView1);
+            this.Controls.Add(this.resultsListView);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.textBox1);
             this.DoubleBuffered = true;
@@ -116,9 +116,9 @@
 
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button button1;
-        private ListViewNoFlicker listView1;
-        private System.Windows.Forms.ColumnHeader columnHeader1;
-        private System.Windows.Forms.ColumnHeader columnHeader2;
-        private System.Windows.Forms.ColumnHeader columnHeader3;
+        private ListViewNoFlicker resultsListView;
+        private System.Windows.Forms.ColumnHeader fileNameColumn;
+        private System.Windows.Forms.ColumnHeader sourcesColumn;
+        private System.Windows.Forms.ColumnHeader sizeColumn;
     }
 }
