@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using LiveDc.Managers;
 using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc;
@@ -32,8 +33,10 @@ namespace LiveDc.Forms
             InitializeComponent();
 
             _comparer = new SourceComparer();
+            resultsListView.SetSortIcon(1, SortOrder.Descending);
             
-            NativeImageList.SetListViewIconIndex(listView1.Handle);
+
+            NativeImageList.SetListViewIconIndex(resultsListView.Handle);
             NativeImageList.SmallExtensionImageLoaded += NativeImageListSmallExtensionImageLoaded;
 
             _dcProvider.Engine.SearchManager.SearchStarted += SearchManager_SearchStarted;
@@ -42,15 +45,15 @@ namespace LiveDc.Forms
 
         void NativeImageListSmallExtensionImageLoaded(object sender, NativeImageListEventArgs e)
         {
-            listView1.Invoke(new Action(RefreshList));
+            resultsListView.Invoke(new Action(RefreshList));
         }
 
         void RefreshList()
         {
-            if (Monitor.TryEnter(listView1))
+            if (Monitor.TryEnter(resultsListView))
             {
-                listView1.Refresh();
-                Monitor.Exit(listView1);
+                resultsListView.Refresh();
+                Monitor.Exit(resultsListView);
             }
         }
 
@@ -94,10 +97,10 @@ namespace LiveDc.Forms
         {
             using (new PerfLimit("ListRefresh"))
             {
-                listView1.BeginUpdate();
-                listView1.VirtualListSize = _list.Count;
-                listView1.Update();
-                listView1.EndUpdate();
+                resultsListView.BeginUpdate();
+                resultsListView.VirtualListSize = _list.Count;
+                resultsListView.Update();
+                resultsListView.EndUpdate();
             }
         }
 
@@ -112,12 +115,61 @@ namespace LiveDc.Forms
                 _list.Clear();
             }
 
-            _client.AsyncOperation.Post(o => { listView1.VirtualListSize = 0; listView1.Refresh(); }, null);
+            _client.AsyncOperation.Post(o => { resultsListView.VirtualListSize = 0; resultsListView.Refresh(); }, null);
         }
 
         private void listView1_ColumnClick(object sender, ColumnClickEventArgs e)
         {
+            for (var i = 0; i < resultsListView.Columns.Count; i++)
+            {
+                resultsListView.SetSortIcon(i, SortOrder.None);
+            }
 
+            var column = resultsListView.Columns[e.Column];
+            
+            if (column == fileNameColumn)
+            {
+                if (_comparer is NameComparer)
+                {
+                    _comparer = new NameComparerAsc();
+                    resultsListView.SetSortIcon(e.Column, SortOrder.Ascending);
+                }
+                else
+                {
+                    _comparer = new NameComparer();
+                    resultsListView.SetSortIcon(e.Column, SortOrder.Descending);
+                }
+                
+            }
+            else if (column == sourcesColumn)
+            {
+                if (_comparer is SourceComparer)
+                {
+                    _comparer = new SourceComparerAsc();
+                    resultsListView.SetSortIcon(e.Column, SortOrder.Ascending);
+                }
+                else
+                {
+                    _comparer = new SourceComparer();
+                    resultsListView.SetSortIcon(e.Column, SortOrder.Descending);
+                }
+            }
+            else if (column == sizeColumn)
+            {
+                if (_comparer is SizeComparer)
+                {
+                    _comparer = new SizeComparerAsc();
+                    resultsListView.SetSortIcon(e.Column, SortOrder.Ascending);
+                }
+                else
+                {
+                    _comparer = new SizeComparer();
+                    resultsListView.SetSortIcon(e.Column, SortOrder.Descending);
+                }
+            }
+
+            _list.Sort(_comparer);
+            FillList();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -145,9 +197,9 @@ namespace LiveDc.Forms
 
         private void listView1_DoubleClick(object sender, EventArgs e)
         {
-            if (listView1.SelectedIndices.Count > 0)
+            if (resultsListView.SelectedIndices.Count > 0)
             {
-                var index = listView1.SelectedIndices[0];
+                var index = resultsListView.SelectedIndices[0];
                 var hsr = _list[index];
 
                 _client.StartFile(hsr.Magnet);
@@ -185,11 +237,136 @@ namespace LiveDc.Forms
         }
     }
 
+    public class SourceComparerAsc : IComparer<HubSearchResult>
+    {
+        public int Compare(HubSearchResult x, HubSearchResult y)
+        {
+            return x.Sources.Count.CompareTo(y.Sources.Count);
+        }
+    }
+
     public class SizeComparer : IComparer<HubSearchResult>
     {
         public int Compare(HubSearchResult x, HubSearchResult y)
         {
             return y.Size.CompareTo(x.Size);
+        }
+    }
+
+    public class SizeComparerAsc : IComparer<HubSearchResult>
+    {
+        public int Compare(HubSearchResult x, HubSearchResult y)
+        {
+            return x.Size.CompareTo(y.Size);
+        }
+    }
+
+    public class NameComparer : IComparer<HubSearchResult>
+    {
+        public int Compare(HubSearchResult x, HubSearchResult y)
+        {
+            return y.Magnet.FileName.CompareTo(x.Magnet.FileName);
+        }
+    }
+
+    public class NameComparerAsc : IComparer<HubSearchResult>
+    {
+        public int Compare(HubSearchResult x, HubSearchResult y)
+        {
+            return x.Magnet.FileName.CompareTo(y.Magnet.FileName);
+        }
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static class ListViewExtensions
+    {
+        [StructLayout(LayoutKind.Sequential)]
+        public struct HDITEM
+        {
+            public Mask mask;
+            public int cxy;
+            [MarshalAs(UnmanagedType.LPTStr)]
+            public string pszText;
+            public IntPtr hbm;
+            public int cchTextMax;
+            public Format fmt;
+            public IntPtr lParam;
+            // _WIN32_IE >= 0x0300 
+            public int iImage;
+            public int iOrder;
+            // _WIN32_IE >= 0x0500
+            public uint type;
+            public IntPtr pvFilter;
+            // _WIN32_WINNT >= 0x0600
+            public uint state;
+
+            [Flags]
+            public enum Mask
+            {
+                Format = 0x4,       // HDI_FORMAT
+            };
+
+            [Flags]
+            public enum Format
+            {
+                SortDown = 0x200,   // HDF_SORTDOWN
+                SortUp = 0x400,     // HDF_SORTUP
+            };
+        };
+
+        public const int LVM_FIRST = 0x1000;
+        public const int LVM_GETHEADER = LVM_FIRST + 31;
+
+        public const int HDM_FIRST = 0x1200;
+        public const int HDM_GETITEM = HDM_FIRST + 11;
+        public const int HDM_SETITEM = HDM_FIRST + 12;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 msg, IntPtr wParam, ref HDITEM lParam);
+
+        public static void SetSortIcon(this ListView listViewControl, int columnIndex, SortOrder order)
+        {
+            IntPtr columnHeader = SendMessage(listViewControl.Handle, LVM_GETHEADER, IntPtr.Zero, IntPtr.Zero);
+            for (int columnNumber = 0; columnNumber <= listViewControl.Columns.Count - 1; columnNumber++)
+            {
+                var columnPtr = new IntPtr(columnNumber);
+                var item = new HDITEM
+                {
+                    mask = HDITEM.Mask.Format
+                };
+
+                if (SendMessage(columnHeader, HDM_GETITEM, columnPtr, ref item) == IntPtr.Zero)
+                {
+                    throw new Win32Exception();
+                }
+
+                if (order != SortOrder.None && columnNumber == columnIndex)
+                {
+                    switch (order)
+                    {
+                        case SortOrder.Ascending:
+                            item.fmt &= ~HDITEM.Format.SortDown;
+                            item.fmt |= HDITEM.Format.SortUp;
+                            break;
+                        case SortOrder.Descending:
+                            item.fmt &= ~HDITEM.Format.SortUp;
+                            item.fmt |= HDITEM.Format.SortDown;
+                            break;
+                    }
+                }
+                else
+                {
+                    item.fmt &= ~HDITEM.Format.SortDown & ~HDITEM.Format.SortUp;
+                }
+
+                if (SendMessage(columnHeader, HDM_SETITEM, columnPtr, ref item) == IntPtr.Zero)
+                {
+                    throw new Win32Exception();
+                }
+            }
         }
     }
 }
