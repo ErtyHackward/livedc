@@ -264,26 +264,29 @@ namespace LiveDc.Providers
             }
         }
 
+        /// <summary>
+        /// Marks 
+        /// </summary>
+        /// <param name="magnet"></param>
         public void DeleteFile(Magnet magnet)
         {
             var manager = FindByMagnet(magnet);
             if (manager != null)
             {
-                manager.BeginStop();
-
                 var file = manager.Torrent.Files.First(f => f.Path == magnet.FileName);
                 file.Priority = Priority.DoNotDownload;
-                while (manager.State != TorrentState.Stopped)
+
+                if (manager.Torrent.Files.All(f => f.Priority == Priority.DoNotDownload))
                 {
-                    Thread.Sleep(100);
+                    manager.Stop();
+
+                    _client.Drive.CloseFileStream("\\" + file.Path);
+
+                    if (File.Exists(file.FullPath))
+                        File.Delete(file.FullPath);
+
+                    CancelTorrent(manager);
                 }
-
-                _client.Drive.CloseFileStream("\\" + file.Path);
-
-                if (File.Exists(file.FullPath))
-                    File.Delete(file.FullPath);
-
-                CancelTorrent(manager);
             }
         }
 
@@ -308,19 +311,16 @@ namespace LiveDc.Providers
             var fastResume = new BEncodedDictionary();
             foreach (var t in _torrents)
             {
-                t.BeginStop();
-                while (t.State != TorrentState.Stopped)
-                {
-                    Thread.Sleep(250);
-                }
-
+                t.Stop();
+                
                 try
                 {
-                    fastResume.Add(t.Torrent.InfoHash.ToHex(), t.SaveFastResume().Encode());
+                    if (t.HasMetadata && t.HashChecked)
+                        fastResume.Add(t.Torrent.InfoHash.ToHex(), t.SaveFastResume().Encode());
                 }
                 catch (Exception x)
                 {
-                    logger.Error("Unable to save the torrent {0}: {1}", t.Torrent.Name, x.Message);
+                    logger.Error("Unable to save the torrent {0}: {1}", t, x.Message);
                 }
                 
             }

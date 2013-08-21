@@ -377,9 +377,8 @@ namespace LiveDc
         {
             var provider = _providers.First(p => p.CanHandle(magnet));
 
-            provider.DeleteFile(magnet);
-
             History.DeleteItem(magnet);
+            provider.DeleteFile(magnet);
         }
     }
 
