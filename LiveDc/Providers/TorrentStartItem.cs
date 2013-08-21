@@ -136,7 +136,7 @@ namespace LiveDc.Providers
 
             while (_file.BytesDownloaded < 1024 * 1024 && sw.Elapsed.TotalSeconds < 120 && UserWaits())
             {
-                StatusMessage = string.Format("Загрузка данных... {0}", _manager.Monitor.DownloadSpeed != 0 ? Utils.FormatBytes(_manager.Monitor.DownloadSpeed) + "/c" : "");
+                StatusMessage = string.Format("Загрузка... {0}", _manager.Monitor.DownloadSpeed != 0 ? Utils.FormatBytes(_manager.Monitor.DownloadSpeed) + "/c" : "");
                 Thread.Sleep(500);
             }
 
