@@ -162,8 +162,10 @@ namespace LiveDc.Providers
 
             if (_cancel && !_addToQueue)
             {
-                _torrentProvider.DeleteFile(Magnet);
                 _torrentProvider.Client.History.DeleteItem(Magnet);
+
+                // warn: this could take long time to finish (minute or so)
+                _torrentProvider.DeleteFile(Magnet);
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Managers;
 using LiveDc.Providers;
@@ -33,13 +34,32 @@ namespace LiveDc.Forms
             _comparer = new SourceComparer();
             
             NativeImageList.SetListViewIconIndex(listView1.Handle);
+            NativeImageList.SmallExtensionImageLoaded += NativeImageListSmallExtensionImageLoaded;
 
             _dcProvider.Engine.SearchManager.SearchStarted += SearchManager_SearchStarted;
             _dcProvider.Engine.SearchManager.SearchResult += SearchManager_SearchResult;
         }
 
+        void NativeImageListSmallExtensionImageLoaded(object sender, NativeImageListEventArgs e)
+        {
+            listView1.Invoke(new Action(RefreshList));
+        }
+
+        void RefreshList()
+        {
+            if (Monitor.TryEnter(listView1))
+            {
+                listView1.Refresh();
+                Monitor.Exit(listView1);
+            }
+        }
+
         void SearchManager_SearchResult(object sender, SearchManagerResultEventArgs e)
         {
+            // skip folders
+            if (e.Result.Size == -1)
+                return;
+
             lock (_results)
             {
                 if (!_results.ContainsKey(e.Result.Magnet.TTH))
@@ -117,7 +137,7 @@ namespace LiveDc.Forms
             item.SubItems.Add(hsr.Sources.Count.ToString());
             item.SubItems.Add(Utils.FormatBytes(hsr.Magnet.Size));
             item.Tag = hsr;
-            item.ImageIndex = NativeImageList.FileIconIndex(Path.GetExtension(hsr.Magnet.FileName));
+            item.ImageIndex = NativeImageList.TryFileIconIndex(Path.GetExtension(hsr.Magnet.FileName));
 
             e.Item = item;
             
