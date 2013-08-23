@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
+using System.Threading;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows.Forms;
+using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc;
 using SharpDc.Managers;
@@ -19,6 +16,7 @@ namespace LiveDc.Forms
     public partial class FrmSearch : Form
     {
         private readonly LiveClient _client;
+        private readonly DcProvider _dcProvider;
 
         private DateTime _lastUpdate;
 
@@ -28,22 +26,43 @@ namespace LiveDc.Forms
 
         private IComparer<HubSearchResult> _comparer;
 
-        public FrmSearch(LiveClient client)
+        public FrmSearch(LiveClient client, DcProvider dcProvider)
         {
             _client = client;
+            _dcProvider = dcProvider;
             InitializeComponent();
 
             _comparer = new SourceComparer();
             resultsListView.SetSortIcon(1, SortOrder.Descending);
             
-            NativeImageList.SetListViewIconIndex(resultsListView.Handle);
 
-            _client.Engine.SearchManager.SearchStarted += SearchManager_SearchStarted;
-            _client.Engine.SearchManager.SearchResult += SearchManager_SearchResult;
+            NativeImageList.SetListViewIconIndex(resultsListView.Handle);
+            NativeImageList.SmallExtensionImageLoaded += NativeImageListSmallExtensionImageLoaded;
+
+            _dcProvider.Engine.SearchManager.SearchStarted += SearchManager_SearchStarted;
+            _dcProvider.Engine.SearchManager.SearchResult += SearchManager_SearchResult;
+        }
+
+        void NativeImageListSmallExtensionImageLoaded(object sender, NativeImageListEventArgs e)
+        {
+            resultsListView.Invoke(new Action(RefreshList));
+        }
+
+        void RefreshList()
+        {
+            if (Monitor.TryEnter(resultsListView))
+            {
+                resultsListView.Refresh();
+                Monitor.Exit(resultsListView);
+            }
         }
 
         void SearchManager_SearchResult(object sender, SearchManagerResultEventArgs e)
         {
+            // skip folders
+            if (e.Result.Size == -1)
+                return;
+
             lock (_results)
             {
                 if (!_results.ContainsKey(e.Result.Magnet.TTH))
@@ -155,7 +174,7 @@ namespace LiveDc.Forms
 
         private void button1_Click(object sender, EventArgs e)
         {
-            _client.Engine.SearchManager.Search(new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any });
+            _dcProvider.Engine.SearchManager.Search(new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any });
         }
 
         private void listView1_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
@@ -170,7 +189,7 @@ namespace LiveDc.Forms
             item.SubItems.Add(hsr.Sources.Count.ToString());
             item.SubItems.Add(Utils.FormatBytes(hsr.Magnet.Size));
             item.Tag = hsr;
-            item.ImageIndex = NativeImageList.FileIconIndex(Path.GetExtension(hsr.Magnet.FileName));
+            item.ImageIndex = NativeImageList.TryFileIconIndex(Path.GetExtension(hsr.Magnet.FileName));
 
             e.Item = item;
             
@@ -183,11 +202,9 @@ namespace LiveDc.Forms
                 var index = resultsListView.SelectedIndices[0];
                 var hsr = _list[index];
 
-                _client.LaunchManager.StartFile(hsr.Magnet);
+                _client.StartFile(hsr.Magnet);
             }
         }
-
-
     }
 
     public class ListViewNoFlicker : ListView

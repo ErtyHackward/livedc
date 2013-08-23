@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using LiveDc.Forms;
 using LiveDc.Helpers;
+using LiveDc.Providers;
 using SharpDc;
 using SharpDc.Connections;
 using SharpDc.Events;
@@ -13,29 +14,28 @@ namespace LiveDc.Managers
     /// <summary>
     /// Allows to find hub addresses and share them between users
     /// </summary>
-    public class HubManager
+    public class DcHubManager
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private readonly DcEngine _engine;
+        private readonly DcProvider _provider;
         private readonly LiveClient _client;
 
         private List<HubConnection> _failedHubs = new List<HubConnection>();
-
         private List<string> _allHubs = new List<string>();
 
         private Settings Settings { get { return _client.Settings; } }
 
         public bool InitializationCompleted { get; private set; }
         
-        public HubManager(DcEngine engine, LiveClient client)
+        public DcHubManager(DcProvider provider, LiveClient client)
         {
-            _engine = engine;
+            _provider = provider;
             _client = client;
 
-            _engine.Hubs.HubAdded += HubsHubAdded;
-            _engine.Hubs.HubRemoved += HubsHubRemoved;
-            _engine.ActiveStatusChanged += _engine_ActiveStatusChanged;
+            _provider.Engine.Hubs.HubAdded += HubsHubAdded;
+            _provider.Engine.Hubs.HubRemoved += HubsHubRemoved;
+            _provider.Engine.ActiveStatusChanged += EngineActiveStatusChanged;
 
             if (!string.IsNullOrEmpty(Settings.Hubs))
             {
@@ -46,15 +46,13 @@ namespace LiveDc.Managers
                     AddHub(hubAddress);
                 }
             }
-
-            
         }
 
-        void _engine_ActiveStatusChanged(object sender, EventArgs e)
+        void EngineActiveStatusChanged(object sender, EventArgs e)
         {
             InitializationCompleted = true;
 
-            if (_client.Engine.Active)
+            if (_provider.Engine.Active)
             {
                 _client.RemoveActionById("hub_fail");
             }
@@ -136,12 +134,12 @@ namespace LiveDc.Managers
 
         private void AddHub(string hubAddress)
         {
-            if (_engine.Hubs.All().Any(h => h.Settings.HubAddress == hubAddress))
+            if (_provider.Engine.Hubs.All().Any(h => h.Settings.HubAddress == hubAddress))
                 return;
 
             logger.Info("Adding hub {0}", hubAddress);
 
-            var hub = _engine.Hubs.Add(hubAddress, Settings.Nickname);
+            var hub = _provider.Engine.Hubs.Add(hubAddress, Settings.Nickname);
             hub.Settings.GetUsersList = false;
         }
 
@@ -185,7 +183,7 @@ namespace LiveDc.Managers
                         _failedHubs.Add(hub);
                 }
 
-                if (_failedHubs.Count == _engine.Hubs.Count && !_client.Settings.DontOverrideHubs)
+                if (_failedHubs.Count == _provider.Engine.Hubs.Count && !_client.Settings.DontOverrideHubs)
                 {
                     InitializationCompleted = true;
                     _client.Settings.DontOverrideHubs = true;
@@ -196,7 +194,7 @@ namespace LiveDc.Managers
 
         private void ShowHubEditDialog()
         {
-            _client.AddClickAction(() => new FrmHubList(_client).Show(),"Не удалось установить соединение ни с одним из хабов. Нажмите чтобы добавить хаб.", "hub_fail");
+            _client.AddClickAction(() => new FrmHubList(_client, _provider).Show(),"Не удалось установить соединение ни с одним из хабов. Нажмите чтобы добавить хаб.", "hub_fail");
         }
     }
 }

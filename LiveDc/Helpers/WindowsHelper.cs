@@ -185,5 +185,175 @@ namespace LiveDc.Helpers
                 writer.Flush();
             }
         }
+
+        public static bool GetProgramAssociatedWithExt(bool global, string ext, out string programName, out string programPath)
+        {
+            var key = global ? Registry.ClassesRoot : Registry.CurrentUser;
+            var basePath = global ? "" : "SOFTWARE\\Classes\\";
+            RegistryKey k;
+            if (key.OpenSubKey(basePath + ext) == null)
+            {
+                programName = null;
+                programPath = null;
+                return false;
+            }
+            else
+            {
+                k = key.OpenSubKey(basePath + ext);
+                programName = k.GetValue("").ToString();
+
+                k = key.OpenSubKey(basePath + programName + "\\Shell\\Open\\Command");
+
+                programPath = k.GetValue("").ToString();
+                if (programPath.Contains(" "))
+                    programPath = programPath.Remove(programPath.LastIndexOf(' '));
+
+                programPath = programPath.Trim('"');
+                return true;
+            }
+        }
+
+        /// <param name="isGlobal"></param>
+        /// <param name="programName"></param>
+        /// <param name="extension">like .myext</param>
+        /// <param name="executionFormat">like -"%1"</param>
+        /// <param name="allowRollback">Does this extension can be rollback to old association</param>
+        /// <returns></returns>
+        public static bool RegisterExtension(bool isGlobal, string programName, string extension, string executionFormat = "", bool allowRollback = false)
+        {
+            if (string.IsNullOrEmpty(extension)) 
+                throw new ArgumentNullException("extension");
+            var key = isGlobal ? Registry.ClassesRoot : Registry.CurrentUser;
+            string basePath = isGlobal ? "" : "SOFTWARE\\Classes\\";
+            if (string.IsNullOrEmpty(executionFormat))
+                executionFormat = "\"%1\"";
+            try
+            {
+                RegistryKey r;
+                if (key.OpenSubKey(basePath + programName) == null)
+                {
+                    r = key.CreateSubKey(basePath + programName);
+                    r.SetValue("", programName);
+
+                    r = key.CreateSubKey(basePath + programName + "\\Shell\\Open\\Command");
+                    r.SetValue("", Application.ExecutablePath + " " + executionFormat);
+
+                    // extension
+                    if ((r = key.OpenSubKey(basePath + extension, true)) != null)
+                    {
+                        if (allowRollback)
+                        {
+                            var previous = r.GetValue("").ToString();
+
+                            if (previous != programName)
+                            {
+                                // do rollback possibility
+                                r.SetValue("Previous", r.GetValue(""));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        r = key.CreateSubKey(basePath + extension);
+                    }
+                    r.SetValue("", programName);
+
+                    r.Close();
+                }
+                else
+                {
+                    if ((r = key.OpenSubKey(basePath + programName, true)) == null)
+                    {
+                        r = key.CreateSubKey(basePath + programName);
+                    }
+                    r.SetValue("", programName);
+
+                    if ((r = key.OpenSubKey(basePath + programName + "\\Shell\\Open\\Command", true)) == null)
+                    {
+                        r = key.CreateSubKey(basePath + programName + "\\Shell\\Open\\Command");
+                    }
+                    r.SetValue("", Application.ExecutablePath + " " + executionFormat);
+
+                    if ((r = key.OpenSubKey(basePath + extension, true)) == null)
+                    {
+                        r = key.CreateSubKey(basePath + extension);
+                    }
+                    else
+                    {
+                        if (allowRollback)
+                        {
+                            var previous = r.GetValue("").ToString();
+
+                            if (previous != programName)
+                            {
+                                // do rollback possibility
+                                r.SetValue("Previous", r.GetValue(""));
+                            }
+                        }
+                        r.SetValue("", programName);
+                    }
+
+                    r.Close();
+                }
+                key.Close();
+
+                try
+                {
+                    // delete explorer info HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.{EXT}
+                    key = Registry.CurrentUser;
+                    key.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" + extension);
+                }
+                catch (Exception) { }
+                
+                return true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (SecurityException)
+            {
+                return false;
+            }
+            catch (NullReferenceException)
+            {
+                return false;
+            }
+        }
+
+        public static bool RollbackExtension(bool isGlobal, string extension)
+        {
+            var key = isGlobal ? Registry.ClassesRoot : Registry.CurrentUser;
+            string basePath = isGlobal ? "" : "SOFTWARE\\Classes\\";
+
+
+            try
+            {
+                RegistryKey k;
+
+                if ((k = key.OpenSubKey(basePath + extension, true)) != null)
+                {
+                    var oldValue = k.GetValue("Previous");
+
+                    if (oldValue != null)
+                    {
+                        k.SetValue("", oldValue.ToString());
+                        k.DeleteValue("Previous");
+                        return true;
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (SecurityException)
+            {
+                return false;
+            }
+
+            return false;
+
+        }
     }
 }

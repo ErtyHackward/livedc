@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Dokan;
+using LiveDc.Managers;
+using LiveDc.Providers;
 using SharpDc.Structs;
 
 namespace LiveDc
@@ -17,9 +19,10 @@ namespace LiveDc
 
         private int _count = 1;
         private char _driveLetter;
-        private readonly SharpDc.DcEngine _engine;
 
-        private Dictionary<string, DcStream> _openedFiles = new Dictionary<string, DcStream>();
+        private IEnumerable<IP2PProvider> _providers;
+
+        private Dictionary<string, Stream> _openedFiles = new Dictionary<string, Stream>();
 
         public string DriveRoot
         {
@@ -32,23 +35,12 @@ namespace LiveDc
         public bool IsReady { get; private set; }
 
         /// <summary>
-        /// Groups shared files and currently donwloading files
+        /// Groups shared files and currently downloading ones
         /// </summary>
         /// <returns></returns>
         public IEnumerable<Magnet> AllMagnets()
         {
-            if (_engine.Share != null)
-            {
-                foreach (var item in _engine.Share.Items())
-                {
-                    yield return item.Magnet;
-                }
-            }
-
-            foreach (var downloadItem in _engine.DownloadManager.Items())
-            {
-                yield return downloadItem.Magnet;
-            }
+            return _providers.SelectMany(p2PProvider => p2PProvider.AllMagnets());
         }
 
         public bool HaveFile(string fileName)
@@ -56,11 +48,11 @@ namespace LiveDc
             return false;
         }
 
-        public LiveDcDrive(SharpDc.DcEngine engine)
+        public LiveDcDrive(IEnumerable<IP2PProvider> providers)
         {
-            if (engine == null)
-                throw new ArgumentNullException("engine");
-            _engine = engine;
+            if (providers == null)
+                throw new ArgumentNullException("providers");
+            _providers = providers;
         }
         
         public void Unmount()
@@ -164,7 +156,7 @@ namespace LiveDc
         {
             lock (_openedFiles)
             {
-                DcStream stream;
+                Stream stream;
 
                 if (_openedFiles.TryGetValue(filename, out stream))
                 {
@@ -177,9 +169,22 @@ namespace LiveDc
             return 0;
         }
 
+        public void CloseFileStream(string fullPath)
+        {
+            lock (_openedFiles)
+            {
+                Stream stream;
+                if (_openedFiles.TryGetValue(fullPath, out stream))
+                {
+                    stream.Dispose();
+                    _openedFiles.Remove(fullPath);
+                }
+            }
+        }
+
         public int ReadFile(string filename, byte[] buffer, ref uint readBytes, long offset, DokanFileInfo info)
         {
-            DcStream stream;
+            Stream stream;
             lock (_openedFiles)
             {  
                 if (!_openedFiles.TryGetValue(filename, out stream))
@@ -188,10 +193,13 @@ namespace LiveDc
 
                     var magnet = AllMagnets().FirstOrDefault(m => m.FileName == pureFileName);
 
-                    if (!string.IsNullOrEmpty(magnet.TTH))
-                    {
-                        stream = _engine.GetStream(magnet);
+                    stream = _providers.Select(p => p.GetStream(magnet)).First(s => s != null);
+
+                    if (stream != null)
                         _openedFiles.Add(filename, stream);
+                    else
+                    {
+                        logger.Error("Unable to create stream from {0}", magnet.ToString());
                     }
                 }
             }
