@@ -11,6 +11,8 @@ namespace LiveDc.Helpers
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
+        public static string PortCheckUri { get; set; }
+
         public static void GetHubsAsync(string city, Action<List<string>> callback)
         {
             var req = WebRequest.Create(string.Format("http://livedc.april32.com/getHubs.php?city={0}", Uri.EscapeDataString(city)));
@@ -85,7 +87,7 @@ namespace LiveDc.Helpers
 
         public static void CheckPortAsync(int tcpPort, Action<CheckIpResult> callback)
         {
-            var req = WebRequest.Create(string.Format("http://livedc.april32.com/checkip.php?tcp={0}", tcpPort));
+            var req = WebRequest.Create(string.Format("{0}?tcp={1}", PortCheckUri ?? "http://livedc.april32.com/checkip.php", tcpPort));
 
             req.Timeout = 5000;
             req.BeginGetResponse(RequestPortFinished, Tuple.Create(req, callback));
