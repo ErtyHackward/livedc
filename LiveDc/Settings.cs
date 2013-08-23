@@ -46,6 +46,8 @@ namespace LiveDc
 
         public string City { get; set; }
 
+        public string PortCheckUrl { get; set; }
+
         #endregion
 
         public string SettingsFilePath

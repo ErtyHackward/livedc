@@ -113,6 +113,8 @@ namespace LiveDc
 
             LaunchManager = new LaunchManager(this);
 
+            if (!string.IsNullOrEmpty(Settings.PortCheckUrl))
+                LiveApi.PortCheckUri = Settings.PortCheckUrl;
             LiveApi.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
 
             if (!Settings.ShownGreetingsTooltip)
