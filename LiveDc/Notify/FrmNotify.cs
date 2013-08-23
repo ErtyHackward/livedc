@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using LiveDc.Forms;
 using LiveDc.Helpers;
+using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc.Interfaces;
 using SharpDc.Structs;
@@ -91,18 +92,7 @@ namespace LiveDc.Notify
 
             foreach (DcFileControl control in flowLayoutPanel1.Controls)
             {
-                var di = _client.Engine.DownloadManager.GetDownloadItem(control.Magnet.TTH);
-
-                if (di != null)
-                {
-                    control.DownloadedBytes = _client.Engine.DownloadManager.GetTotalDownloadBytes(di);
-                    control.DownloadSpeed = (long)_client.Engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == di);
-                }
-                else
-                {
-                    control.DownloadSpeed = 0;
-                }
-
+                _client.UpdateFileItem(control);
                 control.Invalidate();
             }
         }
@@ -247,7 +237,7 @@ namespace LiveDc.Notify
 
         private void открытьToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _client.LaunchManager.StartFile(FromMenu(sender).Magnet);
+            _client.StartFile(FromMenu(sender).Magnet);
         }
 
         private DcFileControl FromMenu(object menuItem)
@@ -271,22 +261,8 @@ namespace LiveDc.Notify
         private void удалитьToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var item = FromMenu(sender);
-            _client.History.DeleteItem(item.Magnet.TTH);
 
-            var di = _client.Engine.DownloadManager.GetDownloadItem(item.Magnet.TTH);
-
-            if (di != null)
-            {
-                _client.Engine.RemoveDownload(di);
-            }
-
-            var shared = _client.Engine.Share.SearchByTth(item.Magnet.TTH);
-
-            if (shared != null)
-            {
-                _client.Engine.Share.RemoveFile(item.Magnet.TTH);
-                File.Delete(shared.Value.SystemPath);
-            }
+            _client.DeleteItem(item.Magnet);
             
             RefreshItems();
         }
@@ -307,14 +283,14 @@ namespace LiveDc.Notify
         void dcItem_DoubleClick(object sender, EventArgs e)
         {
             var item = (DcFileControl)sender;
-            _client.LaunchManager.StartFile(item.Magnet);
+            _client.StartFile(item.Magnet);
         }
 
         private void pictureBox3_Click(object sender, EventArgs e)
         {
             if (_searchForm == null)
             {
-                _searchForm = new FrmSearch(_client);
+                _searchForm = new FrmSearch(_client, _client.Providers.OfType<DcProvider>().First());
                 _searchForm.Closed += _searchForm_Closed;
             }
 

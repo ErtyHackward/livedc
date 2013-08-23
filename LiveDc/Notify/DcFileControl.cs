@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Helpers;
@@ -24,8 +21,6 @@ namespace LiveDc.Notify
         public long DownloadedBytes { get; set; }
 
         public float Progress { get { return (float)DownloadedBytes / Magnet.Size; } }
-
-        public string FilePath { get; set; }
 
         public DateTime CreateDate { get; set; }
 
