@@ -91,11 +91,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\FrmDownloadDebug.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmDownloadDebug.Designer.cs">
+      <DependentUpon>FrmDownloadDebug.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\FrmTorrentFiles.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\FrmTorrentFiles.Designer.cs">
       <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SegementsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\SegementsControl.Designer.cs">
+      <DependentUpon>SegementsControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Providers\DcStartItem.cs" />
     <Compile Include="Forms\FrmHubList.cs">
@@ -175,6 +187,9 @@
     <Compile Include="Windows\EnumWindows.cs" />
     <Compile Include="Windows\NativeImageList.cs" />
     <Compile Include="Windows\NativeMethods.cs" />
+    <EmbeddedResource Include="Forms\FrmDownloadDebug.resx">
+      <DependentUpon>FrmDownloadDebug.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmHubList.resx">
       <DependentUpon>FrmHubList.cs</DependentUpon>
     </EmbeddedResource>
@@ -189,6 +204,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmTorrentFiles.resx">
       <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\SegementsControl.resx">
+      <DependentUpon>SegementsControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Notify\FrmNotify.resx">
       <DependentUpon>FrmNotify.cs</DependentUpon>

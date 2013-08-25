@@ -148,7 +148,7 @@ namespace LiveDc.Forms
                 progressBar.Value = (int)(100 * _startItem.Progress);
             }
 
-            if (nameLabel.Text != _startItem.Magnet.FileName)
+            if (nameLabel.Text != _startItem.Magnet.FileName && !string.IsNullOrEmpty(_startItem.Magnet.FileName))
             {
                 iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(_startItem.Magnet.FileName));
                 nameLabel.Text = _startItem.Magnet.FileName;

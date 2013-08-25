@@ -249,6 +249,13 @@ namespace LiveDc
 
         private void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
+            var exception = e.ExceptionObject as Exception;
+
+            if (exception != null)
+            {
+                logger.Fatal("Unhandled exception: {0} at {1}", exception.Message, exception.StackTrace);
+            }
+
             if (_drive != null)
             {
                 // it is critically important to release the virtual drive

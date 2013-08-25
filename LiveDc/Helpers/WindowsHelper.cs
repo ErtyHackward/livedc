@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Security;
 using System.Windows.Forms;
+using LiveDc.Windows;
 using Microsoft.Win32;
 
 namespace LiveDc.Helpers
@@ -304,6 +305,8 @@ namespace LiveDc.Helpers
                     key.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\" + extension);
                 }
                 catch (Exception) { }
+
+                NativeMethods.SHChangeNotify(HChangeNotifyEventID.SHCNE_ASSOCCHANGED, HChangeNotifyFlags.SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
                 
                 return true;
             }

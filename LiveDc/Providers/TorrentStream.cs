@@ -25,6 +25,8 @@ namespace LiveDc.Providers
         private int _readTimeout = 120000;
         private Stopwatch _readStopwatch = new Stopwatch();
 
+        public TorrentFile TorrentFile { get { return _file; } }
+
         /// <summary>
         /// Gets or sets a value, in miliseconds, that determines how long the stream will attempt to read before timing out. 
         /// </summary>
@@ -85,6 +87,15 @@ namespace LiveDc.Providers
             get { return _innerStream.Position; }
             set { _innerStream.Position = value; }
         }
+
+        public event EventHandler Disposed;
+
+        protected virtual void OnDisposed()
+        {
+            var handler = Disposed;
+            if (handler != null) handler(this, EventArgs.Empty);
+        }
+
 
         public TorrentStream(TorrentManager torrentManager, string filePathVirtual)
         {
@@ -154,9 +165,7 @@ namespace LiveDc.Providers
         public override int Read(byte[] buffer, int offset, int count)
         {
             _readStopwatch.Restart();
-
-            logger.Info("Requested torrent data at: {0} len: {1}", Utils.FormatBytes(_innerStream.Position), count);
-
+            
             while (!AreaDownloaded(_innerStream.Position, count))
             {
                 Thread.Sleep(100);
@@ -164,16 +173,19 @@ namespace LiveDc.Providers
                     throw new TimeoutException(string.Format("Unable to read data in {0}", ReadTimeout / 1000));
             }
             
-            logger.Info("Read torrent data at: {0} len: {1} in {2}", Utils.FormatBytes(_innerStream.Position), count, _readStopwatch.Elapsed.FormatInterval());
             return _innerStream.Read(buffer, offset, count);
+        }
+
+        public int FilePosToPiece(long position)
+        {
+            return _file.StartPieceIndex + (int)((position + _file.StartPieceOffset) / _torrentManager.Torrent.PieceLength);
         }
 
         private bool AreaDownloaded(long position, int length)
         {
             var slidingPicker = _torrentManager.PieceManager.GetPicker<SlidingWindowPicker>();
-            var startPiece = _file.StartPieceIndex + (int)((position + _file.StartPieceOffset) / _torrentManager.Torrent.PieceLength);
+            var startPiece = FilePosToPiece(position);
             slidingPicker.HighPrioritySetStart = startPiece;
-            slidingPicker.HighPrioritySetSize = 3;
             var endPiece = _file.StartPieceIndex + (int)((position + _file.StartPieceOffset + length) / _torrentManager.Torrent.PieceLength);
 
             for (var i = startPiece; i <= endPiece; i++)
@@ -198,6 +210,8 @@ namespace LiveDc.Providers
         protected override void Dispose(bool disposing)
         {
             _innerStream.Dispose();
+            OnDisposed();
+
             base.Dispose(disposing);
         }
 

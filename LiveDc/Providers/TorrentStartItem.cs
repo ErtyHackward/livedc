@@ -128,19 +128,25 @@ namespace LiveDc.Providers
                 Magnet = magnet;
             }
 
+            var slidingPicker = _manager.PieceManager.GetPicker<SlidingWindowPicker>();
+            slidingPicker.HighPrioritySetStart = _file.StartPieceIndex;
+            slidingPicker.HighPrioritySetSize = 3;
+
             _torrentProvider.Client.History.AddItem(Magnet);
 
             _file.Priority = Priority.Immediate;
             
             var sw = Stopwatch.StartNew();
 
-            while (_file.BytesDownloaded < 1024 * 1024 && sw.Elapsed.TotalSeconds < 120 && UserWaits())
+            // start when 2% of the file is loaded and we have the first piece of the file
+
+            while (_file.BytesDownloaded < _file.Length / 50 && sw.Elapsed.TotalSeconds < 120 && UserWaits())
             {
                 StatusMessage = string.Format("Загрузка... {0}", _manager.Monitor.DownloadSpeed != 0 ? Utils.FormatBytes(_manager.Monitor.DownloadSpeed) + "/c" : "");
                 Thread.Sleep(500);
             }
 
-            if (_file.BytesDownloaded >= 1024 * 1024)
+            if (_file.BytesDownloaded >= _file.Length / 50)
             {
                 StartIn5Seconds();
                 return;
