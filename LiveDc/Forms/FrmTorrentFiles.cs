@@ -41,6 +41,8 @@ namespace LiveDc.Forms
                 
                 listView1.Items.Add(lvi);
             }
+
+            listView1.Sort();
         }
 
         private void UpdateIcon(string ext, int index)

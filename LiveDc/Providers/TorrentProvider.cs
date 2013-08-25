@@ -5,9 +5,11 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Windows.Forms;
+using LiveDc.Forms;
 using LiveDc.Helpers;
 using LiveDc.Notify;
 using LiveDc.Utilites;
+using LiveDc.Windows;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -18,6 +20,7 @@ using MonoTorrent.Dht.Listeners;
 using SharpDc.Connections;
 using SharpDc.Structs;
 using EngineSettings = MonoTorrent.Client.EngineSettings;
+using NativeMethods = LiveDc.Windows.NativeMethods;
 
 namespace LiveDc.Providers
 {
@@ -29,13 +32,14 @@ namespace LiveDc.Providers
         private readonly List<TorrentManager> _torrents = new List<TorrentManager>();
         private ClientEngine _engine;
         private TorrentSettings _torrentDefaults;
-
+        
         private string TorrentFastResumePath { get { return Path.Combine(Settings.SettingsFolder, "fastresume.data"); } }
         private string TorrentDhtNodesPath { get { return Path.Combine(Settings.SettingsFolder, "dhtnodes.data"); } }
         public string TorrentsFolder { get { return Path.Combine(Settings.SettingsFolder, "Torrents"); } }
-        
-        public event EventHandler StatusChanged;
 
+#if DEBUG
+        private FrmDownloadDebug _frmDebug;
+#endif
         /// <summary>
         /// Not applicable for torrents, always returns true
         /// </summary>
@@ -52,6 +56,8 @@ namespace LiveDc.Providers
             get { return _torrentDefaults; }
         }
 
+        public event EventHandler StatusChanged;
+
         public TorrentProvider(LiveClient client)
         {
             _client = client;
@@ -60,6 +66,8 @@ namespace LiveDc.Providers
             string programPath;
 
             WindowsHelper.GetProgramAssociatedWithExt(false, ".torrent", out programName, out programPath);
+
+            NativeMethods.SHChangeNotify(HChangeNotifyEventID.SHCNE_ASSOCCHANGED, HChangeNotifyFlags.SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
 
             if (programPath != Application.ExecutablePath)
             {
@@ -159,6 +167,11 @@ namespace LiveDc.Providers
                     RegisterTorrent(manager);
                 }
             }
+
+#if DEBUG
+            _frmDebug = new FrmDownloadDebug();
+            _frmDebug.Show();
+#endif
         }
 
         public IEnumerable<Magnet> AllMagnets()
@@ -186,6 +199,10 @@ namespace LiveDc.Providers
 
             _engine.Register(torrent);
             _torrents.Add(torrent);
+
+#if DEBUG
+            _frmDebug.SegementsControl.Manager = torrent;
+#endif
         }
 
         private void TorrentOnMetadataReceived(object sender, EventArgs eventArgs)
@@ -207,8 +224,12 @@ namespace LiveDc.Providers
                 picker = new EndGameSwitcher(new StandardPicker(), new EndGamePicker(), torrent.Torrent.PieceLength / Piece.BlockSize, torrent);
             else
                 picker = new StandardPicker();
+            picker = new RandomisedPicker(picker);
             picker = new SlidingWindowPicker(picker);
             picker = new PriorityPicker(picker);
+
+
+
             return picker;
         }
 
@@ -223,8 +244,32 @@ namespace LiveDc.Providers
             if (!CanHandle(magnet))
                 return null;
 
-            return new TorrentStream(FindByMagnet(magnet), magnet.FileName);
+            var stream = new TorrentStream(FindByMagnet(magnet), magnet.FileName);
+
+#if DEBUG
+            stream.Disposed += stream_Disposed;
+
+            lock (_frmDebug.SegementsControl.ReadStreams)
+            {
+                _frmDebug.SegementsControl.ReadStreams.Add(stream);
+            }
+#endif
+            return stream;
         }
+
+#if DEBUG
+        void stream_Disposed(object sender, EventArgs e)
+        {
+            var stream = (TorrentStream)sender;
+
+            stream.Disposed -= stream_Disposed;
+
+            lock (_frmDebug.SegementsControl.ReadStreams)
+            {
+                _frmDebug.SegementsControl.ReadStreams.Remove(stream);
+            }
+        }
+#endif
 
         public bool CanHandle(Magnet magnet)
         {
