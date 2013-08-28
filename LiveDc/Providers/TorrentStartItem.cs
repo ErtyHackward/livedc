@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -128,7 +129,14 @@ namespace LiveDc.Providers
                 Magnet = magnet;
             }
 
-            var slidingPicker = _manager.PieceManager.GetPicker<SlidingWindowPicker>();
+            SlidingWindowPicker slidingPicker = null;
+
+            while (slidingPicker == null)
+            {
+                slidingPicker = _manager.PieceManager.GetPicker<SlidingWindowPicker>();
+                Thread.Sleep(0);
+            }
+
             slidingPicker.HighPrioritySetStart = _file.StartPieceIndex;
             slidingPicker.HighPrioritySetSize = 3;
 
@@ -152,15 +160,24 @@ namespace LiveDc.Providers
                 return;
             }
 
-            StatusMessage = "Не удается начать загрузку. Источники: " + _manager.Peers.Available;
-            Progress = float.NaN;
+            if (_file.BytesDownloaded == 0)
+            {
+                StatusMessage = "Не удается начать загрузку. Источники: " + _manager.Peers.Available;
+                Progress = float.PositiveInfinity;
+            }
 
             while (!_cancel && !_started)
             {
-                if (_file.BytesDownloaded != 0)
+                if (_file.BytesDownloaded >= _file.Length / 50)
                 {
                     ReadyToStart = true;
-                    StatusMessage = "Файл готов к работе";
+                    StatusMessage = "Файл готов к работе. Загружено";
+                    Progress = (float)_file.BytesDownloaded / _file.Length;
+                }
+                else if (_file.BytesDownloaded > 0)
+                {
+                    Progress = (float)_file.BytesDownloaded / _file.Length;
+                    StatusMessage = string.Format("Низкая скорость загрузки. Загружено: {0} ({1}%)", Utils.FormatBytes(_manager.Monitor.DownloadSpeed), Math.Round(Progress));
                 }
 
                 Thread.Sleep(100);

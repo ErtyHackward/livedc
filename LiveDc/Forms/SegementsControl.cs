@@ -30,7 +30,7 @@ namespace LiveDc.Forms
         protected override void OnPaint(PaintEventArgs e)
         {
             DrawBG(e.Graphics);
-            if (Manager == null)
+            if (Manager == null || Manager.Torrent == null)
             {
                 return;
             }

@@ -145,31 +145,33 @@ namespace LiveDc.Providers
                 fastResume = new BEncodedDictionary();
             }
 
-            foreach (var file in Directory.GetFiles(TorrentsFolder))
-            {
-                if (file.EndsWith(".torrent"))
-                {
-                    Torrent torrent;
-                    try
-                    {
-                        torrent = Torrent.Load(file);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.Error("Couldn't decode {0}: ", file);
-                        logger.Error(e.Message);
-                        continue;
-                    }
+            var knownTorrentsPaths = Directory.GetFiles(TorrentsFolder,"*.torrent");
 
-                    var manager = new TorrentManager(torrent, downloadsPath, TorrentDefaults);
-                    if (fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                        manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex()]));
-                    RegisterTorrent(manager);
+            logger.Info("Loading {0} saved torrents", knownTorrentsPaths.Length);
+
+            foreach (var file in knownTorrentsPaths)
+            {
+                Torrent torrent;
+                try
+                {
+                    torrent = Torrent.Load(file);
                 }
+                catch (Exception e)
+                {
+                    logger.Error("Couldn't decode {0}: ", file);
+                    logger.Error(e.Message);
+                    continue;
+                }
+
+                var manager = new TorrentManager(torrent, downloadsPath, TorrentDefaults);
+                if (fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                    manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex()]));
+                RegisterTorrent(manager);
             }
 
 #if DEBUG
             _frmDebug = new FrmDownloadDebug();
+            _frmDebug.Width = Screen.PrimaryScreen.WorkingArea.Width;
             _frmDebug.Show();
 #endif
         }
@@ -201,7 +203,8 @@ namespace LiveDc.Providers
             _torrents.Add(torrent);
 
 #if DEBUG
-            _frmDebug.SegementsControl.Manager = torrent;
+            if (_frmDebug != null)
+                _frmDebug.SegementsControl.Manager = torrent;
 #endif
         }
 
@@ -227,9 +230,7 @@ namespace LiveDc.Providers
             picker = new RandomisedPicker(picker);
             picker = new SlidingWindowPicker(picker);
             picker = new PriorityPicker(picker);
-
-
-
+            
             return picker;
         }
 
@@ -347,6 +348,11 @@ namespace LiveDc.Providers
                 _engine.Unregister(manager);
                 _torrents.Remove(manager);
                 manager.Dispose();
+
+                if (manager.Torrent != null && manager.Torrent.TorrentPath.StartsWith(TorrentsFolder))
+                {
+                    File.Delete(manager.Torrent.TorrentPath);
+                }
             }
         }
 
