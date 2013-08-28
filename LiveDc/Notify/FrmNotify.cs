@@ -77,12 +77,15 @@ namespace LiveDc.Notify
             flowLayoutPanel1.Controls.Clear();
             historyLabel.Visible = true;
 
-            foreach (var hItem in _client.History.Items().Take(3))
+            if (_client.History != null)
             {
-                AddItem(hItem.Magnet, hItem.CreateDate);
-            }
+                foreach (var hItem in _client.History.Items().Take(3))
+                {
+                    AddItem(hItem.Magnet, hItem.CreateDate);
+                }
 
-            UpdateItems();
+                UpdateItems();
+            }
         }
 
         private void UpdateItems()
