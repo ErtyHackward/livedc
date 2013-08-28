@@ -189,30 +189,43 @@ namespace LiveDc.Helpers
 
         public static bool GetProgramAssociatedWithExt(bool global, string ext, out string programName, out string programPath)
         {
+            programName = null;
+            programPath = null;
+
             var key = global ? Registry.ClassesRoot : Registry.CurrentUser;
             var basePath = global ? "" : "SOFTWARE\\Classes\\";
             RegistryKey k;
             if (key.OpenSubKey(basePath + ext) == null)
             {
-                programName = null;
-                programPath = null;
                 return false;
             }
-            else
-            {
-                k = key.OpenSubKey(basePath + ext);
-                programName = k.GetValue("").ToString();
 
-                k = key.OpenSubKey(basePath + programName + "\\Shell\\Open\\Command");
+            k = key.OpenSubKey(basePath + ext);
 
-                programPath = k.GetValue("").ToString();
-                if (programPath.Contains(" "))
-                    programPath = programPath.Remove(programPath.LastIndexOf(' '));
+            if (k == null)
+                return false;
 
-                programPath = programPath.Trim('"');
-                return true;
-            }
+            var value = k.GetValue("");
+
+            if (value == null)
+                return false;
+
+            programName = value.ToString();
+
+            k = key.OpenSubKey(basePath + programName + "\\Shell\\Open\\Command");
+
+            if (k == null)
+                return false;
+
+            programPath = k.GetValue("").ToString();
+            if (programPath.Contains(" "))
+                programPath = programPath.Remove(programPath.LastIndexOf(' '));
+
+            programPath = programPath.Trim('"');
+            return true;
         }
+
+
 
         /// <param name="isGlobal"></param>
         /// <param name="programName"></param>
