@@ -316,7 +316,7 @@ namespace LiveDc
             {
                 var torrent = Torrent.Load(torrentFilePath);
                 var torrentProvider = Providers.OfType<TorrentProvider>().First();
-
+                
                 _startItem = torrentProvider.StartItem(torrent);
 
                 if (_statusForm == null)

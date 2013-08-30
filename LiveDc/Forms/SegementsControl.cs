@@ -63,7 +63,7 @@ namespace LiveDc.Forms
                     }
                     else
                     {
-                        e.Graphics.DrawRectangles(SystemPens.GradientActiveCaption, new[] { rect });    
+                        //e.Graphics.DrawRectangles(SystemPens.GradientActiveCaption, new[] { rect });    
                     }
                 }
 
