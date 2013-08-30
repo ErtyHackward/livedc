@@ -66,9 +66,7 @@ namespace LiveDc.Providers
             string programPath;
 
             WindowsHelper.GetProgramAssociatedWithExt(false, ".torrent", out programName, out programPath);
-
-            NativeMethods.SHChangeNotify(HChangeNotifyEventID.SHCNE_ASSOCCHANGED, HChangeNotifyFlags.SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
-
+            
             if (programPath != Application.ExecutablePath)
             {
                 WindowsHelper.RegisterExtension(false, "LiveDC", ".torrent");
@@ -80,6 +78,8 @@ namespace LiveDc.Providers
             {
                 WindowsHelper.RegisterExtension(true, "LiveDC", ".torrent");
             }
+
+            NativeMethods.SHChangeNotify(HChangeNotifyEventID.SHCNE_ASSOCCHANGED, HChangeNotifyFlags.SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
         }
 
         public void Initialize()
@@ -284,6 +284,11 @@ namespace LiveDc.Providers
 
         public IStartItem StartItem(Torrent torrent)
         {
+            var destinationPath = Path.Combine(TorrentsFolder, torrent.InfoHash.ToHex() + ".torrent");
+
+            if (!File.Exists(destinationPath))
+                File.Copy(torrent.TorrentPath, destinationPath);
+
             return new TorrentStartItem(this, new Magnet { BTIH = torrent.InfoHash.ToHex() }, torrent);
         }
 
@@ -301,11 +306,11 @@ namespace LiveDc.Providers
         public void UpdateFileItem(DcFileControl control)
         {
             var manager = FindByMagnet(control.Magnet);
-            if (manager != null)
+            if (manager != null && manager.HasMetadata)
             {
                 var file = manager.Torrent.Files.First(f => f.Path == control.Magnet.FileName);
 
-                control.DownloadSpeed = manager.Monitor.DownloadSpeed;
+                control.DownloadSpeed = file.BytesDownloaded == file.Length ? 0 : manager.Monitor.DownloadSpeed;
                 control.DownloadedBytes = file.BytesDownloaded;
             }
         }

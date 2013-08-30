@@ -126,6 +126,12 @@ namespace LiveDc.Providers
                 var magnet = Magnet;
                 magnet.FileName = _file.Path;
                 magnet.Size = _file.Length;
+
+                if (magnet.Trackers == null && _manager.Torrent.AnnounceUrls.Count > 0)
+                {
+                    magnet.Trackers = _manager.Torrent.AnnounceUrls.SelectMany(t => t).ToArray();
+                }
+
                 Magnet = magnet;
             }
 
