@@ -20,7 +20,7 @@ namespace LiveDc.Helpers
             get
             {
                 RegistryKey registry = Registry.CurrentUser;
-
+                
                 RegistryKey r;
                 r = registry.OpenSubKey("SOFTWARE\\Classes\\" + protocol, false);
                 if (r == null)
@@ -30,7 +30,12 @@ namespace LiveDc.Helpers
                 if (r == null)
                     return false;
 
-                if (r.GetValue("").ToString() == Application.ExecutablePath + " \"%1\"")
+                var value = r.GetValue("");
+
+                if (value == null)
+                    return false;
+
+                if (value.ToString() == Application.ExecutablePath + " \"%1\"")
                     return true;
 
                 return false;
