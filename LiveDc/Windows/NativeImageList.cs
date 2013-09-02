@@ -167,6 +167,24 @@ namespace LiveDc.Windows
             }
         }
 
+        public static Image TryGetSmallIcon(string ext)
+        {
+            lock (_imageCache)
+            {
+                Image img;
+                if (!_imageCache.TryGetValue(ext, out img))
+                {
+                    if (_pendingSmallItems.Contains(ext))
+                        return img;
+
+                    _pendingSmallItems.Add(ext);
+                    new ThreadStart(() => GetFileIcon(ext)).BeginInvoke(null, null);
+                }
+
+                return img;
+            }
+        }
+
 
         public static Image GetLargeFileIcon(string ext, bool isDirectory = false)
         {

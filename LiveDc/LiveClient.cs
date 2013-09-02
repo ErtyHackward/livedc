@@ -63,7 +63,7 @@ namespace LiveDc
             LogManager.LogManagerInstance = new NLogManager();
             MonoTorrent.LogManager.LogManagerInstance = new TorrentNLogManager();
 
-            logger.Info("------------------------------starting");
+            logger.Info("------------------------------starting LiveDC {0}", Assembly.GetExecutingAssembly().GetName().Version);
             
             _copyData = new CopyData();
             _copyData.CreateHandle(new CreateParams());

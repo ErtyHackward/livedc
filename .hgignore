@@ -35,3 +35,4 @@ _ReSharper*/
 Setup/Output/setup_livedc.exe
 LiveDc.opensdf
 LiveDc.sdf
+*\Debug\*
