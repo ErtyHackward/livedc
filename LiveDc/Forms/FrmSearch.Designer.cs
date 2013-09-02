@@ -28,13 +28,23 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmSearch));
             this.textBox1 = new System.Windows.Forms.TextBox();
-            this.button1 = new System.Windows.Forms.Button();
-            this.resultsListView = new LiveDc.Forms.ListViewNoFlicker();
-            this.fileNameColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.sourcesColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.sizeColumn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.searchButton = new System.Windows.Forms.Button();
+            this.imageList1 = new System.Windows.Forms.ImageList(this.components);
+            this.resultsDataGridView = new System.Windows.Forms.DataGridView();
+            this.IconColumn = new System.Windows.Forms.DataGridViewImageColumn();
+            this.FileNameColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.SourcesColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.SizeColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.infoPanel = new System.Windows.Forms.Panel();
+            this.infoLabel = new System.Windows.Forms.Label();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
+            ((System.ComponentModel.ISupportInitialize)(this.resultsDataGridView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.infoPanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // textBox1
@@ -43,70 +53,144 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox1.Location = new System.Drawing.Point(13, 10);
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(548, 20);
+            this.textBox1.Size = new System.Drawing.Size(533, 20);
             this.textBox1.TabIndex = 0;
             // 
-            // button1
+            // searchButton
             // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.button1.Location = new System.Drawing.Point(568, 9);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 22);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "Поиск";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.searchButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.searchButton.Location = new System.Drawing.Point(553, 9);
+            this.searchButton.Name = "searchButton";
+            this.searchButton.Size = new System.Drawing.Size(75, 22);
+            this.searchButton.TabIndex = 1;
+            this.searchButton.Text = "Поиск";
+            this.searchButton.UseVisualStyleBackColor = true;
+            this.searchButton.Click += new System.EventHandler(this.Button1Click);
             // 
-            // resultsListView
+            // imageList1
             // 
-            this.resultsListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.imageList1.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit;
+            this.imageList1.ImageSize = new System.Drawing.Size(32, 32);
+            this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
+            // 
+            // resultsDataGridView
+            // 
+            this.resultsDataGridView.AllowUserToAddRows = false;
+            this.resultsDataGridView.AllowUserToDeleteRows = false;
+            this.resultsDataGridView.AllowUserToResizeRows = false;
+            this.resultsDataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.resultsListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.fileNameColumn,
-            this.sourcesColumn,
-            this.sizeColumn});
-            this.resultsListView.FullRowSelect = true;
-            this.resultsListView.GridLines = true;
-            this.resultsListView.Location = new System.Drawing.Point(13, 37);
-            this.resultsListView.MultiSelect = false;
-            this.resultsListView.Name = "resultsListView";
-            this.resultsListView.Size = new System.Drawing.Size(629, 405);
-            this.resultsListView.TabIndex = 2;
-            this.resultsListView.UseCompatibleStateImageBehavior = false;
-            this.resultsListView.View = System.Windows.Forms.View.Details;
-            this.resultsListView.VirtualMode = true;
-            this.resultsListView.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.listView1_ColumnClick);
-            this.resultsListView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView1_RetrieveVirtualItem);
-            this.resultsListView.DoubleClick += new System.EventHandler(this.listView1_DoubleClick);
+            this.resultsDataGridView.BackgroundColor = System.Drawing.SystemColors.Window;
+            this.resultsDataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.resultsDataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.IconColumn,
+            this.FileNameColumn,
+            this.SourcesColumn,
+            this.SizeColumn});
+            this.resultsDataGridView.Location = new System.Drawing.Point(13, 37);
+            this.resultsDataGridView.MultiSelect = false;
+            this.resultsDataGridView.Name = "resultsDataGridView";
+            this.resultsDataGridView.ReadOnly = true;
+            this.resultsDataGridView.RowHeadersVisible = false;
+            this.resultsDataGridView.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.resultsDataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.resultsDataGridView.ShowEditingIcon = false;
+            this.resultsDataGridView.Size = new System.Drawing.Size(614, 405);
+            this.resultsDataGridView.TabIndex = 3;
+            this.resultsDataGridView.VirtualMode = true;
+            this.resultsDataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.ResultsDataGridViewCellFormatting);
+            this.resultsDataGridView.CellMouseDoubleClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.resultsDataGridView_CellMouseDoubleClick);
+            this.resultsDataGridView.CellValueNeeded += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.ResultsDataGridViewCellValueNeeded);
+            this.resultsDataGridView.ColumnHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.ResultsDataGridViewColumnHeaderMouseClick);
             // 
-            // fileNameColumn
+            // IconColumn
             // 
-            this.fileNameColumn.Text = "Имя файла";
-            this.fileNameColumn.Width = 462;
+            this.IconColumn.HeaderText = "";
+            this.IconColumn.Name = "IconColumn";
+            this.IconColumn.ReadOnly = true;
+            this.IconColumn.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.IconColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.IconColumn.Width = 18;
             // 
-            // sourcesColumn
+            // FileNameColumn
             // 
-            this.sourcesColumn.Text = "Источники";
-            this.sourcesColumn.Width = 80;
+            this.FileNameColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.FileNameColumn.HeaderText = "Имя файла";
+            this.FileNameColumn.Name = "FileNameColumn";
+            this.FileNameColumn.ReadOnly = true;
             // 
-            // sizeColumn
+            // SourcesColumn
             // 
-            this.sizeColumn.Text = "Размер";
+            this.SourcesColumn.HeaderText = "Источники";
+            this.SourcesColumn.Name = "SourcesColumn";
+            this.SourcesColumn.ReadOnly = true;
+            // 
+            // SizeColumn
+            // 
+            this.SizeColumn.HeaderText = "Размер";
+            this.SizeColumn.Name = "SizeColumn";
+            this.SizeColumn.ReadOnly = true;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = global::LiveDc.Properties.Resources.ajax_loader;
+            this.pictureBox1.Location = new System.Drawing.Point(3, 3);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(32, 32);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.pictureBox1.TabIndex = 4;
+            this.pictureBox1.TabStop = false;
+            // 
+            // infoPanel
+            // 
+            this.infoPanel.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.infoPanel.AutoSize = true;
+            this.infoPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.infoPanel.BackColor = System.Drawing.SystemColors.Window;
+            this.infoPanel.Controls.Add(this.infoLabel);
+            this.infoPanel.Controls.Add(this.pictureBox1);
+            this.infoPanel.Location = new System.Drawing.Point(225, 223);
+            this.infoPanel.Name = "infoPanel";
+            this.infoPanel.Size = new System.Drawing.Size(211, 38);
+            this.infoPanel.TabIndex = 5;
+            this.infoPanel.Visible = false;
+            this.infoPanel.SizeChanged += new System.EventHandler(this.infoPanel_SizeChanged);
+            // 
+            // infoLabel
+            // 
+            this.infoLabel.AutoSize = true;
+            this.infoLabel.Location = new System.Drawing.Point(41, 13);
+            this.infoLabel.Name = "infoLabel";
+            this.infoLabel.Size = new System.Drawing.Size(167, 13);
+            this.infoLabel.TabIndex = 5;
+            this.infoLabel.Text = "Поиск начнется через 5 секунд";
+            this.infoLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 1000;
+            this.timer1.Tick += new System.EventHandler(this.Timer1Tick);
             // 
             // FrmSearch
             // 
-            this.AcceptButton = this.button1;
+            this.AcceptButton = this.searchButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(654, 454);
-            this.Controls.Add(this.resultsListView);
-            this.Controls.Add(this.button1);
+            this.ClientSize = new System.Drawing.Size(639, 454);
+            this.Controls.Add(this.infoPanel);
+            this.Controls.Add(this.resultsDataGridView);
+            this.Controls.Add(this.searchButton);
             this.Controls.Add(this.textBox1);
             this.DoubleBuffered = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FrmSearch";
             this.Text = "Поиск";
+            ((System.ComponentModel.ISupportInitialize)(this.resultsDataGridView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.infoPanel.ResumeLayout(false);
+            this.infoPanel.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -115,10 +199,16 @@
         #endregion
 
         private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Button button1;
-        private ListViewNoFlicker resultsListView;
-        private System.Windows.Forms.ColumnHeader fileNameColumn;
-        private System.Windows.Forms.ColumnHeader sourcesColumn;
-        private System.Windows.Forms.ColumnHeader sizeColumn;
+        private System.Windows.Forms.Button searchButton;
+        private System.Windows.Forms.ImageList imageList1;
+        private System.Windows.Forms.DataGridView resultsDataGridView;
+        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.Panel infoPanel;
+        private System.Windows.Forms.Label infoLabel;
+        private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.DataGridViewImageColumn IconColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn FileNameColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn SourcesColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn SizeColumn;
     }
 }

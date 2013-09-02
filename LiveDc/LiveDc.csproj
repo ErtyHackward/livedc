@@ -109,6 +109,7 @@
     <Compile Include="Forms\SegementsControl.Designer.cs">
       <DependentUpon>SegementsControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\DcSharaApi.cs" />
     <Compile Include="Providers\DcStartItem.cs" />
     <Compile Include="Forms\FrmHubList.cs">
       <SubType>Form</SubType>
@@ -261,6 +262,7 @@
     <None Include="Resources\exit1.png" />
     <None Include="Resources\search.png" />
     <None Include="Resources\livedc_action.ico" />
+    <None Include="Resources\ajax-loader.gif" />
     <Content Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

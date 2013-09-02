@@ -11,7 +11,7 @@ Name: fr; MessagesFile: compiler:Languages\French.isl
 
 [Files]
 Source: Deps\DokanInstall_0.6.0.exe; Flags: dontcopy
-Source: ..\LiveDC\bin\Release\*; DestDir: {app}; Excludes: *.dds,*.pdb,*.vshost.*,*.exe.config,Newtonsoft.Json.xml,Ninject.xml,NLog.xml,protobuf-net.xml,SharpDX.*.xml,SharpDX.xml; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\LiveDC\bin\Release\*; DestDir: {app}; Excludes: *.dds,*.pdb,*.vshost.*,*.exe.config,Newtonsoft.Json.xml,Ninject.xml,NLog.xml,protobuf-net.xml,SharpDX.*.xml,SharpDX.xml,*.exp,*.lib; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: Deps\PTN57F.ttf; DestDir: {fonts}; FontInstall: "PT Sans Narrow"; Flags: onlyifdoesntexist uninsneveruninstall
 ;Source: Deps\PTN77F.ttf; DestDir: {fonts}; FontInstall: "PT Sans Narrow Bold"; Flags: onlyifdoesntexist uninsneveruninstall
 
