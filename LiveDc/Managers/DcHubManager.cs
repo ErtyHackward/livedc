@@ -5,7 +5,6 @@ using System.Net;
 using LiveDc.Forms;
 using LiveDc.Helpers;
 using LiveDc.Providers;
-using SharpDc;
 using SharpDc.Connections;
 using SharpDc.Events;
 
@@ -43,6 +42,7 @@ namespace LiveDc.Managers
 
                 foreach (var hubAddress in hubs)
                 {
+                    _allHubs.Add(hubAddress);
                     AddHub(hubAddress);
                 }
             }
@@ -99,36 +99,121 @@ namespace LiveDc.Managers
 
             Settings.City = e.City;
 
-            if (e.City != null)
+            if (e.City != null && Settings.UpdateHubs)
             {
                 LiveApi.GetHubsAsync(e.City, HubsListReceived);
-                if (!string.IsNullOrEmpty(Settings.Hubs))
-                {
-                    LiveApi.PostHubsAsync(e.City, Settings.Hubs);
-                }
+            }
+            else if (_allHubs.Count == 0 && _provider.Engine.Hubs.Count == 0)
+            {
+                ShowHubEditDialog("Не удалось найти хабы. Нажмите, чтобы добавить хаб.");
             }
             else
-                ShowHubEditDialog();
+            {
+                VerifyHubs();
+            }
+        }
+
+        /// <summary>
+        /// Check that we do not have duplicate hubs and submit them to the server
+        /// </summary>
+        private void VerifyHubs()
+        {
+            // step 1: normalize all hub addresses
+            for (int i = 0; i < _allHubs.Count; i++)
+            {
+                _allHubs[i] = NormalizeHubAddress(_allHubs[i]);
+            }
+
+            // step 2: remove obvius duplicates
+            _allHubs = _allHubs.Distinct().ToList();
+
+            // step 3: find ip addresses of domain names to exclude situation when we have 2 instance of the same hub (ip and dns)
+            var ipList = new List<string>(_allHubs);
+
+            for (int i = 0; i < ipList.Count; i++)
+            {
+                if (!isIp(ipList[i]))
+                {
+                    string port;
+                    var ip = extractIp(ipList[i], out port);
+                    try
+                    {
+                        ipList[i] = Dns.GetHostEntry(ip).AddressList[0] + (port == null ? "" : ":" + port);
+                    }
+                    catch (Exception x)
+                    {
+                        logger.Error("unable to resolve hub {0} : {1}", ipList[i], x.Message);
+                        ipList[i] = null;
+                    }
+                }
+            }
+
+            // remove hubs with invalid dns responses
+            for (int i = _allHubs.Count - 1; i >= 0; i--)
+            {
+                if (ipList[i] == null)
+                {
+                    _allHubs.RemoveAt(i);
+                    ipList.RemoveAt(i);
+                }
+            }
+
+            // exclude duplicates
+            var list = _allHubs.Select((h, i) => new { dns = h, ip = ipList[i]} ).GroupBy(t => t.ip).Select(t => t.First().dns).ToList();
+
+            Settings.Hubs = string.Join(";", list);
+            Settings.LastHubCheck = DateTime.Now;
+            Settings.Save();
+
+            foreach (var hub in list)
+            {
+                AddHub(hub);
+            }
+
+            if (!string.IsNullOrEmpty(Settings.Hubs) && !string.IsNullOrEmpty(Settings.City))
+            {
+                LiveApi.PostHubsAsync(Settings.City, Settings.Hubs);
+            }
+        }
+
+        private bool isIp(string input)
+        {
+            if (input.StartsWith("dchub://"))
+                input = input.Remove(0, 8);
+            IPAddress addr;
+            return IPAddress.TryParse(input, out addr);
+        }
+
+        private string extractIp(string input, out string port)
+        {
+            if (input.StartsWith("dchub://"))
+                input = input.Remove(0, 8);
+            port = null;
+
+            var index = input.IndexOf(":");
+            if (index != -1)
+            {
+                port = input.Substring(index + 1);
+                input = input.Substring(0, index);
+            }
+
+            return input;
         }
 
         private void HubsListReceived(List<string> list)
         {
             if (list.Count > 0)
             {
-                if (Settings.Hubs == null)
-                    Settings.Hubs = "";
-                else
-                    Settings.Hubs += ";";
+                _allHubs.AddRange(list);
+            }
 
-                Settings.Hubs += string.Join(";", list.Where(i => !Settings.Hubs.Contains(i)));
-                Settings.Hubs = Settings.Hubs.Trim(';');
-                Settings.Save();
-
-                list.ForEach(AddHub);
+            if (_allHubs.Count == 0)
+            {
+                ShowHubEditDialog();
             }
             else
             {
-                ShowHubEditDialog();
+                VerifyHubs();
             }
         }
 
@@ -192,9 +277,24 @@ namespace LiveDc.Managers
             }
         }
 
-        private void ShowHubEditDialog()
+        private void ShowHubEditDialog(string message = null)
         {
-            _client.AddClickAction(() => new FrmHubList(_client, _provider).Show(),"Не удалось установить соединение ни с одним из хабов. Нажмите чтобы добавить хаб.", "hub_fail");
+            _client.AddClickAction(() => new FrmHubList(_client, _provider).Show(), message ?? "Не удалось установить соединение ни с одним из хабов. Нажмите чтобы добавить хаб.", "hub_fail");
+        }
+
+        public static string NormalizeHubAddress(string address)
+        {
+            var result = address.ToLower();
+
+            if (result.StartsWith("dchub://"))
+                result = result.Remove(0, 8);
+
+            if (result.EndsWith(":411"))
+            {
+                result = result.Remove(result.Length - 4);
+            }
+
+            return result;
         }
     }
 }

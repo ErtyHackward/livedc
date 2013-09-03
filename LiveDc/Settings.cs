@@ -29,8 +29,14 @@ namespace LiveDc
         public int UDPPort { get; set; }
         public string City { get; set; }
         public int TorrentTcpPort { get; set; }
-
         public string PortCheckUrl { get; set; }
+        public string StartPageUrl { get; set; }
+        public bool OpenStartPage { get; set; }
+        /// <summary>
+        /// Do we need to update hub list using livedc api ?
+        /// </summary>
+        public bool UpdateHubs { get; set; }
+        public DateTime LastHubCheck { get; set; }
 
         #endregion
 
@@ -50,6 +56,7 @@ namespace LiveDc
             StorageAutoPrune = true;
             AutoUpdate = true;
             ActiveMode = true;
+            UpdateHubs = true;
         }
 
         public void Save()
@@ -122,6 +129,11 @@ namespace LiveDc
                         {
                             prop.SetValue(this, bool.Parse(settingValue), null);
                             continue;
+                        }
+
+                        if (prop.PropertyType == typeof(DateTime))
+                        {
+                            prop.SetValue(this, DateTime.Parse(settingValue), null);
                         }
 
                         logger.Warn("Type {0} of setting {1} is not supported", prop.PropertyType, prop.Name);

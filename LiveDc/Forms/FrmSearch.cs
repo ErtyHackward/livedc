@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using LiveDc.Helpers;
 using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc;
+using SharpDc.Interfaces;
 using SharpDc.Managers;
 using SharpDc.Messages;
 
@@ -14,16 +18,18 @@ namespace LiveDc.Forms
 {
     public partial class FrmSearch : Form
     {
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
         private readonly LiveClient _client;
         private readonly DcProvider _dcProvider;
 
         private DateTime _lastUpdate;
 
-        private readonly Dictionary<string, HubSearchResult> _results = new Dictionary<string, HubSearchResult>();
+        private readonly Dictionary<string, ISearchResult> _results = new Dictionary<string, ISearchResult>();
 
-        private List<HubSearchResult> _list = new List<HubSearchResult>();
+        private readonly List<ISearchResult> _list = new List<ISearchResult>();
 
-        private IComparer<HubSearchResult> _comparer;
+        private IComparer<ISearchResult> _comparer;
         private SearchMessage _searchMsg;
 
         public FrmSearch(LiveClient client, DcProvider dcProvider)
@@ -36,10 +42,20 @@ namespace LiveDc.Forms
 
             SourcesColumn.HeaderCell.SortGlyphDirection = SortOrder.Descending;
 
-            NativeImageList.SmallExtensionImageLoaded += NativeImageListLargeExtensionImageLoaded;
+            NativeImageList.LargeExtensionImageLoaded += NativeImageListLargeExtensionImageLoaded;
             
             _dcProvider.Engine.SearchManager.SearchStarted += SearchManagerSearchStarted;
             _dcProvider.Engine.SearchManager.SearchResult += SearchManagerSearchResult;
+
+            this.Disposed += FrmSearch_Disposed;
+        }
+
+        void FrmSearch_Disposed(object sender, EventArgs e)
+        {
+            NativeImageList.LargeExtensionImageLoaded -= NativeImageListLargeExtensionImageLoaded;
+
+            _dcProvider.Engine.SearchManager.SearchStarted -= SearchManagerSearchStarted;
+            _dcProvider.Engine.SearchManager.SearchResult -= SearchManagerSearchResult;
         }
 
         void NativeImageListLargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
@@ -56,35 +72,42 @@ namespace LiveDc.Forms
             }
         }
 
-        void SearchManagerSearchResult(object sender, SearchManagerResultEventArgs e)
+        private void HandleResult(ISearchResult result)
         {
             // skip folders
-            if (e.Result.Size == -1)
+            if (result.Size == -1)
                 return;
+
+            if (result is DcSharaResult)
+            {
+                var dcSharaRes = (DcSharaResult)result;
+                dcSharaRes.PosterReceived += DcSharaResPosterReceived;
+            }
 
             if (infoPanel.Visible)
                 infoPanel.BeginInvoke((Action)(() => infoPanel.Hide()));
 
             lock (_results)
             {
-                if (!_results.ContainsKey(e.Result.Magnet.TTH))
-                {
-                    _results.Add(e.Result.Magnet.TTH, e.Result);
-                    var pos = _list.BinarySearch(e.Result, _comparer);
+                var hsr = result as HubSearchResult;
 
-                    if (pos < 0)
+                if (hsr != null)
+                {
+                    if (!_results.ContainsKey(hsr.Magnet.TTH))
                     {
-                        _list.Insert(~pos, e.Result);
+                        _results.Add(hsr.Magnet.TTH, hsr);
+                        InsertResult(hsr);
                     }
                     else
                     {
-                        _list.Insert(pos, e.Result);
+                        // change src count
+                        _list.Sort(_comparer);
                     }
                 }
                 else
                 {
-                    // change src count
-                    _list.Sort(_comparer);
+                    // provider result
+                    InsertResult(result);
                 }
             }
 
@@ -95,10 +118,39 @@ namespace LiveDc.Forms
             }
         }
 
+        void DcSharaResPosterReceived(object sender, EventArgs e)
+        {
+            var dcSharaRes = (DcSharaResult)sender;
+            dcSharaRes.PosterReceived -= DcSharaResPosterReceived;
+            _client.AsyncOperation.Post(o => FillList(), null);
+        }
+
+        private void InsertResult(ISearchResult result)
+        {
+            var pos = _list.BinarySearch(result, _comparer);
+
+            if (pos < 0)
+            {
+                _list.Insert(~pos, result);
+            }
+            else
+            {
+                _list.Insert(pos, result);
+            }
+        }
+
+        void SearchManagerSearchResult(object sender, SearchManagerResultEventArgs e)
+        {
+            HandleResult(e.Result);
+        }
+
         private void FillList()
         {
             if (resultsDataGridView.Rows.Count == _list.Count || resultsDataGridView.IsDisposed)
+            {
+                resultsDataGridView.Refresh();
                 return;
+            }
 
             using (new PerfLimit("ListRefresh"))
             {
@@ -116,10 +168,11 @@ namespace LiveDc.Forms
                     if (resultsDataGridView.Rows.Count == 0)
                     {
                         resultsDataGridView.Rows.Add();
+                        resultsDataGridView.Rows[0].Height = 32;
                         addRows--;
                     }
 
-                    if (addRows > 1)
+                    if (addRows >= 1)
                         resultsDataGridView.Rows.AddCopies(0, addRows);
                 }
                 resultsDataGridView.ResumeDrawing(true);
@@ -130,12 +183,14 @@ namespace LiveDc.Forms
         {
             if (e.Message.SearchType == SearchType.TTH)
                 return;
-
+            
             lock (_results)
             {
                 _results.Clear();
                 _list.Clear();
             }
+
+            ProvidersSearch();
 
             _client.AsyncOperation.Post(o => FillList(), null);
 
@@ -149,33 +204,94 @@ namespace LiveDc.Forms
 
         private void Button1Click(object sender, EventArgs e)
         {
-            _searchMsg = new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any };
-            _dcProvider.Engine.SearchManager.Search(_searchMsg);
+            resultsDataGridView.Rows.Clear();
+
+            if (hubsCheck.Checked)
+            {
+                _searchMsg = new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any };
+                _dcProvider.Engine.SearchManager.Search(_searchMsg);
+            }
+            else
+            {
+                lock (_results)
+                {
+                    _results.Clear();
+                    _list.Clear();
+                }
+
+                if (!ProvidersSearch())
+                {
+                    Logger.Warn("Can't start the search, no providers are selected");
+                    System.Media.SystemSounds.Beep.Play();
+                }
+            }
+        }
+
+        private bool ProvidersSearch()
+        {
+            var result = false;
+            if (dcSharaCheck.Checked)
+            {
+                DcSharaApi.SearchAsync(textBox1.Text, DcSharaResults);
+                result = true;
+            }
+
+            return result;
+        }
+
+        private void DcSharaResults(DcSharaResponse dcSharaResponse)
+        {
+            if (dcSharaResponse.Results == null)
+                return;
+
+            foreach (var result in dcSharaResponse.Results)
+            {
+                HandleResult(result);
+            }
+
+            _client.AsyncOperation.Post(o => FillList(), null);
         }
 
         private void ResultsDataGridViewCellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
         {
-            HubSearchResult hsr;
+            ISearchResult result;
             lock (_results)
             {
-                hsr = _list[e.RowIndex];
+                result = _list[e.RowIndex];
             }
+
+            var hsr = result as HubSearchResult;
+            var dcsResult = result as DcSharaResult;
 
             if (e.ColumnIndex == IconColumn.Index)
             {
-                e.Value = NativeImageList.TryGetSmallIcon(Path.GetExtension(hsr.Magnet.FileName));
+                if (dcsResult != null)
+                {
+                    e.Value = dcsResult.Poster;
+                }
+                else
+                {
+                    e.Value = NativeImageList.TryGetLargeIcon(Path.GetExtension(result.Name));
+                }
             }
             else if (e.ColumnIndex == FileNameColumn.Index)
             {
-                e.Value = hsr.Magnet.FileName;
+                e.Value = result.Name;
             }
             else if (e.ColumnIndex == SourcesColumn.Index)
             {
-                e.Value = hsr.Sources.Count;
+                if (hsr != null)
+                {
+                    e.Value = hsr.Sources.Count;
+                }
+                else
+                {
+                    e.Value = 0;
+                }
             }
             else if (e.ColumnIndex == SizeColumn.Index)
             {
-                e.Value = hsr.Magnet.Size;
+                e.Value = result.Size;
             }
         }
 
@@ -249,7 +365,16 @@ namespace LiveDc.Forms
             if (e.ColumnIndex == SizeColumn.Index)
             {
                 e.FormattingApplied = true;
-                e.Value = Utils.FormatBytes((long)e.Value);
+                e.Value = (long)e.Value == 0 ? "" : Utils.FormatBytes((long)e.Value);
+            }
+
+            if (e.ColumnIndex == SourcesColumn.Index)
+            {
+                if ((int)e.Value == 0)
+                {
+                    e.FormattingApplied = true;
+                    e.Value = "dcshara.ru";
+                }
             }
         }
 
@@ -258,63 +383,100 @@ namespace LiveDc.Forms
             if (resultsDataGridView.SelectedRows.Count > 0)
             {
                 var row = resultsDataGridView.SelectedRows[0];
-                var hsr = _list[row.Index];
+                var res = _list[row.Index];
 
-                _client.StartFile(hsr.Magnet);
+                if (res is HubSearchResult)
+                {
+                    var hsr = (HubSearchResult)res;
+                    _client.StartFile(hsr.Magnet);
+                }
+
+                if (res is DcSharaResult)
+                {
+                    var dsres = (DcSharaResult)res;
+                    ShellHelper.Start(dsres.ResultUrl);
+                }
             }
         }
 
-        private void infoPanel_SizeChanged(object sender, EventArgs e)
+        private void InfoPanelSizeChanged(object sender, EventArgs e)
         {
             infoPanel.Left = (resultsDataGridView.Width - infoPanel.Width) / 2;
         }
+
+        private void FrmSearchShown(object sender, EventArgs e)
+        {
+            textBox1.Focus();
+        }
+
+
     }
 
-    public class SourceComparer : IComparer<HubSearchResult>
+    public class SourceComparer : IComparer<ISearchResult>
     {
-        public int Compare(HubSearchResult x, HubSearchResult y)
+        public int Compare(ISearchResult x, ISearchResult y)
         {
-            return y.Sources.Count.CompareTo(x.Sources.Count);
+            var hsrX = x as HubSearchResult;
+            var hsrY = y as HubSearchResult;
+
+            if (hsrX == null && hsrY == null)
+                return 0;
+            if (hsrX == null)
+                return -1;
+            if (hsrY == null)
+                return 1;
+            
+            return hsrY.Sources.Count.CompareTo(hsrX.Sources.Count);
         }
     }
 
-    public class SourceComparerAsc : IComparer<HubSearchResult>
+    public class SourceComparerAsc : IComparer<ISearchResult>
     {
-        public int Compare(HubSearchResult x, HubSearchResult y)
+        public int Compare(ISearchResult x, ISearchResult y)
         {
-            return x.Sources.Count.CompareTo(y.Sources.Count);
+            var hsrX = x as HubSearchResult;
+            var hsrY = y as HubSearchResult;
+
+            if (hsrX == null && hsrY == null)
+                return 0;
+            if (hsrX == null)
+                return 1;
+            if (hsrY == null)
+                return -1;
+
+            return hsrX.Sources.Count.CompareTo(hsrY.Sources.Count);
         }
     }
 
-    public class SizeComparer : IComparer<HubSearchResult>
+    public class SizeComparer : IComparer<ISearchResult>
     {
-        public int Compare(HubSearchResult x, HubSearchResult y)
+        public int Compare(ISearchResult x, ISearchResult y)
         {
             return y.Size.CompareTo(x.Size);
         }
     }
 
-    public class SizeComparerAsc : IComparer<HubSearchResult>
+    public class SizeComparerAsc : IComparer<ISearchResult>
     {
-        public int Compare(HubSearchResult x, HubSearchResult y)
+        public int Compare(ISearchResult x, ISearchResult y)
         {
             return x.Size.CompareTo(y.Size);
         }
     }
 
-    public class NameComparer : IComparer<HubSearchResult>
+    public class NameComparer : IComparer<ISearchResult>
     {
-        public int Compare(HubSearchResult x, HubSearchResult y)
+        public int Compare(ISearchResult x, ISearchResult y)
         {
-            return y.Magnet.FileName.CompareTo(x.Magnet.FileName);
+            return y.Name.CompareTo(x.Name);
         }
     }
 
-    public class NameComparerAsc : IComparer<HubSearchResult>
+    public class NameComparerAsc : IComparer<ISearchResult>
     {
-        public int Compare(HubSearchResult x, HubSearchResult y)
+        public int Compare(ISearchResult x, ISearchResult y)
         {
-            return x.Magnet.FileName.CompareTo(y.Magnet.FileName);
+            return x.Name.CompareTo(y.Name);
         }
     }
 

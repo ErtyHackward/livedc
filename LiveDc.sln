@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DokanNet", "..\dokan-net-0.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpDc", "..\sharpdc\SharpDc\SharpDc.csproj", "{660E074C-9BAC-4681-856E-1668862252CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoSetupVersionUpdate", "InnoSetupVersionUpdate\InnoSetupVersionUpdate.csproj", "{BF9762B5-542F-46BB-B344-C464C8C2809B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InnoSetupManager", "InnoSetupVersionUpdate\InnoSetupManager.csproj", "{BF9762B5-542F-46BB-B344-C464C8C2809B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoTorrent", "..\monotorrent\src\MonoTorrent\MonoTorrent.csproj", "{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}"
 EndProject

@@ -69,7 +69,7 @@ namespace LiveDc.Forms
                 if (!string.IsNullOrEmpty(_client.Settings.City))
                     LiveApi.PostHubsAsync(_client.Settings.City, hubText.Text);
 
-                _client.AsyncOperation.Post((o) =>
+                _client.AsyncOperation.Post(o =>
                                                 {
                                                     statusLabel.Text = "Успешное подключение. Клиент готов к работе. Если желаете, можно добавить еще.";
                                                     hubText.Text = "";
