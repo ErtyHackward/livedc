@@ -103,6 +103,12 @@
     <Compile Include="Forms\FrmTorrentFiles.Designer.cs">
       <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\PosterControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\PosterControl.Designer.cs">
+      <DependentUpon>PosterControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\SegementsControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -208,6 +214,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmTorrentFiles.resx">
       <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\PosterControl.resx">
+      <DependentUpon>PosterControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\SegementsControl.resx">
       <DependentUpon>SegementsControl.cs</DependentUpon>
