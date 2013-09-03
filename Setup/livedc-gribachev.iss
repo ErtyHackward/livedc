@@ -36,7 +36,7 @@ DefaultDirName={pf}\LiveDC\
 ;WizardImageFile=setupTitle.bmp
 ;WizardSmallImageFile=setupSmall.bmp
 ;UninstallDisplayIcon=..\Media\icon.ico
-OutputBaseFilename=setup_livedc_gribashev
+OutputBaseFilename=setup_livedc_gribachev
 ;ArchitecturesInstallIn64BitMode=x64
 
 [Icons]

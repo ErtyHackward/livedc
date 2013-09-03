@@ -32,6 +32,8 @@ namespace LiveDc.Forms
         private IComparer<ISearchResult> _comparer;
         private SearchMessage _searchMsg;
 
+        private List<ISearchResult> _providerResults = new List<ISearchResult>();
+
         public FrmSearch(LiveClient client, DcProvider dcProvider)
         {
             _client = client;
@@ -46,6 +48,9 @@ namespace LiveDc.Forms
             
             _dcProvider.Engine.SearchManager.SearchStarted += SearchManagerSearchStarted;
             _dcProvider.Engine.SearchManager.SearchResult += SearchManagerSearchResult;
+
+            int vertScrollWidth = SystemInformation.VerticalScrollBarWidth;
+            flowLayoutPanel1.Padding = new Padding(0, 0, vertScrollWidth, 0);
 
             this.Disposed += FrmSearch_Disposed;
         }
@@ -77,12 +82,6 @@ namespace LiveDc.Forms
             // skip folders
             if (result.Size == -1)
                 return;
-
-            if (result is DcSharaResult)
-            {
-                var dcSharaRes = (DcSharaResult)result;
-                dcSharaRes.PosterReceived += DcSharaResPosterReceived;
-            }
 
             if (infoPanel.Visible)
                 infoPanel.BeginInvoke((Action)(() => infoPanel.Hide()));
@@ -122,7 +121,17 @@ namespace LiveDc.Forms
         {
             var dcSharaRes = (DcSharaResult)sender;
             dcSharaRes.PosterReceived -= DcSharaResPosterReceived;
-            _client.AsyncOperation.Post(o => FillList(), null);
+            _client.AsyncOperation.Post(o => 
+            {
+                foreach (PosterControl control in flowLayoutPanel1.Controls)
+                {
+                    if (control.Tag == dcSharaRes)
+                    {
+                        control.Poster = dcSharaRes.Poster;
+                        return;
+                    }
+                }
+            }, null);
         }
 
         private void InsertResult(ISearchResult result)
@@ -177,6 +186,9 @@ namespace LiveDc.Forms
                 }
                 resultsDataGridView.ResumeDrawing(true);
             }
+
+            tabPage1.Text = string.Format("DcShara.ru ({0})", _providerResults.Count);
+            tabPage2.Text = string.Format("На хабах ({0})", _list.Count);
         }
 
         void SearchManagerSearchStarted(object sender, SearchEventArgs e)
@@ -188,6 +200,7 @@ namespace LiveDc.Forms
             {
                 _results.Clear();
                 _list.Clear();
+                _providerResults.Clear();
             }
 
             ProvidersSearch();
@@ -205,38 +218,15 @@ namespace LiveDc.Forms
         private void Button1Click(object sender, EventArgs e)
         {
             resultsDataGridView.Rows.Clear();
+            _searchMsg = new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any };
+            _dcProvider.Engine.SearchManager.Search(_searchMsg);
 
-            if (hubsCheck.Checked)
-            {
-                _searchMsg = new SearchMessage { SearchRequest = textBox1.Text, SearchType = SearchType.Any };
-                _dcProvider.Engine.SearchManager.Search(_searchMsg);
-            }
-            else
-            {
-                lock (_results)
-                {
-                    _results.Clear();
-                    _list.Clear();
-                }
-
-                if (!ProvidersSearch())
-                {
-                    Logger.Warn("Can't start the search, no providers are selected");
-                    System.Media.SystemSounds.Beep.Play();
-                }
-            }
         }
 
         private bool ProvidersSearch()
         {
-            var result = false;
-            if (dcSharaCheck.Checked)
-            {
-                DcSharaApi.SearchAsync(textBox1.Text, DcSharaResults);
-                result = true;
-            }
-
-            return result;
+            DcSharaApi.SearchAsync(textBox1.Text, DcSharaResults);
+            return true;
         }
 
         private void DcSharaResults(DcSharaResponse dcSharaResponse)
@@ -246,10 +236,44 @@ namespace LiveDc.Forms
 
             foreach (var result in dcSharaResponse.Results)
             {
-                HandleResult(result);
+                result.PosterReceived += DcSharaResPosterReceived;
+                _providerResults.Add(result);
+                
             }
 
-            _client.AsyncOperation.Post(o => FillList(), null);
+            _client.AsyncOperation.Post(o =>
+            {
+                infoPanel.Hide();
+
+                flowLayoutPanel1.Controls.Clear();
+
+                flowLayoutPanel1.SuspendDrawing();
+                foreach (DcSharaResult providerResult in _providerResults)
+                {
+                    var poster = providerResult.Poster;
+                    
+                    var control = new PosterControl { 
+                        Text = providerResult.Name, 
+                        Tag = providerResult
+                    };
+
+                    if (poster != null)
+                        control.Poster = poster;
+
+                    control.Click += control_Click;
+
+                    flowLayoutPanel1.Controls.Add(control);
+                }
+                flowLayoutPanel1.ResumeDrawing(true);
+                flowLayoutPanel1.Refresh();
+            }, null);
+        }
+
+        void control_Click(object sender, EventArgs e)
+        {
+            var control = (PosterControl)sender;
+            var res = (DcSharaResult)control.Tag;
+            ShellHelper.Start(res.ResultUrl);
         }
 
         private void ResultsDataGridViewCellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
