@@ -25,6 +25,9 @@ namespace LiveDc.Forms
             tcpPortNumeric.Value = _client.Settings.TCPPort;
             udpPortNumeric.Value = _client.Settings.UDPPort;
 
+            startPageCheck.Checked = _client.Settings.OpenStartPage;
+            startPageUrlText.Text = _client.Settings.StartPageUrl;
+
             storageAutoselectCheck_Click(null, null);
         }
 
@@ -62,7 +65,10 @@ namespace LiveDc.Forms
                 VistaSecurity.StartElevated(autostartCheck.Checked ? "-setstartup" : "-removestartup");
             }
 
+            _client.Settings.OpenStartPage = startPageCheck.Checked;
+            _client.Settings.StartPageUrl = startPageUrlText.Text;
             _client.Settings.StorageAutoSelect = storageAutoselectCheck.Checked;
+
             if (!_client.Settings.StorageAutoSelect)
             {
                 _client.Settings.StoragePath = storagePathText.Text;

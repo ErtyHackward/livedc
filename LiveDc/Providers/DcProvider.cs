@@ -230,7 +230,7 @@ namespace LiveDc.Providers
 
             _engine.Settings.ActiveMode = e.IsPortOpen;
 
-            if (string.IsNullOrEmpty(Settings.Hubs))
+            if (string.IsNullOrEmpty(Settings.Hubs) || (DateTime.Now - Settings.LastHubCheck).TotalDays > 7)
             {
                 _hubManager.FindHubs(IPAddress.Parse(e.ExternalIpAddress));
             }

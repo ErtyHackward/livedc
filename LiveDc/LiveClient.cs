@@ -89,12 +89,14 @@ namespace LiveDc
             if (!Settings.ShownGreetingsTooltip)
             {
                 _icon.ShowBalloonTip(10000, "LiveDC", "Добро пожаловать! Нажмите здесь, чтобы увидеть текущий статус работы.", ToolTipIcon.Info);
+                OpenStartPage();
 
                 Settings.ShownGreetingsTooltip = true;
                 Settings.Save();
             }
             else if (!Program.SilentMode)
             {
+                OpenStartPage();
                 _icon.ShowBalloonTip(10000, "LiveDC", "Клиент запущен.", ToolTipIcon.Info);
             }
 
@@ -224,13 +226,25 @@ namespace LiveDc
             }
         }
 
+        private bool OpenStartPage()
+        {
+            if (Settings.OpenStartPage && !string.IsNullOrEmpty(Settings.StartPageUrl))
+            {
+                ShellHelper.Start(Settings.StartPageUrl);
+                return true;
+            }
+
+            return false;
+        }
+
         private void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
         {
             var data = e.Data.ToString();
 
             if (data == "SHOW")
             {
-                _icon.ShowBalloonTip(5000, "Я здесь!", "Клиент LiveDC уже запущен", ToolTipIcon.None);
+                if (!OpenStartPage())
+                    _icon.ShowBalloonTip(5000, "Я здесь!", "Клиент LiveDC уже запущен", ToolTipIcon.None);
                 return;
             }
 

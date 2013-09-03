@@ -44,15 +44,17 @@
             this.autoupdateCheck = new System.Windows.Forms.CheckBox();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.tcpPortNumeric = new System.Windows.Forms.NumericUpDown();
             this.udpPortNumeric = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
+            this.tcpPortNumeric = new System.Windows.Forms.NumericUpDown();
+            this.label2 = new System.Windows.Forms.Label();
+            this.startPageCheck = new System.Windows.Forms.CheckBox();
+            this.startPageUrlText = new System.Windows.Forms.TextBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tcpPortNumeric)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.udpPortNumeric)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tcpPortNumeric)).BeginInit();
             this.SuspendLayout();
             // 
             // cancelButton
@@ -119,7 +121,7 @@
             this.groupBox1.Controls.Add(this.storageAutoselectCheck);
             this.groupBox1.Controls.Add(this.storageSelectButton);
             this.groupBox1.Controls.Add(this.storagePathText);
-            this.groupBox1.Location = new System.Drawing.Point(12, 118);
+            this.groupBox1.Location = new System.Drawing.Point(12, 140);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(469, 115);
             this.groupBox1.TabIndex = 7;
@@ -174,12 +176,14 @@
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox2.Controls.Add(this.startPageUrlText);
+            this.groupBox2.Controls.Add(this.startPageCheck);
             this.groupBox2.Controls.Add(this.autoupdateCheck);
             this.groupBox2.Controls.Add(this.autostartCheck);
             this.groupBox2.Controls.Add(this.idleEconomyCheck);
             this.groupBox2.Location = new System.Drawing.Point(12, 12);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(469, 100);
+            this.groupBox2.Size = new System.Drawing.Size(469, 122);
             this.groupBox2.TabIndex = 10;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Главное";
@@ -203,33 +207,12 @@
             this.groupBox3.Controls.Add(this.label3);
             this.groupBox3.Controls.Add(this.tcpPortNumeric);
             this.groupBox3.Controls.Add(this.label2);
-            this.groupBox3.Location = new System.Drawing.Point(12, 240);
+            this.groupBox3.Location = new System.Drawing.Point(11, 261);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(470, 78);
             this.groupBox3.TabIndex = 11;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Соединения";
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(19, 21);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(56, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Порт TCP";
-            // 
-            // tcpPortNumeric
-            // 
-            this.tcpPortNumeric.Location = new System.Drawing.Point(77, 19);
-            this.tcpPortNumeric.Maximum = new decimal(new int[] {
-            65536,
-            0,
-            0,
-            0});
-            this.tcpPortNumeric.Name = "tcpPortNumeric";
-            this.tcpPortNumeric.Size = new System.Drawing.Size(61, 20);
-            this.tcpPortNumeric.TabIndex = 1;
             // 
             // udpPortNumeric
             // 
@@ -251,6 +234,44 @@
             this.label3.Size = new System.Drawing.Size(58, 13);
             this.label3.TabIndex = 2;
             this.label3.Text = "Порт UDP";
+            // 
+            // tcpPortNumeric
+            // 
+            this.tcpPortNumeric.Location = new System.Drawing.Point(77, 19);
+            this.tcpPortNumeric.Maximum = new decimal(new int[] {
+            65536,
+            0,
+            0,
+            0});
+            this.tcpPortNumeric.Name = "tcpPortNumeric";
+            this.tcpPortNumeric.Size = new System.Drawing.Size(61, 20);
+            this.tcpPortNumeric.TabIndex = 1;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(19, 21);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(56, 13);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "Порт TCP";
+            // 
+            // startPageCheck
+            // 
+            this.startPageCheck.AutoSize = true;
+            this.startPageCheck.Location = new System.Drawing.Point(6, 90);
+            this.startPageCheck.Name = "startPageCheck";
+            this.startPageCheck.Size = new System.Drawing.Size(176, 17);
+            this.startPageCheck.TabIndex = 11;
+            this.startPageCheck.Text = "При запуске открывать сайт:";
+            this.startPageCheck.UseVisualStyleBackColor = true;
+            // 
+            // startPageUrlText
+            // 
+            this.startPageUrlText.Location = new System.Drawing.Point(188, 89);
+            this.startPageUrlText.Name = "startPageUrlText";
+            this.startPageUrlText.Size = new System.Drawing.Size(271, 20);
+            this.startPageUrlText.TabIndex = 12;
             // 
             // FrmSettings
             // 
@@ -279,8 +300,8 @@
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.tcpPortNumeric)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.udpPortNumeric)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tcpPortNumeric)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -305,5 +326,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.NumericUpDown tcpPortNumeric;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox startPageUrlText;
+        private System.Windows.Forms.CheckBox startPageCheck;
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using SharpDc.Interfaces;
 
 namespace LiveDc.Helpers
 {
@@ -83,7 +85,7 @@ namespace LiveDc.Helpers
             {
                 // class="box4"><a href="http://dcshara.ru/uzhasy/14831118-pod-kupolom-under-the-dome-1-sezon.html" class="tip-bottom item" ><img width="155" height="228" src="http://dcshara.ru/uploads/posts/2013-06/1372606952_1372224699_kupol.jpg" alt="Под куполом - Under the Dome (1 сезон)" 
 
-                DcSharaResult res;
+                DcSharaResult res = new DcSharaResult();
 
                 var linkStartInd = data.IndexOf("http://", startIndex);
                 var linkEndInd = data.IndexOf("\" class", linkStartInd);
@@ -98,7 +100,7 @@ namespace LiveDc.Helpers
                 var nameStartInd = data.IndexOf("alt=\"", posterEndInd) + 5;
                 var nameEndInd = data.IndexOf("\" />", nameStartInd);
 
-                res.DisplayName = data.Substring(nameStartInd, nameEndInd - nameStartInd);
+                res.Name = data.Substring(nameStartInd, nameEndInd - nameStartInd);
 
                 yield return res;
                 startIndex++;
@@ -112,10 +114,75 @@ namespace LiveDc.Helpers
         public Exception Exception { get; set; }
     }
 
-    public struct DcSharaResult
+    public class DcSharaResult : ISearchResult 
     {
-        public string DisplayName;
-        public string PosterUrl;
-        public string ResultUrl;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+        private Image _poster;
+        private bool _requestSent;
+
+        public event EventHandler PosterReceived;
+
+        protected virtual void OnPosterReceived()
+        {
+            var handler = PosterReceived;
+            if (handler != null) handler(this, EventArgs.Empty);
+        }
+
+        public string Name { get; set; }
+        /// <summary>
+        /// Always zero
+        /// </summary>
+        public long Size { get; private set; }
+        public string PosterUrl { get; set; }
+        public string ResultUrl { get; set; }
+
+        public Image Poster
+        {
+            get
+            {
+                if (_poster != null)
+                    return _poster;
+
+                lock (this)
+                {
+                    if (!_requestSent)
+                    {
+                        DownloadPosterAsync(PosterUrl);
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        public object Clone()
+        {
+            throw new NotSupportedException();
+        }
+
+        public void DownloadPosterAsync(string url)
+        {
+            var myRequest = (HttpWebRequest)WebRequest.Create(url);
+            myRequest.Method = "GET";
+            myRequest.BeginGetResponse(ImageReceived, myRequest);
+        }
+
+        private void ImageReceived(IAsyncResult ar)
+        {
+            try
+            {
+                var tuple = (HttpWebRequest)ar.AsyncState;
+                var myResponse = (HttpWebResponse)tuple.EndGetResponse(ar);
+                var bmp = new Bitmap(myResponse.GetResponseStream());
+                myResponse.Close();
+                _poster = bmp;
+                OnPosterReceived();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Unable to load dcShara image {0}", ex);
+            }
+        }
+
     }
 }
