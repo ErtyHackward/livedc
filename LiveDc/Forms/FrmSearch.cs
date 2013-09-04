@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -18,6 +20,36 @@ namespace LiveDc.Forms
 {
     public partial class FrmSearch : Form
     {
+        private static List<IWebSearchProvider> _providers;
+
+        public static bool SearchProvidersLoaded { get { return _providers != null; } }
+
+        public static void LoadSearchProviders(string pluginFolder)
+        {
+            _providers = new List<IWebSearchProvider>();
+
+            var iface = typeof(IWebSearchProvider);
+
+            foreach (var libPath in Directory.GetFiles(pluginFolder, "*.dll"))
+            {
+                try
+                {
+                    var assembly = Assembly.LoadFile(libPath);
+                    
+                    foreach (var exportedType in assembly.GetExportedTypes().Where(iface.IsAssignableFrom))
+                    {
+                        var provider =(IWebSearchProvider)Activator.CreateInstance(exportedType);
+                        _providers.Add(provider);
+                        Logger.Info("{0} provider is loaded", provider.ProviderName);
+                    }
+                }
+                catch (Exception x)
+                {
+                    Logger.Error("Unable to load library: {0}/r/n{1}", libPath, x.Message);
+                }
+            }
+        }
+
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         private readonly LiveClient _client;
@@ -31,8 +63,7 @@ namespace LiveDc.Forms
 
         private IComparer<ISearchResult> _comparer;
         private SearchMessage _searchMsg;
-
-        private List<ISearchResult> _providerResults = new List<ISearchResult>();
+        
 
         public FrmSearch(LiveClient client, DcProvider dcProvider)
         {
@@ -49,10 +80,25 @@ namespace LiveDc.Forms
             _dcProvider.Engine.SearchManager.SearchStarted += SearchManagerSearchStarted;
             _dcProvider.Engine.SearchManager.SearchResult += SearchManagerSearchResult;
 
-            int vertScrollWidth = SystemInformation.VerticalScrollBarWidth;
-            flowLayoutPanel1.Padding = new Padding(0, 0, vertScrollWidth, 0);
+            if (!SearchProvidersLoaded)
+                LoadSearchProviders(Path.Combine(Path.GetDirectoryName(Application.ExecutablePath),"Plugins"));
 
-            this.Disposed += FrmSearch_Disposed;
+            IntPtr h = tabControl1.Handle;
+            foreach (var webSearchProvider in _providers)
+            {
+                var tab = new TabPage(webSearchProvider.TabTitle);
+                var flowPanel = new FlowLayoutPanel();
+                tab.Controls.Add(flowPanel);
+                flowPanel.Dock = DockStyle.Fill;
+                flowPanel.Padding = new Padding(0, 0, SystemInformation.VerticalScrollBarWidth, 0);
+                flowPanel.BackColor = SystemColors.Window;
+                flowPanel.AutoScroll = true;
+                tab.Tag = webSearchProvider;
+                tabControl1.TabPages.Insert(0, tab);
+            }
+            tabControl1.SelectTab(0);
+
+            Disposed += FrmSearch_Disposed;
         }
 
         void FrmSearch_Disposed(object sender, EventArgs e)
@@ -119,16 +165,23 @@ namespace LiveDc.Forms
 
         void DcSharaResPosterReceived(object sender, EventArgs e)
         {
-            var dcSharaRes = (DcSharaResult)sender;
+            var dcSharaRes = (WebSearchResult)sender;
             dcSharaRes.PosterReceived -= DcSharaResPosterReceived;
             _client.AsyncOperation.Post(o => 
             {
-                foreach (PosterControl control in flowLayoutPanel1.Controls)
+                foreach (TabPage tabPage in tabControl1.TabPages)
                 {
-                    if (control.Tag == dcSharaRes)
+                    if (tabPage == hubsTabPage)
+                        continue;
+
+                    var flowPanel = (FlowLayoutPanel)tabPage.Controls[0];
+                    foreach (PosterControl control in flowPanel.Controls)
                     {
-                        control.Poster = dcSharaRes.Poster;
-                        return;
+                        if (control.Tag == dcSharaRes)
+                        {
+                            control.Poster = dcSharaRes.Poster;
+                            return;
+                        }
                     }
                 }
             }, null);
@@ -187,8 +240,12 @@ namespace LiveDc.Forms
                 resultsDataGridView.ResumeDrawing(true);
             }
 
-            tabPage1.Text = string.Format("DcShara.ru ({0})", _providerResults.Count);
-            tabPage2.Text = string.Format("На хабах ({0})", _list.Count);
+            hubsTabPage.Text = string.Format("На хабах ({0})", _list.Count);
+        }
+
+        private TabPage FindByProvider(IWebSearchProvider provider)
+        {
+            return tabControl1.TabPages.Cast<TabPage>().FirstOrDefault(tabPage => tabPage.Tag == provider);
         }
 
         void SearchManagerSearchStarted(object sender, SearchEventArgs e)
@@ -200,7 +257,6 @@ namespace LiveDc.Forms
             {
                 _results.Clear();
                 _list.Clear();
-                _providerResults.Clear();
             }
 
             ProvidersSearch();
@@ -225,30 +281,45 @@ namespace LiveDc.Forms
 
         private bool ProvidersSearch()
         {
-            DcSharaApi.SearchAsync(textBox1.Text, DcSharaResults);
+            foreach (var searchProvider in _providers)
+            {
+                searchProvider.SearchAsync(textBox1.Text, ProvidersResults);
+            }
+
             return true;
         }
 
-        private void DcSharaResults(DcSharaResponse dcSharaResponse)
+        private void ProvidersResults(WebSearchResponse response)
         {
-            if (dcSharaResponse.Results == null)
-                return;
-
-            foreach (var result in dcSharaResponse.Results)
+            if (response.Results == null)
             {
-                result.PosterReceived += DcSharaResPosterReceived;
-                _providerResults.Add(result);
-                
+                _client.AsyncOperation.Post(o =>
+                    {
+                        var tab = FindByProvider(response.Provider);
+                        tab.Text = string.Format("{0} (0)", response.Provider.TabTitle);
+                    }, null);
+                return;
+            }
+
+            foreach (var result in response.Results)
+            {
+                result.PosterReceived += DcSharaResPosterReceived;                
             }
 
             _client.AsyncOperation.Post(o =>
             {
                 infoPanel.Hide();
 
-                flowLayoutPanel1.Controls.Clear();
+                var tab = FindByProvider(response.Provider);
 
-                flowLayoutPanel1.SuspendDrawing();
-                foreach (DcSharaResult providerResult in _providerResults)
+                tab.Text = string.Format("{0} ({1})", response.Provider.TabTitle, response.Results.Count);
+
+                var flowPanel = (FlowLayoutPanel)tab.Controls[0];
+
+                flowPanel.Controls.Clear();
+
+                flowPanel.SuspendDrawing();
+                foreach (var providerResult in response.Results)
                 {
                     var poster = providerResult.Poster;
                     
@@ -262,18 +333,18 @@ namespace LiveDc.Forms
 
                     control.Click += control_Click;
 
-                    flowLayoutPanel1.Controls.Add(control);
+                    flowPanel.Controls.Add(control);
                 }
-                flowLayoutPanel1.ResumeDrawing(true);
-                flowLayoutPanel1.Refresh();
+                flowPanel.ResumeDrawing(true);
+                flowPanel.Refresh();
             }, null);
         }
 
         void control_Click(object sender, EventArgs e)
         {
             var control = (PosterControl)sender;
-            var res = (DcSharaResult)control.Tag;
-            ShellHelper.Start(res.ResultUrl);
+            var res = (WebSearchResult)control.Tag;
+            ShellHelper.Start(res.ReleaseUrl);
         }
 
         private void ResultsDataGridViewCellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
@@ -285,7 +356,7 @@ namespace LiveDc.Forms
             }
 
             var hsr = result as HubSearchResult;
-            var dcsResult = result as DcSharaResult;
+            var dcsResult = result as WebSearchResult;
 
             if (e.ColumnIndex == IconColumn.Index)
             {
@@ -391,15 +462,6 @@ namespace LiveDc.Forms
                 e.FormattingApplied = true;
                 e.Value = (long)e.Value == 0 ? "" : Utils.FormatBytes((long)e.Value);
             }
-
-            if (e.ColumnIndex == SourcesColumn.Index)
-            {
-                if ((int)e.Value == 0)
-                {
-                    e.FormattingApplied = true;
-                    e.Value = "dcshara.ru";
-                }
-            }
         }
 
         private void resultsDataGridView_CellMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
@@ -415,10 +477,10 @@ namespace LiveDc.Forms
                     _client.StartFile(hsr.Magnet);
                 }
 
-                if (res is DcSharaResult)
+                if (res is WebSearchResult)
                 {
-                    var dsres = (DcSharaResult)res;
-                    ShellHelper.Start(dsres.ResultUrl);
+                    var dsres = (WebSearchResult)res;
+                    ShellHelper.Start(dsres.ReleaseUrl);
                 }
             }
         }
@@ -432,8 +494,6 @@ namespace LiveDc.Forms
         {
             textBox1.Focus();
         }
-
-
     }
 
     public class SourceComparer : IComparer<ISearchResult>

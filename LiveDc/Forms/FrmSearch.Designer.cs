@@ -44,16 +44,13 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.panel3 = new System.Windows.Forms.Panel();
             this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.hubsTabPage = new System.Windows.Forms.TabPage();
             ((System.ComponentModel.ISupportInitialize)(this.resultsDataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.infoPanel.SuspendLayout();
             this.panel3.SuspendLayout();
             this.tabControl1.SuspendLayout();
-            this.tabPage1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
+            this.hubsTabPage.SuspendLayout();
             this.SuspendLayout();
             // 
             // textBox1
@@ -103,7 +100,7 @@
             this.resultsDataGridView.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.resultsDataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.resultsDataGridView.ShowEditingIcon = false;
-            this.resultsDataGridView.Size = new System.Drawing.Size(625, 392);
+            this.resultsDataGridView.Size = new System.Drawing.Size(660, 427);
             this.resultsDataGridView.TabIndex = 3;
             this.resultsDataGridView.VirtualMode = true;
             this.resultsDataGridView.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.ResultsDataGridViewCellFormatting);
@@ -193,8 +190,7 @@
             // 
             // tabControl1
             // 
-            this.tabControl1.Controls.Add(this.tabPage1);
-            this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.hubsTabPage);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl1.Location = new System.Drawing.Point(0, 30);
             this.tabControl1.Name = "tabControl1";
@@ -202,36 +198,16 @@
             this.tabControl1.Size = new System.Drawing.Size(674, 459);
             this.tabControl1.TabIndex = 8;
             // 
-            // tabPage1
+            // hubsTabPage
             // 
-            this.tabPage1.Controls.Add(this.flowLayoutPanel1);
-            this.tabPage1.Location = new System.Drawing.Point(4, 22);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(666, 433);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "DcShara.ru";
-            this.tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // flowLayoutPanel1
-            // 
-            this.flowLayoutPanel1.AutoScroll = true;
-            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 3);
-            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(660, 427);
-            this.flowLayoutPanel1.TabIndex = 0;
-            // 
-            // tabPage2
-            // 
-            this.tabPage2.Controls.Add(this.resultsDataGridView);
-            this.tabPage2.Location = new System.Drawing.Point(4, 22);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(631, 398);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "На хабах";
-            this.tabPage2.UseVisualStyleBackColor = true;
+            this.hubsTabPage.Controls.Add(this.resultsDataGridView);
+            this.hubsTabPage.Location = new System.Drawing.Point(4, 22);
+            this.hubsTabPage.Name = "hubsTabPage";
+            this.hubsTabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.hubsTabPage.Size = new System.Drawing.Size(666, 433);
+            this.hubsTabPage.TabIndex = 1;
+            this.hubsTabPage.Text = "На хабах";
+            this.hubsTabPage.UseVisualStyleBackColor = true;
             // 
             // FrmSearch
             // 
@@ -255,8 +231,7 @@
             this.panel3.ResumeLayout(false);
             this.panel3.PerformLayout();
             this.tabControl1.ResumeLayout(false);
-            this.tabPage1.ResumeLayout(false);
-            this.tabPage2.ResumeLayout(false);
+            this.hubsTabPage.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -278,8 +253,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn SourcesColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn SizeColumn;
         private System.Windows.Forms.TabControl tabControl1;
-        private System.Windows.Forms.TabPage tabPage1;
-        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
-        private System.Windows.Forms.TabPage tabPage2;
+        private System.Windows.Forms.TabPage hubsTabPage;
     }
 }
