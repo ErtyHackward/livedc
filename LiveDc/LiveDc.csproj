@@ -186,6 +186,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\DcProvider.cs" />
     <Compile Include="Providers\IP2PProvider.cs" />
+    <Compile Include="Providers\IWebSearchProvider.cs" />
     <Compile Include="Providers\TorrentProvider.cs" />
     <Compile Include="Providers\TorrentStream.cs" />
     <Compile Include="Settings.cs" />
