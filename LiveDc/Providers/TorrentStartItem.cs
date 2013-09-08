@@ -61,7 +61,20 @@ namespace LiveDc.Providers
                         return;
                     }
                 }
+
+                if (_manager.State == TorrentState.Stopped)
+                {
+                    _manager.Start();
+                }
             }
+
+            var switcher = _manager.PieceManager.GetPicker<EndGameSwitcher>();
+            switcher.Reset();
+
+#if DEBUG
+            if (_torrentProvider.FrmDebug != null)
+                _torrentProvider.FrmDebug.SegementsControl.Manager = _manager;
+#endif
             
             new ThreadStart(FormThread).BeginInvoke(null, null);
         }
@@ -149,6 +162,12 @@ namespace LiveDc.Providers
             _torrentProvider.Client.History.AddItem(Magnet);
 
             _file.Priority = Priority.Immediate;
+
+            while (_manager.State == TorrentState.Hashing)
+            {
+                StatusMessage = string.Format("Проверка кеша... ");
+                Thread.Sleep(500);
+            }
             
             var sw = Stopwatch.StartNew();
 
@@ -177,13 +196,13 @@ namespace LiveDc.Providers
                 if (_file.BytesDownloaded >= _file.Length / 50)
                 {
                     ReadyToStart = true;
-                    StatusMessage = "Файл готов к работе. Загружено";
+                    StatusMessage = string.Format("Файл готов к работе. Загружено: {0} ({1}%)", Utils.FormatBytes(_file.BytesDownloaded), Math.Round(Progress*100));
                     Progress = (float)_file.BytesDownloaded / _file.Length;
                 }
                 else if (_file.BytesDownloaded > 0)
                 {
                     Progress = (float)_file.BytesDownloaded / _file.Length;
-                    StatusMessage = string.Format("Низкая скорость загрузки. Загружено: {0} ({1}%)", Utils.FormatBytes(_manager.Monitor.DownloadSpeed), Math.Round(Progress));
+                    StatusMessage = string.Format("Низкая скорость загрузки. Загружено: {0} ({1}%)", Utils.FormatBytes(_file.BytesDownloaded), Math.Round(Progress*100));
                 }
 
                 Thread.Sleep(100);
@@ -231,6 +250,7 @@ namespace LiveDc.Providers
 
             StatusMessage = "Открываю файл...";
             ShellHelper.Start(Path.Combine(_torrentProvider.Client.Drive.DriveRoot, _file.Path));
+            Closed = true;
         }
     }
 }

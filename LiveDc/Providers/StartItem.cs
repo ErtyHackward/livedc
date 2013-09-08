@@ -37,6 +37,8 @@ namespace LiveDc.Providers
                 StatusMessage = "Файл доступен. Запуск через " + timeout;
                 Progress = 1f;
                 Thread.Sleep(1000);
+                if (_started)
+                    return;
             }
             OpenFile();
             Closed = true;

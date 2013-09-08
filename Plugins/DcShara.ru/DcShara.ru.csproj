@@ -43,12 +43,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\sharpdc\SharpDc\SharpDc.csproj">
+    <ProjectReference Include="..\..\..\sharpdc\SharpDc\SharpDc.csproj">
       <Project>{660e074c-9bac-4681-856e-1668862252ca}</Project>
       <Name>SharpDc</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\LiveDc\LiveDc.csproj">
+    <ProjectReference Include="..\..\LiveDc\LiveDc.csproj">
       <Project>{888E0125-1BA1-4305-B001-9E828D5C29C9}</Project>
       <Name>LiveDc</Name>
       <Private>False</Private>
