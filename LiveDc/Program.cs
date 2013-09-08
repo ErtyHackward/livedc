@@ -14,7 +14,7 @@ namespace LiveDc
     {
         private static LiveClient _client;
 
-        public static DateTime BestBefore = DateTime.Parse("2014-01-01");
+        public static DateTime BestBefore = DateTime.Parse("2014-02-01");
 
         public static bool SilentMode = false;
 

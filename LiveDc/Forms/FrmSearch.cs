@@ -30,6 +30,9 @@ namespace LiveDc.Forms
 
             var iface = typeof(IWebSearchProvider);
 
+            if (!Directory.Exists(pluginFolder))
+                return;
+            
             foreach (var libPath in Directory.GetFiles(pluginFolder, "*.dll"))
             {
                 try

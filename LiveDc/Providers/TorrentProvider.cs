@@ -38,7 +38,7 @@ namespace LiveDc.Providers
         public string TorrentsFolder { get { return Path.Combine(Settings.SettingsFolder, "Torrents"); } }
 
 #if DEBUG
-        private FrmDownloadDebug _frmDebug;
+        public FrmDownloadDebug FrmDebug;
 #endif
         /// <summary>
         /// Not applicable for torrents, always returns true
@@ -170,9 +170,9 @@ namespace LiveDc.Providers
             }
 
 #if DEBUG
-            _frmDebug = new FrmDownloadDebug();
-            _frmDebug.Width = Screen.PrimaryScreen.WorkingArea.Width;
-            _frmDebug.Show();
+            FrmDebug = new FrmDownloadDebug();
+            FrmDebug.Width = Screen.PrimaryScreen.WorkingArea.Width;
+            FrmDebug.Show();
 #endif
         }
 
@@ -201,11 +201,6 @@ namespace LiveDc.Providers
 
             _engine.Register(torrent);
             _torrents.Add(torrent);
-
-#if DEBUG
-            if (_frmDebug != null)
-                _frmDebug.SegementsControl.Manager = torrent;
-#endif
         }
 
         private void TorrentOnMetadataReceived(object sender, EventArgs eventArgs)
@@ -250,9 +245,9 @@ namespace LiveDc.Providers
 #if DEBUG
             stream.Disposed += stream_Disposed;
 
-            lock (_frmDebug.SegementsControl.ReadStreams)
+            lock (FrmDebug.SegementsControl.ReadStreams)
             {
-                _frmDebug.SegementsControl.ReadStreams.Add(stream);
+                FrmDebug.SegementsControl.ReadStreams.Add(stream);
             }
 #endif
             return stream;
@@ -265,9 +260,9 @@ namespace LiveDc.Providers
 
             stream.Disposed -= stream_Disposed;
 
-            lock (_frmDebug.SegementsControl.ReadStreams)
+            lock (FrmDebug.SegementsControl.ReadStreams)
             {
-                _frmDebug.SegementsControl.ReadStreams.Remove(stream);
+                FrmDebug.SegementsControl.ReadStreams.Remove(stream);
             }
         }
 #endif
