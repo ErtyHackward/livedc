@@ -28,6 +28,9 @@ namespace LiveDc.Forms
             startPageCheck.Checked = _client.Settings.OpenStartPage;
             startPageUrlText.Text = _client.Settings.StartPageUrl;
 
+            torrentAssocCheck.Checked = _client.Settings.AssocTorrentFiles;
+            magnetAssocCheck.Checked = _client.Settings.AssocMagnetLinks;
+
             storageAutoselectCheck_Click(null, null);
         }
 
@@ -69,6 +72,9 @@ namespace LiveDc.Forms
             _client.Settings.StartPageUrl = startPageUrlText.Text;
             _client.Settings.StorageAutoSelect = storageAutoselectCheck.Checked;
 
+            _client.Settings.AssocTorrentFiles = torrentAssocCheck.Checked;
+            _client.Settings.AssocMagnetLinks = magnetAssocCheck.Checked;
+
             if (!_client.Settings.StorageAutoSelect)
             {
                 _client.Settings.StoragePath = storagePathText.Text;
@@ -85,6 +91,8 @@ namespace LiveDc.Forms
                 _client.Settings.UDPPort = (int)udpPortNumeric.Value;
                 _client.Providers.OfType<DcProvider>().First().Engine.Settings.UdpPort = _client.Settings.UDPPort;
             }
+            
+            
 
             _client.Settings.Save();
 

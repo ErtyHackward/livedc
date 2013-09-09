@@ -11,19 +11,19 @@ Name: fr; MessagesFile: compiler:Languages\French.isl
 
 [Files]
 Source: Deps\DokanInstall_0.6.0.exe; Flags: dontcopy
-Source: ..\LiveDC\bin\Release\*; DestDir: {app}; Excludes: *.dds,*.pdb,*.vshost.*,*.exe.config,Newtonsoft.Json.xml,Ninject.xml,NLog.xml,protobuf-net.xml,SharpDX.*.xml,SharpDX.xml,*.exp,*.lib; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\LiveDC\bin\Release\*; DestDir: {app}; Excludes: *.dds,*.pdb,*.vshost.*,*.exe.config,Newtonsoft.Json.xml,Ninject.xml,NLog.xml,protobuf-net.xml,SharpDX.*.xml,SharpDX.xml,*.exp,*.lib,\Plugins\*; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: Deps\PTN57F.ttf; DestDir: {fonts}; FontInstall: "PT Sans Narrow"; Flags: onlyifdoesntexist uninsneveruninstall
 ;Source: Deps\PTN77F.ttf; DestDir: {fonts}; FontInstall: "PT Sans Narrow Bold"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Setup]
-VersionInfoVersion=1.1.7
+VersionInfoVersion=1.1.8
 VersionInfoCompany=LiveDC
 VersionInfoDescription=LiveDC
 VersionInfoCopyright=Vladislav Pozdnyakov, 2013
 VersionInfoProductName=LiveDC
 MinVersion=0,5.01.2600sp1
 AppName=LiveDC
-AppVerName=LiveDC, 1.1.7
+AppVerName=LiveDC, 1.1.8
 AppPublisher=April32
 AppPublisherURL=http://april32.com
 AppSupportURL=http://april32.com
