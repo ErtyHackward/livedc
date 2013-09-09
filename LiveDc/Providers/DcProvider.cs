@@ -41,9 +41,12 @@ namespace LiveDc.Providers
         {
             _client = client;
             Settings = settings;
-            if (!WindowsHelper.IsMagnetHandlerAssigned)
+            if (Settings.AssocMagnetLinks)
             {
-                WindowsHelper.RegisterMagnetHandler();
+                if (!WindowsHelper.IsMagnetHandlerAssigned)
+                {
+                    WindowsHelper.RegisterMagnetHandler();
+                }
             }
         }
         

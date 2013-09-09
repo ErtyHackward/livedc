@@ -37,6 +37,8 @@ namespace LiveDc
         /// </summary>
         public bool UpdateHubs { get; set; }
         public DateTime LastHubCheck { get; set; }
+        public bool AssocTorrentFiles { get; set; }
+        public bool AssocMagnetLinks { get; set; }
 
         #endregion
 
@@ -57,6 +59,9 @@ namespace LiveDc
             AutoUpdate = true;
             ActiveMode = true;
             UpdateHubs = true;
+
+            AssocTorrentFiles = true;
+            AssocMagnetLinks = true;
         }
 
         public void Save()

@@ -62,24 +62,27 @@ namespace LiveDc.Providers
         {
             _client = client;
 
-            string programName;
-            string programPath;
-
-            WindowsHelper.GetProgramAssociatedWithExt(false, ".torrent", out programName, out programPath);
-            
-            if (programPath != Application.ExecutablePath)
+            if (_client.Settings.AssocTorrentFiles)
             {
-                WindowsHelper.RegisterExtension(false, "LiveDC", ".torrent");
+                string programName;
+                string programPath;
+
+                WindowsHelper.GetProgramAssociatedWithExt(false, ".torrent", out programName, out programPath);
+
+                if (programPath != Application.ExecutablePath)
+                {
+                    WindowsHelper.RegisterExtension(false, "LiveDC", ".torrent");
+                }
+
+                WindowsHelper.GetProgramAssociatedWithExt(true, ".torrent", out programName, out programPath);
+
+                if (programPath != Application.ExecutablePath && VistaSecurity.IsAdmin())
+                {
+                    WindowsHelper.RegisterExtension(true, "LiveDC", ".torrent");
+                }
+
+                NativeMethods.SHChangeNotify(HChangeNotifyEventID.SHCNE_ASSOCCHANGED, HChangeNotifyFlags.SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
             }
-
-            WindowsHelper.GetProgramAssociatedWithExt(true, ".torrent", out programName, out programPath);
-
-            if (programPath != Application.ExecutablePath && VistaSecurity.IsAdmin())
-            {
-                WindowsHelper.RegisterExtension(true, "LiveDC", ".torrent");
-            }
-
-            NativeMethods.SHChangeNotify(HChangeNotifyEventID.SHCNE_ASSOCCHANGED, HChangeNotifyFlags.SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
         }
 
         public void Initialize()
@@ -167,6 +170,8 @@ namespace LiveDc.Providers
                 if (fastResume.ContainsKey(torrent.InfoHash.ToHex()))
                     manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex()]));
                 RegisterTorrent(manager);
+
+                manager.Start();
             }
 
 #if DEBUG
