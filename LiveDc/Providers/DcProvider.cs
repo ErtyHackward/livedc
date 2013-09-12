@@ -138,6 +138,7 @@ namespace LiveDc.Providers
             settings.ActiveMode = Settings.ActiveMode;
             settings.UseSparseFiles = true;
             settings.AutoSelectPort = true;
+            settings.ReconnectTimeout = 45;
 
             if (Settings.TCPPort != 0)
                 settings.TcpPort = Settings.TCPPort;
@@ -155,6 +156,7 @@ namespace LiveDc.Providers
                 try
                 {
                     _engine.Share = MemoryShare.CreateFromXml(SharePath);
+                    _engine.Share.Reload();
                 }
                 catch (Exception x)
                 {
