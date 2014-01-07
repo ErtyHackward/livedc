@@ -13,9 +13,6 @@ namespace LiveDc
     static class Program
     {
         private static LiveClient _client;
-
-        public static DateTime BestBefore = DateTime.Parse("2014-02-01");
-
         public static bool SilentMode = false;
 
         public static string StartMagnet;
@@ -135,18 +132,6 @@ namespace LiveDc
                 {
                     copyData.Channels.Add("LIVEDC");
                     copyData.Channels["LIVEDC"].Send("SHOW");
-                }
-                return;
-            }
-
-            if (DateTime.Now > BestBefore)
-            {
-                if (!SilentMode)
-                {
-                    if (MessageBox.Show(string.Format("Текущая версия клиента {0} устарела. Необходимо обновление. Перейти на сайт для загрузки?", Assembly.GetExecutingAssembly().GetName().Version.ToString(3)), "LiveDC", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                    {
-                        Process.Start("http://april32.com/ru/products/livedc");
-                    }
                 }
                 return;
             }

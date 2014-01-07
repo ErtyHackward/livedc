@@ -40,7 +40,7 @@ namespace LiveDc.Managers
             {
                 var hubs = Settings.Hubs.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
 
-                foreach (var hubAddress in hubs)
+                foreach (var hubAddress in hubs.Take(5))
                 {
                     _allHubs.Add(hubAddress);
                     AddHub(hubAddress);
@@ -127,39 +127,7 @@ namespace LiveDc.Managers
             // step 2: remove obvius duplicates
             _allHubs = _allHubs.Distinct().ToList();
 
-            // step 3: find ip addresses of domain names to exclude situation when we have 2 instance of the same hub (ip and dns)
-            var ipList = new List<string>(_allHubs);
-
-            for (int i = 0; i < ipList.Count; i++)
-            {
-                if (!isIp(ipList[i]))
-                {
-                    string port;
-                    var ip = extractIp(ipList[i], out port);
-                    try
-                    {
-                        ipList[i] = Dns.GetHostEntry(ip).AddressList[0] + (port == null ? "" : ":" + port);
-                    }
-                    catch (Exception x)
-                    {
-                        logger.Error("unable to resolve hub {0} : {1}", ipList[i], x.Message);
-                        ipList[i] = null;
-                    }
-                }
-            }
-
-            // remove hubs with invalid dns responses
-            for (int i = _allHubs.Count - 1; i >= 0; i--)
-            {
-                if (ipList[i] == null)
-                {
-                    _allHubs.RemoveAt(i);
-                    ipList.RemoveAt(i);
-                }
-            }
-
-            // exclude duplicates
-            var list = _allHubs.Select((h, i) => new { dns = h, ip = ipList[i]} ).GroupBy(t => t.ip).Select(t => t.First().dns).ToList();
+            var list = _allHubs;
 
             Settings.Hubs = string.Join(";", list);
             Settings.LastHubCheck = DateTime.Now;

@@ -119,6 +119,17 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Helpers\DcSharaApi.cs" />
+    <Compile Include="Notify\FrmAttachUrl.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Notify\FrmAttachUrl.Designer.cs">
+      <DependentUpon>FrmAttachUrl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="Providers\DcStartItem.cs" />
     <Compile Include="Forms\FrmHubList.cs">
       <SubType>Form</SubType>
@@ -158,6 +169,8 @@
     <Compile Include="Helpers\StrongDcHelper.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\WindowsHelper.cs" />
+    <Compile Include="Providers\HttpProvider.cs" />
+    <Compile Include="Providers\IFsProvider.cs" />
     <Compile Include="Providers\IStartItem.cs" />
     <Compile Include="Managers\AutoUpdateManager.cs" />
     <Compile Include="Managers\DcHubManager.cs" />
@@ -187,6 +200,8 @@
     <Compile Include="Providers\DcProvider.cs" />
     <Compile Include="Providers\IP2PProvider.cs" />
     <Compile Include="Providers\IWebSearchProvider.cs" />
+    <Compile Include="Providers\MirrorProvider.cs" />
+    <Compile Include="Providers\SimpleStartItem.cs" />
     <Compile Include="Providers\TorrentProvider.cs" />
     <Compile Include="Providers\TorrentStream.cs" />
     <Compile Include="Settings.cs" />
@@ -222,19 +237,17 @@
     <EmbeddedResource Include="Forms\SegementsControl.resx">
       <DependentUpon>SegementsControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Notify\FrmAttachUrl.resx">
+      <DependentUpon>FrmAttachUrl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Notify\FrmNotify.resx">
       <DependentUpon>FrmNotify.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -276,6 +289,7 @@
     <None Include="Resources\search.png" />
     <None Include="Resources\livedc_action.ico" />
     <None Include="Resources\ajax-loader.gif" />
+    <None Include="Resources\1389054985_80_Globe.png" />
     <Content Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

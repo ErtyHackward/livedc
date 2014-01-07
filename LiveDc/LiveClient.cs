@@ -37,9 +37,11 @@ namespace LiveDc
         private CopyData _copyData;
         private List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
         private List<IP2PProvider> _providers = new List<IP2PProvider>();
+        private List<IFsProvider> _fsProviders = new List<IFsProvider>();
         private IStartItem _startItem;
         private FrmStatus _statusForm;
-        
+        private HttpProvider _httpProvider;
+
         private string DriveLockPath { get { return Path.Combine(Settings.SettingsFolder, "drive.lck"); } }
 
         public Settings Settings { get; private set; }
@@ -48,7 +50,15 @@ namespace LiveDc
         public AsyncOperation AsyncOperation { get { return _ao; } }
         public LiveDcDrive Drive { get { return _drive; } }
         public IEnumerable<IP2PProvider> Providers { get { return _providers; } }
-        
+
+        public IEnumerable<IFsProvider> FsProviders { get { return _providers.Concat(_fsProviders); } }
+
+        public HttpProvider HttpProvider
+        {
+            get { return _httpProvider; }
+        }
+
+
         public LiveClient()
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
@@ -77,6 +87,8 @@ namespace LiveDc
 
             _providers.Add(new DcProvider(Settings, this));
             _providers.Add(new TorrentProvider(this));
+
+            _fsProviders.Add(_httpProvider = new HttpProvider(this));
 
             InitializeEngine();
 
@@ -135,6 +147,7 @@ namespace LiveDc
 
             _form.Show();
             _form.Activate();
+            _form.TopMost = true;
         }
 
         private void form_Deactivate(object sender, EventArgs e)
@@ -188,7 +201,9 @@ namespace LiveDc
                 driveLetter = StorageHelper.GetFreeDrive('l');
             }
 
-            _drive = new LiveDcDrive(_providers);
+            HttpFileStream.Manager.CacheSize = 30 * 1024 * 1024;
+            
+            _drive = new LiveDcDrive(FsProviders);
             _drive.MountAsync(driveLetter);
             StorageHelper.OwnDrive = char.ToUpper(driveLetter) + ":\\";
 
@@ -355,7 +370,7 @@ namespace LiveDc
 
             try
             {
-                var provider = Providers.First(p => p.CanHandle(magnet));
+                var provider = FsProviders.First(p => p.CanHandle(magnet));
 
                 _startItem = provider.StartItem(magnet);
 

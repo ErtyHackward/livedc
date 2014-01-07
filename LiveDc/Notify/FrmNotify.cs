@@ -57,7 +57,7 @@ namespace LiveDc.Notify
 
             Activated += FrmNotify_Activated;
 
-            label1.Text = "LiveDC " + Assembly.GetExecutingAssembly().GetName().Version.ToString(3) + " beta";
+            label1.Text = "LiveDC " + Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
 
         }
 
@@ -306,6 +306,24 @@ namespace LiveDc.Notify
         {
             _searchForm.Closed -= _searchForm_Closed;
             _searchForm = null;
+        }
+
+        private void pictureBox4_Click(object sender, EventArgs e)
+        {
+            var form = new FrmAttachUrl();
+
+            if (form.ShowDialog() != DialogResult.OK) 
+                return;
+
+            try
+            {
+                var magnet = _client.HttpProvider.RegisterFile(form.Url);
+                _client.StartFile(magnet);
+            }
+            catch (Exception x)
+            {
+                MessageBox.Show(x.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

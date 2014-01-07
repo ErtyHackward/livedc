@@ -17,14 +17,14 @@ Source: ..\LiveDC\bin\Release\Plugins\DcShara.ru.dll; DestDir: {app}\Plugins\; F
 ;Source: Deps\PTN77F.ttf; DestDir: {fonts}; FontInstall: "PT Sans Narrow Bold"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Setup]
-VersionInfoVersion=1.1.8
+VersionInfoVersion=1.1.10
 VersionInfoCompany=LiveDC
 VersionInfoDescription=LiveDC
 VersionInfoCopyright=Vladislav Pozdnyakov, 2013
 VersionInfoProductName=LiveDC
 MinVersion=0,5.01.2600sp1
 AppName=LiveDC - DcShara.ru
-AppVerName=LiveDC, 1.1.8
+AppVerName=LiveDC, 1.1.10
 AppPublisher=April32
 AppPublisherURL=http://april32.com
 AppSupportURL=http://april32.com

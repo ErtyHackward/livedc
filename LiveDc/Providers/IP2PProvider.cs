@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using LiveDc.Notify;
 using SharpDc.Structs;
 
@@ -9,7 +7,7 @@ namespace LiveDc.Providers
     /// <summary>
     /// General p2p features that required by LiveDC to work
     /// </summary>
-    public interface IP2PProvider : IDisposable
+    public interface IP2PProvider : IDisposable, IFsProvider
     {
         /// <summary>
         /// Occurs when online status is changed
@@ -25,29 +23,6 @@ namespace LiveDc.Providers
         /// Prepares specific resources (establish connections with servers, etc)
         /// </summary>
         void Initialize();
-
-        /// <summary>
-        /// Enumerates all files that are acessible now
-        /// </summary>
-        /// <returns></returns>
-        IEnumerable<Magnet> AllMagnets();
-
-        /// <summary>
-        /// Returns file data stream for the magnet
-        /// </summary>
-        /// <param name="magnet"></param>
-        /// <returns></returns>
-        Stream GetStream(Magnet magnet);
-        
-        bool CanHandle(Magnet magnet);
-        
-        /// <summary>
-        /// Creates communication object between GUI and the provider
-        /// Tries to start download at the same time
-        /// </summary>
-        /// <param name="magnet"></param>
-        /// <returns></returns>
-        IStartItem StartItem(Magnet magnet);
 
         /// <summary>
         /// Gets path of a file on a virtual drive
