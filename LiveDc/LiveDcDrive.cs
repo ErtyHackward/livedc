@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Dokan;
-using LiveDc.Managers;
 using LiveDc.Providers;
 using SharpDc.Structs;
 
@@ -17,13 +16,12 @@ namespace LiveDc
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
+        private readonly IEnumerable<IFsProvider> _providers;
+        private readonly Dictionary<string, Stream> _openedFiles = new Dictionary<string, Stream>();
+
         private int _count = 1;
         private char _driveLetter;
-
-        private IEnumerable<IP2PProvider> _providers;
-
-        private Dictionary<string, Stream> _openedFiles = new Dictionary<string, Stream>();
-
+        
         public string DriveRoot
         {
             get { return _driveLetter.ToString() + ":\\"; }
@@ -48,7 +46,7 @@ namespace LiveDc
             return false;
         }
 
-        public LiveDcDrive(IEnumerable<IP2PProvider> providers)
+        public LiveDcDrive(IEnumerable<IFsProvider> providers)
         {
             if (providers == null)
                 throw new ArgumentNullException("providers");
@@ -206,14 +204,12 @@ namespace LiveDc
 
             if (stream == null)
             {
-                //Trace.WriteLine("Stream does not found " + filename);
                 return -1;
             }
-
-            //Trace.WriteLine(string.Format("Reading {0} {1}", filename, offset));
             
             try
             {
+                //logger.Info("Reading {0} {1} {2}", filename, offset, buffer.Length);
                 stream.Seek(offset, SeekOrigin.Begin);
                 readBytes = (uint)stream.Read(buffer, 0, buffer.Length);
             }
