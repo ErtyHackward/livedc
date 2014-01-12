@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using LiveDc.Helpers;
 using LiveDc.Managers;
@@ -111,6 +112,22 @@ namespace LiveDc.Providers
             {
                 control.DownloadSpeed = 0;
             }
+        }
+
+        public long ReleaseFileCache(long releaseBytes)
+        {
+            logger.Info("Requested relese of {0} bytes ", releaseBytes );
+            var released = 0L;
+
+            var list = _engine.Share.OldestItems().TakeWhile( i => (released += i.Magnet.Size) < releaseBytes ).ToList();
+
+            foreach (var contentItem in list)
+            {
+                logger.Info("Deleting {0}", contentItem.SystemPath);
+                _engine.Share.RemoveFile(contentItem.Magnet.TTH);
+            }
+
+            return released;
         }
 
         public void DeleteFile(Magnet magnet)

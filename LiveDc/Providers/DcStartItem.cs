@@ -54,9 +54,17 @@ namespace LiveDc
                 return;
             }
 
+            var cacheRoot = _provider.LiveClient.ReserveCacheSpace(magnet.Size);
+
+            if (cacheRoot == null)
+            {
+                MessageBox.Show("Недостаточно свободного места на диске.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             _provider.LiveClient.History.AddItem(magnet);
 
-            _currentDownload = _provider.Engine.DownloadFile(magnet);
+            _currentDownload = _provider.Engine.DownloadFile(magnet, cacheRoot);
             _currentDownload.LogSegmentEvents = true;
 
             new ThreadStart(FormThread).BeginInvoke(null, null);

@@ -315,6 +315,63 @@ namespace LiveDc.Providers
             }
         }
 
+        public long ReleaseFileCache(long releaseBytes)
+        {
+            var released = 0L;
+            var di = new DirectoryInfo(TorrentsFolder);
+            var files = di.GetFiles("*.torrent").OrderBy(fi => fi.CreationTime).ToList();
+
+            foreach (var torrentFile in files)
+            {
+                var torrent = _torrents.FirstOrDefault(t => t.Torrent.TorrentPath == torrentFile.FullName);
+
+                if (torrent == null)
+                    continue;
+
+                var state = torrent.State;
+
+                if (state != TorrentState.Stopped)
+                    torrent.Stop();
+
+                foreach (var file in torrent.Torrent.Files)
+                {
+                    if (file.BitField.PercentComplete == 100)
+                    {
+                        file.Priority = Priority.DoNotDownload;
+                        try
+                        {
+                            logger.Info("Deleting file {0}", file.FullPath);
+                            File.Delete(file.FullPath);
+                            released += file.Length;
+
+                            if (released >= releaseBytes)
+                                break;
+
+                        }
+                        catch (Exception x)
+                        {
+                            logger.Error("Unable to delete file {0} {1}", file.FullPath, x.Message);
+                        }
+                    }
+                }
+
+                if (torrent.Torrent.Files.All(t => t.Priority == Priority.DoNotDownload))
+                {
+                    CancelTorrent(torrent);
+                }
+                else
+                {
+                    if (state != TorrentState.Stopped)
+                        torrent.Start();
+                }
+
+                if (released >= releaseBytes)
+                    break;
+            }
+
+            return released;
+        }
+
         /// <summary>
         /// Marks 
         /// </summary>

@@ -43,6 +43,7 @@ namespace LiveDc
         private FrmStatus _statusForm;
         private readonly HttpProvider _httpProvider;
         private readonly DcProvider _dcProvider;
+        private StorageManager _storageManager;
 
         private string DriveLockPath { get { return Path.Combine(Settings.SettingsFolder, "drive.lck"); } }
         
@@ -122,6 +123,42 @@ namespace LiveDc
             SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
         }
 
+        /// <summary>
+        /// Checks all possible cache locations for specified amount of bytes and returns first
+        /// If none has enough space removes old cached files 
+        /// </summary>
+        /// <param name="bytesToReserve"></param>
+        /// <returns>Path to root cache directory or null if there is no free space</returns>
+        public string ReserveCacheSpace(long bytesToReserve)
+        {
+            string root;
+
+            var freed = 0L;
+
+            while (( root = _storageManager.GetStoragePoint(bytesToReserve) ) == null)
+            {
+                if (!Settings.StorageAutoPrune)
+                    return null;
+
+                var round = 0L;
+
+                foreach (var p2PProvider in Providers)
+                {
+                    round += p2PProvider.ReleaseFileCache(bytesToReserve);
+
+                    if (round > 0 && freed + round >= bytesToReserve)
+                        break;
+                }
+
+                if (round == 0)
+                    return null;
+
+                freed += round;
+            }
+
+            return root;
+        }
+
         void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)
         {
             if (e.Mode == PowerModes.Resume)
@@ -164,9 +201,11 @@ namespace LiveDc
 
         private void form_Deactivate(object sender, EventArgs e)
         {
+            if (_form.Visible)
+                _hideTime = DateTime.Now;
+
             var form = (Form)sender;
             form.Hide();
-            _hideTime = DateTime.Now;
         }
 
         private void ApplicationApplicationExit(object sender, EventArgs e)
@@ -218,6 +257,7 @@ namespace LiveDc
             _drive = new LiveDcDrive(FsProviders);
             _drive.MountAsync(driveLetter);
             StorageHelper.OwnDrive = char.ToUpper(driveLetter) + ":\\";
+            _storageManager = new StorageManager(StorageHelper.OwnDrive);
 
             if (!Directory.Exists(Path.GetDirectoryName(DriveLockPath)))
                 Directory.CreateDirectory(Path.GetDirectoryName(DriveLockPath));
