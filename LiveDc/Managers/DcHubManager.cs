@@ -70,6 +70,8 @@ namespace LiveDc.Managers
                         hubs[i] = hubs[i].Remove(0, 8);
                 }
 
+                logger.Info("Found FlyLink hubs: "+ string.Join(", ", hubs));
+
                 _allHubs.AddRange(hubs);
             }
 
@@ -82,6 +84,8 @@ namespace LiveDc.Managers
                     if (hubs[i].StartsWith("dchub://"))
                         hubs[i] = hubs[i].Remove(0, 8);
                 }
+
+                logger.Info("Found StrongDC hubs: " + string.Join(", ", hubs));
 
                 _allHubs.AddRange(hubs);
             }
@@ -127,8 +131,40 @@ namespace LiveDc.Managers
             // step 2: remove obvius duplicates
             _allHubs = _allHubs.Distinct().ToList();
 
-            var list = _allHubs;
+            // step 3: find ip addresses of domain names to exclude situation when we have 2 instance of the same hub (ip and dns)
+            var ipList = new List<string>(_allHubs);
 
+            for (int i = 0; i < ipList.Count; i++)
+            {
+                if (!isIp(ipList[i]))
+                {
+                    string port;
+                    var ip = extractIp(ipList[i], out port);
+                    try
+                    {
+                        ipList[i] = Dns.GetHostEntry(ip).AddressList[0] + (port == null ? "" : ":" + port);
+                    }
+                    catch (Exception x)
+                    {
+                        logger.Error("unable to resolve hub {0} : {1}", ipList[i], x.Message);
+                        ipList[i] = null;
+                    }
+                }
+            }
+
+            // remove hubs with invalid dns responses
+            for (int i = _allHubs.Count - 1; i >= 0; i--)
+            {
+                if (ipList[i] == null)
+                {
+                    _allHubs.RemoveAt(i);
+                    ipList.RemoveAt(i);
+                }
+            }
+
+            // exclude duplicates
+            var list = _allHubs.Select((h, i) => new { dns = h, ip = ipList[i]} ).GroupBy(t => t.ip).Select(t => t.First().dns).ToList();
+            
             Settings.Hubs = string.Join(";", list);
             Settings.LastHubCheck = DateTime.Now;
             Settings.Save();
@@ -170,6 +206,8 @@ namespace LiveDc.Managers
 
         private void HubsListReceived(List<string> list)
         {
+            logger.Info("Received hubs from server: "+ string.Join(", ", list));
+
             if (list.Count > 0)
             {
                 _allHubs.AddRange(list);
@@ -192,8 +230,15 @@ namespace LiveDc.Managers
 
             logger.Info("Adding hub {0}", hubAddress);
 
-            var hub = _provider.Engine.Hubs.Add(hubAddress, Settings.Nickname);
-            hub.Settings.GetUsersList = false;
+            try
+            {
+                var hub = _provider.Engine.Hubs.Add(hubAddress, Settings.Nickname);
+                hub.Settings.GetUsersList = false;
+            }
+            catch (Exception x)
+            {
+                logger.Error("Unable to add hub: {0} {1}", hubAddress , x.Message);
+            }
         }
 
         void HubsHubRemoved(object sender, HubsChangedEventArgs e)

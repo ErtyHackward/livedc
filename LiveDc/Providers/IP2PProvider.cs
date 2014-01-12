@@ -43,13 +43,5 @@ namespace LiveDc.Providers
         /// </summary>
         /// <param name="control"></param>
         void UpdateFileItem(DcFileControl control);
-
-        /// <summary>
-        /// Completely removes file from the app
-        /// Stops seeding
-        /// Deletes data from the hard drive
-        /// </summary>
-        /// <param name="magnet"></param>
-        void DeleteFile(Magnet magnet);
     }
 }

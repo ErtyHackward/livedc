@@ -83,5 +83,10 @@ namespace LiveDc.Providers
         {
             return new SimpleStartItem(magnet, _client.Drive);
         }
+
+        public void DeleteFile(Magnet magnet)
+        {
+            _registeredFiles.Remove(magnet);
+        }
     }
 }

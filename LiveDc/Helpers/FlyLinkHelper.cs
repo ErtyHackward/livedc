@@ -40,12 +40,13 @@ namespace LiveDc.Helpers
                     conn.Open();
                     using (var cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT name FROM fly_dic";
+                        cmd.CommandText = "SELECT val_str FROM fly_registry";
                         using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                hubs.Add(reader.GetString(0));
+                                var spl = reader.GetString(0).Split('\n');
+                                hubs.Add(spl[3]);
                             }
                         }
                     }

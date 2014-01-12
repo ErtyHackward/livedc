@@ -1,4 +1,4 @@
-п»їnamespace LiveDc.Notify
+namespace LiveDc.Forms
 {
     partial class FrmAttachUrl
     {
@@ -41,7 +41,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(139, 13);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Р’РІРµРґРёС‚Рµ РїРѕР»РЅС‹Р№ url С„Р°Р№Р»Р°";
+            this.label1.Text = "Введите полный url файла";
             // 
             // textBox1
             // 
@@ -59,7 +59,7 @@
             this.connectButton.Name = "connectButton";
             this.connectButton.Size = new System.Drawing.Size(90, 23);
             this.connectButton.TabIndex = 2;
-            this.connectButton.Text = "РџРѕРґРєР»СЋС‡РёС‚СЊ";
+            this.connectButton.Text = "Подключить";
             this.connectButton.UseVisualStyleBackColor = true;
             this.connectButton.Click += new System.EventHandler(this.connectButton_Click);
             // 
@@ -71,7 +71,7 @@
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(92, 23);
             this.cancelButton.TabIndex = 3;
-            this.cancelButton.Text = "РћС‚РјРµРЅР°";
+            this.cancelButton.Text = "Отмена";
             this.cancelButton.UseVisualStyleBackColor = true;
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
@@ -92,7 +92,7 @@
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "РџРѕРґРєР»СЋС‡РµРЅРёРµ С„Р°Р№Р»Р° РїРѕ URL";
+            this.Text = "Подключение файла по URL";
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -16,14 +16,14 @@ Source: ..\LiveDC\bin\Release\*; DestDir: {app}; Excludes: *.dds,*.pdb,*.vshost.
 ;Source: Deps\PTN77F.ttf; DestDir: {fonts}; FontInstall: "PT Sans Narrow Bold"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Setup]
-VersionInfoVersion=1.1.10
+VersionInfoVersion=1.1.11
 VersionInfoCompany=LiveDC
 VersionInfoDescription=LiveDC
 VersionInfoCopyright=Vladislav Pozdnyakov, 2013
 VersionInfoProductName=LiveDC
 MinVersion=0,5.01.2600sp1
 AppName=LiveDC
-AppVerName=LiveDC, 1.1.10
+AppVerName=LiveDC, 1.1.11
 AppPublisher=April32
 AppPublisherURL=http://april32.com
 AppSupportURL=http://april32.com

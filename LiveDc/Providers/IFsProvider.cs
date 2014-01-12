@@ -28,5 +28,13 @@ namespace LiveDc.Providers
         /// <param name="magnet"></param>
         /// <returns></returns>
         IStartItem StartItem(Magnet magnet);
+
+        /// <summary>
+        /// Completely removes file from the app
+        /// Stops seeding
+        /// Deletes data from the hard drive
+        /// </summary>
+        /// <param name="magnet"></param>
+        void DeleteFile(Magnet magnet);
     }
 }
