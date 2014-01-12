@@ -21,6 +21,7 @@ namespace LiveDc.Forms
             autostartCheck.Checked = WindowsHelper.IsInAutoRun;
             storagePathText.Text = _client.Settings.StorageAutoSelect ? StorageHelper.GetBestSaveDirectory() : _client.Settings.StoragePath;
             storageAutoselectCheck.Checked = _client.Settings.StorageAutoSelect;
+            storageAutopruneCheck.Checked = _client.Settings.StorageAutoPrune;
 
             tcpPortNumeric.Value = _client.Settings.TCPPort;
             udpPortNumeric.Value = _client.Settings.UDPPort;
@@ -71,6 +72,7 @@ namespace LiveDc.Forms
             _client.Settings.OpenStartPage = startPageCheck.Checked;
             _client.Settings.StartPageUrl = startPageUrlText.Text;
             _client.Settings.StorageAutoSelect = storageAutoselectCheck.Checked;
+            _client.Settings.StorageAutoPrune = storageAutopruneCheck.Checked;
 
             _client.Settings.AssocTorrentFiles = torrentAssocCheck.Checked;
             _client.Settings.AssocMagnetLinks = magnetAssocCheck.Checked;

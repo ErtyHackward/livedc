@@ -45,14 +45,13 @@
             this.label2 = new System.Windows.Forms.Label();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.torrentAssocCheck = new System.Windows.Forms.CheckBox();
             this.magnetAssocCheck = new System.Windows.Forms.CheckBox();
+            this.autostartCheck = new System.Windows.Forms.CheckBox();
             this.startPageUrlText = new System.Windows.Forms.TextBox();
             this.startPageCheck = new System.Windows.Forms.CheckBox();
             this.autoupdateCheck = new System.Windows.Forms.CheckBox();
-            this.autostartCheck = new System.Windows.Forms.CheckBox();
-            this.idleEconomyCheck = new System.Windows.Forms.CheckBox();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.udpPortNumeric)).BeginInit();
@@ -121,12 +120,11 @@
             // storageAutopruneCheck
             // 
             this.storageAutopruneCheck.AutoSize = true;
-            this.storageAutopruneCheck.Enabled = false;
             this.storageAutopruneCheck.Location = new System.Drawing.Point(6, 75);
             this.storageAutopruneCheck.Name = "storageAutopruneCheck";
-            this.storageAutopruneCheck.Size = new System.Drawing.Size(325, 17);
+            this.storageAutopruneCheck.Size = new System.Drawing.Size(274, 17);
             this.storageAutopruneCheck.TabIndex = 8;
-            this.storageAutopruneCheck.Text = "Автоматически очищать хранилище при недостатке места";
+            this.storageAutopruneCheck.Text = "Удалять старые загрузки при недостатке места";
             this.toolTip1.SetToolTip(this.storageAutopruneCheck, "Система удалит старые файлы для освобождения места для новых. Удаляются только те" +
         " файлы, что были загружены программой.");
             this.storageAutopruneCheck.UseVisualStyleBackColor = true;
@@ -212,7 +210,6 @@
             this.tabPage1.Controls.Add(this.magnetAssocCheck);
             this.tabPage1.Controls.Add(this.autostartCheck);
             this.tabPage1.Controls.Add(this.startPageUrlText);
-            this.tabPage1.Controls.Add(this.idleEconomyCheck);
             this.tabPage1.Controls.Add(this.startPageCheck);
             this.tabPage1.Controls.Add(this.autoupdateCheck);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
@@ -222,6 +219,66 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Главное";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // torrentAssocCheck
+            // 
+            this.torrentAssocCheck.AutoSize = true;
+            this.torrentAssocCheck.Location = new System.Drawing.Point(6, 99);
+            this.torrentAssocCheck.Name = "torrentAssocCheck";
+            this.torrentAssocCheck.Size = new System.Drawing.Size(178, 17);
+            this.torrentAssocCheck.TabIndex = 14;
+            this.torrentAssocCheck.Text = "Ассоциация с torrent файлами";
+            this.torrentAssocCheck.UseVisualStyleBackColor = true;
+            // 
+            // magnetAssocCheck
+            // 
+            this.magnetAssocCheck.AutoSize = true;
+            this.magnetAssocCheck.Location = new System.Drawing.Point(6, 76);
+            this.magnetAssocCheck.Name = "magnetAssocCheck";
+            this.magnetAssocCheck.Size = new System.Drawing.Size(190, 17);
+            this.magnetAssocCheck.TabIndex = 13;
+            this.magnetAssocCheck.Text = "Ассоциация с магнет-ссылками";
+            this.magnetAssocCheck.UseVisualStyleBackColor = true;
+            // 
+            // autostartCheck
+            // 
+            this.autostartCheck.AutoSize = true;
+            this.autostartCheck.Location = new System.Drawing.Point(6, 6);
+            this.autostartCheck.Name = "autostartCheck";
+            this.autostartCheck.Size = new System.Drawing.Size(191, 17);
+            this.autostartCheck.TabIndex = 9;
+            this.autostartCheck.Text = "Автозапуск при старте системы";
+            this.autostartCheck.UseVisualStyleBackColor = true;
+            // 
+            // startPageUrlText
+            // 
+            this.startPageUrlText.Location = new System.Drawing.Point(188, 52);
+            this.startPageUrlText.Name = "startPageUrlText";
+            this.startPageUrlText.Size = new System.Drawing.Size(271, 20);
+            this.startPageUrlText.TabIndex = 12;
+            // 
+            // startPageCheck
+            // 
+            this.startPageCheck.AutoSize = true;
+            this.startPageCheck.Location = new System.Drawing.Point(6, 53);
+            this.startPageCheck.Name = "startPageCheck";
+            this.startPageCheck.Size = new System.Drawing.Size(176, 17);
+            this.startPageCheck.TabIndex = 11;
+            this.startPageCheck.Text = "При запуске открывать сайт:";
+            this.startPageCheck.UseVisualStyleBackColor = true;
+            // 
+            // autoupdateCheck
+            // 
+            this.autoupdateCheck.AutoSize = true;
+            this.autoupdateCheck.Checked = true;
+            this.autoupdateCheck.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.autoupdateCheck.Enabled = false;
+            this.autoupdateCheck.Location = new System.Drawing.Point(6, 29);
+            this.autoupdateCheck.Name = "autoupdateCheck";
+            this.autoupdateCheck.Size = new System.Drawing.Size(219, 17);
+            this.autoupdateCheck.TabIndex = 10;
+            this.autoupdateCheck.Text = "Автоматически обновлять программу";
+            this.autoupdateCheck.UseVisualStyleBackColor = true;
             // 
             // tabPage2
             // 
@@ -237,78 +294,6 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Хранилище";
             this.tabPage2.UseVisualStyleBackColor = true;
-            // 
-            // torrentAssocCheck
-            // 
-            this.torrentAssocCheck.AutoSize = true;
-            this.torrentAssocCheck.Location = new System.Drawing.Point(6, 123);
-            this.torrentAssocCheck.Name = "torrentAssocCheck";
-            this.torrentAssocCheck.Size = new System.Drawing.Size(178, 17);
-            this.torrentAssocCheck.TabIndex = 14;
-            this.torrentAssocCheck.Text = "Ассоциация с torrent файлами";
-            this.torrentAssocCheck.UseVisualStyleBackColor = true;
-            // 
-            // magnetAssocCheck
-            // 
-            this.magnetAssocCheck.AutoSize = true;
-            this.magnetAssocCheck.Location = new System.Drawing.Point(6, 100);
-            this.magnetAssocCheck.Name = "magnetAssocCheck";
-            this.magnetAssocCheck.Size = new System.Drawing.Size(190, 17);
-            this.magnetAssocCheck.TabIndex = 13;
-            this.magnetAssocCheck.Text = "Ассоциация с магнет-ссылками";
-            this.magnetAssocCheck.UseVisualStyleBackColor = true;
-            // 
-            // startPageUrlText
-            // 
-            this.startPageUrlText.Location = new System.Drawing.Point(188, 76);
-            this.startPageUrlText.Name = "startPageUrlText";
-            this.startPageUrlText.Size = new System.Drawing.Size(271, 20);
-            this.startPageUrlText.TabIndex = 12;
-            // 
-            // startPageCheck
-            // 
-            this.startPageCheck.AutoSize = true;
-            this.startPageCheck.Location = new System.Drawing.Point(6, 77);
-            this.startPageCheck.Name = "startPageCheck";
-            this.startPageCheck.Size = new System.Drawing.Size(176, 17);
-            this.startPageCheck.TabIndex = 11;
-            this.startPageCheck.Text = "При запуске открывать сайт:";
-            this.startPageCheck.UseVisualStyleBackColor = true;
-            // 
-            // autoupdateCheck
-            // 
-            this.autoupdateCheck.AutoSize = true;
-            this.autoupdateCheck.Checked = true;
-            this.autoupdateCheck.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.autoupdateCheck.Enabled = false;
-            this.autoupdateCheck.Location = new System.Drawing.Point(6, 53);
-            this.autoupdateCheck.Name = "autoupdateCheck";
-            this.autoupdateCheck.Size = new System.Drawing.Size(219, 17);
-            this.autoupdateCheck.TabIndex = 10;
-            this.autoupdateCheck.Text = "Автоматически обновлять программу";
-            this.autoupdateCheck.UseVisualStyleBackColor = true;
-            // 
-            // autostartCheck
-            // 
-            this.autostartCheck.AutoSize = true;
-            this.autostartCheck.Location = new System.Drawing.Point(6, 6);
-            this.autostartCheck.Name = "autostartCheck";
-            this.autostartCheck.Size = new System.Drawing.Size(191, 17);
-            this.autostartCheck.TabIndex = 9;
-            this.autostartCheck.Text = "Автозапуск при старте системы";
-            this.autostartCheck.UseVisualStyleBackColor = true;
-            // 
-            // idleEconomyCheck
-            // 
-            this.idleEconomyCheck.AutoSize = true;
-            this.idleEconomyCheck.Enabled = false;
-            this.idleEconomyCheck.Location = new System.Drawing.Point(6, 29);
-            this.idleEconomyCheck.Name = "idleEconomyCheck";
-            this.idleEconomyCheck.Size = new System.Drawing.Size(302, 17);
-            this.idleEconomyCheck.TabIndex = 8;
-            this.idleEconomyCheck.Text = "Пониженное потребление ресурсов во время простоя";
-            this.toolTip1.SetToolTip(this.idleEconomyCheck, "Во время простоя программа будет ограничивать скорость отдачи контента");
-            this.idleEconomyCheck.UseVisualStyleBackColor = true;
             // 
             // tabPage3
             // 
@@ -375,7 +360,6 @@
         private System.Windows.Forms.CheckBox magnetAssocCheck;
         private System.Windows.Forms.CheckBox autostartCheck;
         private System.Windows.Forms.TextBox startPageUrlText;
-        private System.Windows.Forms.CheckBox idleEconomyCheck;
         private System.Windows.Forms.CheckBox startPageCheck;
         private System.Windows.Forms.CheckBox autoupdateCheck;
         private System.Windows.Forms.TabPage tabPage2;

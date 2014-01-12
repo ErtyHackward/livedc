@@ -34,7 +34,15 @@ namespace LiveDc.Providers
             {
                 if (torrent != null)
                 {
-                    _manager = new TorrentManager(torrent, StorageHelper.GetBestSaveDirectory(), _torrentProvider.TorrentDefaults);
+                    var cacheFolder = torrentProvider.Client.ReserveCacheSpace(magnet.Size);
+
+                    if (cacheFolder == null)
+                    {
+                        MessageBox.Show("Недостаточно свободного места на диске.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    _manager = new TorrentManager(torrent, cacheFolder, _torrentProvider.TorrentDefaults);
 
                     foreach (var torrentFile in _manager.Torrent.Files)
                     {

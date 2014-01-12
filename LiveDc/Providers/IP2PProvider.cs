@@ -43,5 +43,12 @@ namespace LiveDc.Providers
         /// </summary>
         /// <param name="control"></param>
         void UpdateFileItem(DcFileControl control);
+
+        /// <summary>
+        /// Deletes oldest cached files until no files left or releaseBytes bytes released
+        /// </summary>
+        /// <param name="releaseBytes">requried space</param>
+        /// <returns>Amount of bytes freed</returns>
+        long ReleaseFileCache(long releaseBytes);
     }
 }
