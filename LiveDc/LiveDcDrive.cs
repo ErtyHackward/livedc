@@ -19,6 +19,8 @@ namespace LiveDc
         private readonly IEnumerable<IFsProvider> _providers;
         private readonly Dictionary<string, Stream> _openedFiles = new Dictionary<string, Stream>();
 
+        private readonly List<string> _deleteList = new List<string>();
+
         private int _count = 1;
         private char _driveLetter;
         
@@ -116,7 +118,13 @@ namespace LiveDc
             var pureFileName = filename.Trim('\\');
 
             if (!string.IsNullOrEmpty(pureFileName) && AllMagnets().Any(m => m.FileName == pureFileName))
+            {
+                if (info.DeleteOnClose)
+                {
+                    _deleteList.Add(filename);
+                }
                 return 0;
+            }
             
             if (filename == "\\")
             {
@@ -146,6 +154,12 @@ namespace LiveDc
 
         public int Cleanup(string filename, DokanFileInfo info)
         {
+            if (_deleteList.Count > 0 && _deleteList.Contains(filename))
+            {
+                _deleteList.Remove(filename);
+                DeleteFile(filename, info);
+            }
+
             //Trace.WriteLine("Cleanup " + filename);
             return 0;
         }
@@ -294,6 +308,17 @@ namespace LiveDc
 
         public int DeleteFile(string filename, DokanFileInfo info)
         {
+            var pureFileName = filename.Trim('\\');
+            var item = AllMagnets().FirstOrDefault(m => m.FileName == pureFileName);
+
+            var provider = _providers.FirstOrDefault(p => p.CanHandle(item));
+
+            if (provider != null)
+            {
+                provider.DeleteFile(item);
+                return 0;
+            }
+
             return -1;
         }
 

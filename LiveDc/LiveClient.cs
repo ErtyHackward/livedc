@@ -11,6 +11,7 @@ using LiveDc.Managers;
 using LiveDc.Notify;
 using LiveDc.Properties;
 using LiveDc.Providers;
+using Microsoft.Win32;
 using MonoTorrent.Common;
 using SharpDc;
 using SharpDc.Structs;
@@ -32,33 +33,32 @@ namespace LiveDc
         private NotifyIcon _icon;
         private Timer _timer;
         
-        private AsyncOperation _ao;
+        private readonly AsyncOperation _ao;
         private LiveDcDrive _drive;
-        private CopyData _copyData;
-        private List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
-        private List<IP2PProvider> _providers = new List<IP2PProvider>();
-        private List<IFsProvider> _fsProviders = new List<IFsProvider>();
+        private readonly CopyData _copyData;
+        private readonly List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
+        private readonly List<IP2PProvider> _providers = new List<IP2PProvider>();
+        private readonly List<IFsProvider> _fsProviders = new List<IFsProvider>();
         private IStartItem _startItem;
         private FrmStatus _statusForm;
-        private HttpProvider _httpProvider;
+        private readonly HttpProvider _httpProvider;
+        private readonly DcProvider _dcProvider;
 
         private string DriveLockPath { get { return Path.Combine(Settings.SettingsFolder, "drive.lck"); } }
-
+        
         public Settings Settings { get; private set; }
         public LiveHistoryManager History { get; private set; }
         public AutoUpdateManager AutoUpdate { get; private set; }
         public AsyncOperation AsyncOperation { get { return _ao; } }
         public LiveDcDrive Drive { get { return _drive; } }
         public IEnumerable<IP2PProvider> Providers { get { return _providers; } }
-
         public IEnumerable<IFsProvider> FsProviders { get { return _providers.Concat(_fsProviders); } }
 
         public HttpProvider HttpProvider
         {
             get { return _httpProvider; }
         }
-
-
+        
         public LiveClient()
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
@@ -85,7 +85,9 @@ namespace LiveDc
 
             Utils.FileSizeFormatProvider.BinaryModifiers = new[] { " Б", " КБ", " МБ", " ГБ", " ТБ", " ПБ" };
 
-            _providers.Add(new DcProvider(Settings, this));
+
+
+            _providers.Add(_dcProvider = new DcProvider(Settings, this));
             _providers.Add(new TorrentProvider(this));
 
             _fsProviders.Add(_httpProvider = new HttpProvider(this));
@@ -115,6 +117,16 @@ namespace LiveDc
             if (!string.IsNullOrEmpty(Program.StartMagnet))
             {
                 StartFile(Magnet.Parse(Program.StartMagnet));
+            }
+
+            SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
+        }
+
+        void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Resume)
+            {
+                _dcProvider.Engine.Connect();
             }
         }
         
