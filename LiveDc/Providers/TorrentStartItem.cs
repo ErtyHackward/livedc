@@ -39,6 +39,7 @@ namespace LiveDc.Providers
                     if (cacheFolder == null)
                     {
                         MessageBox.Show("Недостаточно свободного места на диске.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Closed = true;
                         return;
                     }
 

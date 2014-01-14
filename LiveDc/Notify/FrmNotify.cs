@@ -37,6 +37,8 @@ namespace LiveDc.Notify
                 CreateDate = createDate
             };
 
+            _client.UpdateFileItem(dcItem);
+
             dcItem.Icon = NativeImageList.TryGetLargeIcon(Path.GetExtension(dcItem.Magnet.FileName));
             dcItem.ContextMenuStrip = contextMenuStrip1;
             dcItem.DoubleClick += dcItem_DoubleClick;
@@ -103,6 +105,9 @@ namespace LiveDc.Notify
         void Timer1Tick(object sender, EventArgs e)
         {
             UpdateItems();
+
+            totalDownloadLabel.Text = ((double)_client.Providers.Sum(p => p.GetTotalDownloadSpeed()) / (1024 * 1024)).ToString("0.00") + " МБ/с";
+            totalUploadLabel.Text = ((double)_client.Providers.Sum(p => p.GetTotalUploadSpeed()) / (1024 * 1024)).ToString("0.00") + " МБ/с";
         }
 
         void NativeImageListLargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)

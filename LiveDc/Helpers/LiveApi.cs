@@ -62,7 +62,7 @@ namespace LiveDc.Helpers
                 try
                 {
                     var postBytes =
-                        Encoding.UTF8.GetBytes(string.Format("city={0}&hubs={1}",
+                        Encoding.UTF8.GetBytes(string.Format("v=2&city={0}&hubs={1}",
                                                              Uri.EscapeDataString(city),
                                                              Uri.EscapeDataString(hubs)));
 

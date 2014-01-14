@@ -291,6 +291,8 @@
     <None Include="Resources\livedc_action.ico" />
     <None Include="Resources\ajax-loader.gif" />
     <None Include="Resources\1389054985_80_Globe.png" />
+    <None Include="Resources\download.png" />
+    <None Include="Resources\upload.png" />
     <Content Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

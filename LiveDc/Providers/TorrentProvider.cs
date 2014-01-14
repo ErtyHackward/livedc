@@ -305,6 +305,8 @@ namespace LiveDc.Providers
 
         public void UpdateFileItem(DcFileControl control)
         {
+            control.Progress = GetMagnetCacheProgress(control.Magnet);
+
             var manager = FindByMagnet(control.Magnet);
             if (manager != null && manager.HasMetadata)
             {
@@ -372,8 +374,34 @@ namespace LiveDc.Providers
             return released;
         }
 
+        public float GetMagnetCacheProgress(Magnet magnet)
+        {
+            var manager = FindByMagnet(magnet);
+
+            if (manager == null)
+                return 0f;
+
+            var torrentFile = manager.Torrent.Files.FirstOrDefault(f => Path.GetFileName(f.FullPath) == magnet.FileName);
+            if (torrentFile == null)
+                return 0f;
+
+            return (float)torrentFile.BytesDownloaded / torrentFile.Length;
+        }
+
+        public long GetTotalUploadSpeed()
+        {
+            return _engine.TotalUploadSpeed;
+        }
+
+        public long GetTotalDownloadSpeed()
+        {
+            return _engine.TotalDownloadSpeed;
+        }
+
         /// <summary>
-        /// Marks 
+        /// Completely removes file from the app
+        /// Stops seeding
+        /// Deletes data from the hard drive
         /// </summary>
         /// <param name="magnet"></param>
         public void DeleteFile(Magnet magnet)

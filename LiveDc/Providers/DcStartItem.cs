@@ -35,6 +35,7 @@ namespace LiveDc
             if (_provider.HubManager.InitializationCompleted && !_provider.Engine.Active)
             {
                 MessageBox.Show("Не удалось установить соединение ни с одним из хабов. Проверьте сетевое подключение.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Closed = true;
                 return;
             }
             
@@ -59,6 +60,7 @@ namespace LiveDc
             if (cacheRoot == null)
             {
                 MessageBox.Show("Недостаточно свободного места на диске.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Closed = true;
                 return;
             }
 
