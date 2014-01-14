@@ -50,5 +50,16 @@ namespace LiveDc.Providers
         /// <param name="releaseBytes">requried space</param>
         /// <returns>Amount of bytes freed</returns>
         long ReleaseFileCache(long releaseBytes);
+
+        /// <summary>
+        /// Returns percent of the magnet is cached [0;1] 
+        /// </summary>
+        /// <param name="magnet"></param>
+        /// <returns></returns>
+        float GetMagnetCacheProgress(Magnet magnet);
+        
+        long GetTotalUploadSpeed();
+
+        long GetTotalDownloadSpeed();
     }
 }

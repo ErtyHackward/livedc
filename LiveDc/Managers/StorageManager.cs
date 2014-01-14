@@ -16,6 +16,7 @@ namespace LiveDc.Managers
         public StorageManager(string ownDrive)
         {
             _ownDrive = ownDrive;
+            Initialize();
         }
 
         private bool HasWriteAccessToFolder(string folderPath)
@@ -33,7 +34,7 @@ namespace LiveDc.Managers
             }
         }
 
-        public void Initialize()
+        private void Initialize()
         {
             var drives = DriveInfo.GetDrives().Where(d => d.RootDirectory.Name != _ownDrive && d.IsReady && d.DriveType == DriveType.Fixed).ToList();
 

@@ -46,6 +46,10 @@
             this.historyLabel = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.totalUploadLabel = new System.Windows.Forms.Label();
+            this.totalDownloadLabel = new System.Windows.Forms.Label();
+            this.pictureBox6 = new System.Windows.Forms.PictureBox();
+            this.pictureBox5 = new System.Windows.Forms.PictureBox();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox4)).BeginInit();
@@ -53,10 +57,16 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox6)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox5)).BeginInit();
             this.SuspendLayout();
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.totalUploadLabel);
+            this.panel1.Controls.Add(this.totalDownloadLabel);
+            this.panel1.Controls.Add(this.pictureBox6);
+            this.panel1.Controls.Add(this.pictureBox5);
             this.panel1.Controls.Add(this.linkLabel1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.panel1.Location = new System.Drawing.Point(0, 145);
@@ -69,13 +79,13 @@
             // 
             this.linkLabel1.ActiveLinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(218)))));
             this.linkLabel1.BackColor = System.Drawing.Color.Transparent;
-            this.linkLabel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.linkLabel1.Dock = System.Windows.Forms.DockStyle.Left;
             this.linkLabel1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.linkLabel1.LinkBehavior = System.Windows.Forms.LinkBehavior.HoverUnderline;
             this.linkLabel1.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(218)))));
             this.linkLabel1.Location = new System.Drawing.Point(0, 0);
             this.linkLabel1.Name = "linkLabel1";
-            this.linkLabel1.Size = new System.Drawing.Size(247, 43);
+            this.linkLabel1.Size = new System.Drawing.Size(164, 43);
             this.linkLabel1.TabIndex = 0;
             this.linkLabel1.TabStop = true;
             this.linkLabel1.Text = "Открыть папку LiveDC";
@@ -201,13 +211,57 @@
             this.historyLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.historyLabel.ForeColor = System.Drawing.Color.DimGray;
+            this.historyLabel.ForeColor = System.Drawing.Color.Gray;
             this.historyLabel.Location = new System.Drawing.Point(15, 33);
             this.historyLabel.Name = "historyLabel";
             this.historyLabel.Size = new System.Drawing.Size(220, 109);
             this.historyLabel.TabIndex = 4;
             this.historyLabel.Text = "Здесь будут 3 последних файла, что вы открывали.";
             this.historyLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // totalUploadLabel
+            // 
+            this.totalUploadLabel.AutoSize = true;
+            this.totalUploadLabel.BackColor = System.Drawing.Color.Transparent;
+            this.totalUploadLabel.ForeColor = System.Drawing.Color.Gray;
+            this.totalUploadLabel.Location = new System.Drawing.Point(182, 24);
+            this.totalUploadLabel.Name = "totalUploadLabel";
+            this.totalUploadLabel.Size = new System.Drawing.Size(58, 13);
+            this.totalUploadLabel.TabIndex = 7;
+            this.totalUploadLabel.Text = "0,00 МБ/с";
+            // 
+            // totalDownloadLabel
+            // 
+            this.totalDownloadLabel.AutoSize = true;
+            this.totalDownloadLabel.BackColor = System.Drawing.Color.Transparent;
+            this.totalDownloadLabel.ForeColor = System.Drawing.Color.Gray;
+            this.totalDownloadLabel.Location = new System.Drawing.Point(182, 7);
+            this.totalDownloadLabel.Name = "totalDownloadLabel";
+            this.totalDownloadLabel.Size = new System.Drawing.Size(58, 13);
+            this.totalDownloadLabel.TabIndex = 6;
+            this.totalDownloadLabel.Text = "0,00 МБ/с";
+            // 
+            // pictureBox6
+            // 
+            this.pictureBox6.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox6.Image = global::LiveDc.Properties.Resources.upload;
+            this.pictureBox6.Location = new System.Drawing.Point(165, 22);
+            this.pictureBox6.Name = "pictureBox6";
+            this.pictureBox6.Size = new System.Drawing.Size(16, 16);
+            this.pictureBox6.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.pictureBox6.TabIndex = 5;
+            this.pictureBox6.TabStop = false;
+            // 
+            // pictureBox5
+            // 
+            this.pictureBox5.BackColor = System.Drawing.Color.Transparent;
+            this.pictureBox5.Image = global::LiveDc.Properties.Resources.download;
+            this.pictureBox5.Location = new System.Drawing.Point(165, 4);
+            this.pictureBox5.Name = "pictureBox5";
+            this.pictureBox5.Size = new System.Drawing.Size(16, 16);
+            this.pictureBox5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.pictureBox5.TabIndex = 4;
+            this.pictureBox5.TabStop = false;
             // 
             // FrmNotify
             // 
@@ -230,6 +284,7 @@
             this.Shown += new System.EventHandler(this.Form1_Shown);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form1_Paint);
             this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox4)).EndInit();
@@ -237,6 +292,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.contextMenuStrip1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox6)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox5)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -259,6 +316,10 @@
         private System.Windows.Forms.PictureBox pictureBox3;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.PictureBox pictureBox4;
+        private System.Windows.Forms.Label totalUploadLabel;
+        private System.Windows.Forms.Label totalDownloadLabel;
+        private System.Windows.Forms.PictureBox pictureBox6;
+        private System.Windows.Forms.PictureBox pictureBox5;
 
     }
 }

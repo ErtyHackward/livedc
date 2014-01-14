@@ -101,8 +101,10 @@ namespace LiveDc.Providers
 
         public void UpdateFileItem(DcFileControl control)
         {
-            var di = Engine.DownloadManager.GetDownloadItem(control.Magnet.TTH);
+            control.Progress = GetMagnetCacheProgress(control.Magnet);
 
+            var di = Engine.DownloadManager.GetDownloadItem(control.Magnet.TTH);
+            
             if (di != null)
             {
                 control.DownloadedBytes = Engine.DownloadManager.GetTotalDownloadBytes(di);
@@ -128,6 +130,31 @@ namespace LiveDc.Providers
             }
 
             return released;
+        }
+
+        public float GetMagnetCacheProgress(Magnet magnet)
+        {
+            var di = Engine.DownloadManager.GetDownloadItem(magnet.TTH);
+
+            if (di != null)
+            {
+                return (float)Engine.DownloadManager.GetTotalDownloadBytes(di) / magnet.Size;
+            }
+            else
+            {
+                var result = Engine.Share.SearchByTth(magnet.TTH);
+                return result == null ? 0f : 1f;
+            }
+        }
+
+        public long GetTotalUploadSpeed()
+        {
+            return Engine.TransferManager.Transfers().Uploads().UploadSpeed();
+        }
+
+        public long GetTotalDownloadSpeed()
+        {
+            return Engine.TransferManager.Transfers().Downloads().DownloadSpeed();
         }
 
         public void DeleteFile(Magnet magnet)

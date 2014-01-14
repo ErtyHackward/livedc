@@ -20,7 +20,7 @@ namespace LiveDc.Notify
 
         public long DownloadedBytes { get; set; }
 
-        public float Progress { get { return (float)DownloadedBytes / Magnet.Size; } }
+        public float Progress { get; set; }
 
         public DateTime CreateDate { get; set; }
 
@@ -39,7 +39,7 @@ namespace LiveDc.Notify
                 }
             }
         }
-
+        
         public DcFileControl()
         {
             this.Height = 40;
@@ -116,7 +116,7 @@ namespace LiveDc.Notify
             string infoText;
 
             if (DownloadSpeed == 0)
-                infoText = "добавлен " + TimeFormatHelper.Format(CreateDate);
+                infoText = string.Format("добавлен {0}{1}", TimeFormatHelper.Format(CreateDate), Progress == 1f ? "" : ", не загружен");
             else
             {
                 infoText = string.Format("{0}% {1} {2}/c", (int)(Progress * 100), Utils.FormatBytes(Magnet.Size), Utils.FormatBytes(DownloadSpeed));
