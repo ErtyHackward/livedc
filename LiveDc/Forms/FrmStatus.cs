@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Text;
+using System.ComponentModel;
 using System.IO;
 using System.Windows.Forms;
-using LiveDc.Managers;
+using LiveDc.Providers;
 using LiveDc.Windows;
 using SharpDc;
 
@@ -11,14 +10,13 @@ namespace LiveDc.Forms
 {
     public partial class FrmStatus : Form
     {
-        private readonly LaunchManager _launchManager;
-
-        public FrmStatus(LaunchManager launchManager)
+        private readonly AsyncOperation _ao;
+        private IStartItem _startItem;
+        
+        public FrmStatus(AsyncOperation ao)
         {
-            if (launchManager == null) 
-                throw new ArgumentNullException("launchManager");
+            _ao = ao;
 
-            _launchManager = launchManager;
             InitializeComponent();
             Closing += FrmStatus_Closing;
             NativeImageList.LargeExtensionImageLoaded += NativeImageList_LargeExtensionImageLoaded;
@@ -26,42 +24,61 @@ namespace LiveDc.Forms
 
         void NativeImageList_LargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
         {
-            if (_launchManager.Magnet.FileName != null && e.Extension.ToLower() == Path.GetExtension(_launchManager.Magnet.FileName).ToLower())
+            if (_startItem != null && _startItem.Magnet.FileName != null && e.Extension.ToLower() == Path.GetExtension(_startItem.Magnet.FileName).ToLower())
             {
-                _launchManager.Client.AsyncOperation.Post(o => iconPicture.Image = e.Icon, null);
+                _ao.Post(o => iconPicture.Image = e.Icon, null);
             }
         }
 
         void FrmStatus_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            _launchManager.Cancel();
+            _startItem.Dispose();
             Hide();
         }
 
         private void cancelButton_Click(object sender, EventArgs e)
         {
-            _launchManager.Cancel();
+            _startItem.Dispose();
             Hide();
         }
 
         private void startButton_Click(object sender, EventArgs e)
         {
-            _launchManager.OpenFile();
+            _startItem.OpenFile();
+            Hide();
         }
 
         private void queueButton_Click(object sender, EventArgs e)
         {
-            _launchManager.AddToQueue();
+            _startItem.AddToQueue();
             Hide();
         }
 
-        public void UpdateAndShow()
+        public void UpdateAndShow(IStartItem startItem)
         {
-            iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(_launchManager.Magnet.FileName));
+            _startItem = startItem;
 
-            nameLabel.Text = _launchManager.Magnet.FileName;
-            sizeLabel.Text = Utils.FormatBytes(_launchManager.Magnet.Size);
+            if (!string.IsNullOrEmpty(startItem.Magnet.FileName))
+            {
+                iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(startItem.Magnet.FileName));
+                nameLabel.Text = startItem.Magnet.FileName;
+
+                if (startItem.Magnet.Size != 0)
+                {
+                    sizeLabel.Text = Utils.FormatBytes(startItem.Magnet.Size);
+                }
+                else
+                {
+                    sizeLabel.Text = null;
+                }
+            }
+            else
+            {
+                iconPicture.Image = null;
+                nameLabel.Text = null;
+                sizeLabel.Text = null;
+            }
 
             progressBar.Enabled = true;
             progressBar.Style = ProgressBarStyle.Marquee;
@@ -70,26 +87,34 @@ namespace LiveDc.Forms
             UpdateStartButton();
             startButton.Enabled = false;
             Show();
+            Activate();
         }
 
         public void UpdateStartButton(int timeout = -1)
         {
-            string label = "";
+            string label;
 
-            switch (Path.GetExtension(_launchManager.Magnet.FileName).ToLower())
+            if (!string.IsNullOrEmpty(_startItem.Magnet.FileName))
             {
-                case ".avi":
-                case ".mov":
-                case ".mkv":
-                case ".3gp":
-                case ".wmv":
-                case ".mpg":
-                case ".ts":
-                    label = "Начать просмотр";
-                    break;
-                default:
-                    label = "Открыть";
-                    break;
+                switch (Path.GetExtension(_startItem.Magnet.FileName).ToLower())
+                {
+                    case ".avi":
+                    case ".mov":
+                    case ".mkv":
+                    case ".3gp":
+                    case ".wmv":
+                    case ".mpg":
+                    case ".ts":
+                        label = "Начать просмотр";
+                        break;
+                    default:
+                        label = "Открыть";
+                        break;
+                }
+            }
+            else
+            {
+                label = "Открыть";
             }
 
             startButton.Enabled = true;
@@ -97,6 +122,51 @@ namespace LiveDc.Forms
                 startButton.Text = string.Format("{0} ({1})", label, timeout);
             else
                 startButton.Text = label;
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (_startItem == null)
+                return;
+            
+            startButton.Enabled = _startItem.ReadyToStart;
+            statusLabel.Text = _startItem.StatusMessage;
+
+            if (float.IsNaN(_startItem.Progress))
+            {
+                progressBar.Enabled = false;
+            }
+            else if (float.IsPositiveInfinity(_startItem.Progress))
+            {
+                progressBar.Enabled = true;
+                progressBar.Style = ProgressBarStyle.Marquee;
+            }
+            else
+            {
+                progressBar.Enabled = true;
+                progressBar.Style = ProgressBarStyle.Continuous;
+                progressBar.Value = (int)(100 * _startItem.Progress);
+            }
+
+            if (nameLabel.Text != _startItem.Magnet.FileName && !string.IsNullOrEmpty(_startItem.Magnet.FileName))
+            {
+                iconPicture.Image = NativeImageList.TryGetLargeIcon(Path.GetExtension(_startItem.Magnet.FileName));
+                nameLabel.Text = _startItem.Magnet.FileName;
+            }
+
+            if (string.IsNullOrEmpty(sizeLabel.Text) && _startItem.Magnet.Size != 0)
+            {
+                sizeLabel.Text = Utils.FormatBytes(_startItem.Magnet.Size);
+            }
+
+            if (!_startItem.Closed)
+                _startItem.MainThreadAction(this);
+
+            if (_startItem.Closed)
+            {
+                Close();
+                _startItem = null;
+            }
         }
     }
 }

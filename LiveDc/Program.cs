@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
-using LiveDc.Forms;
 using LiveDc.Helpers;
 using LiveDc.Notify;
 using LiveDc.Utilites;
@@ -15,12 +13,10 @@ namespace LiveDc
     static class Program
     {
         private static LiveClient _client;
-
-        public static DateTime BestBefore = DateTime.Parse("2014-01-01");
-
         public static bool SilentMode = false;
 
         public static string StartMagnet;
+        public static string StartTorrent;
         private static HookWindow _hook;
 
         /// <summary>
@@ -42,7 +38,6 @@ namespace LiveDc
                         if (!result)
                             MessageBox.Show("Не удается установить обработчик магнет-ссылок", "Ошибка",
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
-
                     }
                     else
                     {
@@ -111,6 +106,21 @@ namespace LiveDc
                     }
                     StartMagnet = arg;
                 }
+
+                if (arg.EndsWith(".torrent"))
+                {
+                    Process proc = RunningInstance();
+                    if (proc != null)
+                    {
+                        using (var copyData = new CopyData())
+                        {
+                            copyData.Channels.Add("LIVEDC");
+                            copyData.Channels["LIVEDC"].Send(arg);
+                        }
+                        return;
+                    }
+                    StartTorrent = arg;
+                }
             }
             #endregion
 
@@ -122,18 +132,6 @@ namespace LiveDc
                 {
                     copyData.Channels.Add("LIVEDC");
                     copyData.Channels["LIVEDC"].Send("SHOW");
-                }
-                return;
-            }
-
-            if (DateTime.Now > BestBefore)
-            {
-                if (!SilentMode)
-                {
-                    if (MessageBox.Show(string.Format("Текущая версия клиента {0} устарела. Необходимо обновление. Перейти на сайт для загрузки?", Assembly.GetExecutingAssembly().GetName().Version.ToString(3)), "LiveDC", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                    {
-                        Process.Start("http://livedc.april32.com");
-                    }
                 }
                 return;
             }
@@ -158,23 +156,17 @@ namespace LiveDc
             Process current = Process.GetCurrentProcess();
             Process[] processes = Process.GetProcessesByName(current.ProcessName);
 
-            //Loop through the running processes in with the same name 
             foreach (Process process in processes)
             {
-                //Ignore the current process 
                 if (process.Id != current.Id)
                 {
-                    //Make sure that the process is running from the exe file. 
                     if (Assembly.GetExecutingAssembly().Location.
                          Replace("/", "\\") == current.MainModule.FileName)
                     {
-                        //Return the other process instance.  
                         return process;
-
                     }
                 }
             }
-            //No other instance was found, return null.  
             return null;
         }
 

@@ -6,9 +6,11 @@ namespace LiveDc.Helpers
 {
     public static class StorageHelper
     {
+        public static string OwnDrive;
+
         public static DriveInfo FindBestDrive()
         {
-            var drives = DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed).ToList();
+            var drives = DriveInfo.GetDrives().Where(d => d.RootDirectory.Name != OwnDrive &&  d.IsReady && d.DriveType == DriveType.Fixed).ToList();
 
             drives.Sort((d1, d2) => ( d2.AvailableFreeSpace.CompareTo(d1.AvailableFreeSpace) ));
 
@@ -21,8 +23,7 @@ namespace LiveDc.Helpers
 
             if (drive.RootDirectory.Name == "C:\\")
             {
-                var userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                                                 "Downloads");
+                var userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
                 if (userDownloads.StartsWith("C:\\"))
                     return userDownloads;
