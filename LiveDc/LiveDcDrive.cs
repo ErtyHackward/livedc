@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Dokan;
+using LiveDc.Providers;
 using SharpDc.Structs;
 
 namespace LiveDc
@@ -15,12 +16,14 @@ namespace LiveDc
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
+        private readonly IEnumerable<IFsProvider> _providers;
+        private readonly Dictionary<string, Stream> _openedFiles = new Dictionary<string, Stream>();
+
+        private readonly List<string> _deleteList = new List<string>();
+
         private int _count = 1;
         private char _driveLetter;
-        private readonly SharpDc.DcEngine _engine;
-
-        private Dictionary<string, DcStream> _openedFiles = new Dictionary<string, DcStream>();
-
+        
         public string DriveRoot
         {
             get { return _driveLetter.ToString() + ":\\"; }
@@ -32,23 +35,12 @@ namespace LiveDc
         public bool IsReady { get; private set; }
 
         /// <summary>
-        /// Groups shared files and currently donwloading files
+        /// Groups shared files and currently downloading ones
         /// </summary>
         /// <returns></returns>
         public IEnumerable<Magnet> AllMagnets()
         {
-            if (_engine.Share != null)
-            {
-                foreach (var item in _engine.Share.Items())
-                {
-                    yield return item.Magnet;
-                }
-            }
-
-            foreach (var downloadItem in _engine.DownloadManager.Items())
-            {
-                yield return downloadItem.Magnet;
-            }
+            return _providers.SelectMany(p2PProvider => p2PProvider.AllMagnets());
         }
 
         public bool HaveFile(string fileName)
@@ -56,11 +48,11 @@ namespace LiveDc
             return false;
         }
 
-        public LiveDcDrive(SharpDc.DcEngine engine)
+        public LiveDcDrive(IEnumerable<IFsProvider> providers)
         {
-            if (engine == null)
-                throw new ArgumentNullException("engine");
-            _engine = engine;
+            if (providers == null)
+                throw new ArgumentNullException("providers");
+            _providers = providers;
         }
         
         public void Unmount()
@@ -126,7 +118,13 @@ namespace LiveDc
             var pureFileName = filename.Trim('\\');
 
             if (!string.IsNullOrEmpty(pureFileName) && AllMagnets().Any(m => m.FileName == pureFileName))
+            {
+                if (info.DeleteOnClose)
+                {
+                    _deleteList.Add(filename);
+                }
                 return 0;
+            }
             
             if (filename == "\\")
             {
@@ -156,6 +154,12 @@ namespace LiveDc
 
         public int Cleanup(string filename, DokanFileInfo info)
         {
+            if (_deleteList.Count > 0 && _deleteList.Contains(filename))
+            {
+                _deleteList.Remove(filename);
+                DeleteFile(filename, info);
+            }
+
             //Trace.WriteLine("Cleanup " + filename);
             return 0;
         }
@@ -164,7 +168,7 @@ namespace LiveDc
         {
             lock (_openedFiles)
             {
-                DcStream stream;
+                Stream stream;
 
                 if (_openedFiles.TryGetValue(filename, out stream))
                 {
@@ -177,9 +181,22 @@ namespace LiveDc
             return 0;
         }
 
+        public void CloseFileStream(string fullPath)
+        {
+            lock (_openedFiles)
+            {
+                Stream stream;
+                if (_openedFiles.TryGetValue(fullPath, out stream))
+                {
+                    stream.Dispose();
+                    _openedFiles.Remove(fullPath);
+                }
+            }
+        }
+
         public int ReadFile(string filename, byte[] buffer, ref uint readBytes, long offset, DokanFileInfo info)
         {
-            DcStream stream;
+            Stream stream;
             lock (_openedFiles)
             {  
                 if (!_openedFiles.TryGetValue(filename, out stream))
@@ -188,24 +205,25 @@ namespace LiveDc
 
                     var magnet = AllMagnets().FirstOrDefault(m => m.FileName == pureFileName);
 
-                    if (!string.IsNullOrEmpty(magnet.TTH))
-                    {
-                        stream = _engine.GetStream(magnet);
+                    stream = _providers.Select(p => p.GetStream(magnet)).First(s => s != null);
+
+                    if (stream != null)
                         _openedFiles.Add(filename, stream);
+                    else
+                    {
+                        logger.Error("Unable to create stream from {0}", magnet.ToString());
                     }
                 }
             }
 
             if (stream == null)
             {
-                //Trace.WriteLine("Stream does not found " + filename);
                 return -1;
             }
-
-            //Trace.WriteLine(string.Format("Reading {0} {1}", filename, offset));
             
             try
             {
+                //logger.Info("Reading {0} {1} {2}", filename, offset, buffer.Length);
                 stream.Seek(offset, SeekOrigin.Begin);
                 readBytes = (uint)stream.Read(buffer, 0, buffer.Length);
             }
@@ -290,6 +308,17 @@ namespace LiveDc
 
         public int DeleteFile(string filename, DokanFileInfo info)
         {
+            var pureFileName = filename.Trim('\\');
+            var item = AllMagnets().FirstOrDefault(m => m.FileName == pureFileName);
+
+            var provider = _providers.FirstOrDefault(p => p.CanHandle(item));
+
+            if (provider != null)
+            {
+                provider.DeleteFile(item);
+                return 0;
+            }
+
             return -1;
         }
 

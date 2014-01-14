@@ -70,6 +70,10 @@
     <RunPostBuildEvent>Always</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DokanNet, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\dokan-net-0.6.0\DokanNet\bin\x86\Release\DokanNet.dll</HintPath>
+    </Reference>
     <Reference Include="NLog">
       <HintPath>..\packages\NLog.2.0.0.2000\lib\net40\NLog.dll</HintPath>
     </Reference>
@@ -91,6 +95,47 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\FrmAttachUrl.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmAttachUrl.Designer.cs">
+      <DependentUpon>FrmAttachUrl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FrmDownloadDebug.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmDownloadDebug.Designer.cs">
+      <DependentUpon>FrmDownloadDebug.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\FrmTorrentFiles.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\FrmTorrentFiles.Designer.cs">
+      <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\PosterControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\PosterControl.Designer.cs">
+      <DependentUpon>PosterControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SegementsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\SegementsControl.Designer.cs">
+      <DependentUpon>SegementsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\CollapsibleSplitter.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Helpers\DcSharaApi.cs" />
+    <Compile Include="Managers\StorageManager.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Providers\DcStartItem.cs" />
     <Compile Include="Forms\FrmHubList.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -129,9 +174,11 @@
     <Compile Include="Helpers\StrongDcHelper.cs" />
     <Compile Include="Helpers\TimeFormatHelper.cs" />
     <Compile Include="Helpers\WindowsHelper.cs" />
-    <Compile Include="Managers\LaunchManager.cs" />
+    <Compile Include="Providers\HttpProvider.cs" />
+    <Compile Include="Providers\IFsProvider.cs" />
+    <Compile Include="Providers\IStartItem.cs" />
     <Compile Include="Managers\AutoUpdateManager.cs" />
-    <Compile Include="Managers\HubManager.cs" />
+    <Compile Include="Managers\DcHubManager.cs" />
     <Compile Include="LiveClient.cs" />
     <Compile Include="LiveClient.Designer.cs">
       <DependentUpon>LiveClient.cs</DependentUpon>
@@ -155,13 +202,28 @@
     <Compile Include="Notify\WindowPositioning.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Providers\DcProvider.cs" />
+    <Compile Include="Providers\IP2PProvider.cs" />
+    <Compile Include="Providers\IWebSearchProvider.cs" />
+    <Compile Include="Providers\MirrorProvider.cs" />
+    <Compile Include="Providers\SimpleStartItem.cs" />
+    <Compile Include="Providers\TorrentProvider.cs" />
+    <Compile Include="Providers\TorrentStream.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
+    <Compile Include="Providers\StartItem.cs" />
+    <Compile Include="Providers\TorrentStartItem.cs" />
     <Compile Include="Utilites\VistaSecurity.cs" />
     <Compile Include="Windows\CopyData.cs" />
     <Compile Include="Windows\EnumWindows.cs" />
     <Compile Include="Windows\NativeImageList.cs" />
     <Compile Include="Windows\NativeMethods.cs" />
+    <EmbeddedResource Include="Forms\FrmAttachUrl.resx">
+      <DependentUpon>FrmAttachUrl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FrmDownloadDebug.resx">
+      <DependentUpon>FrmDownloadDebug.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\FrmHubList.resx">
       <DependentUpon>FrmHubList.cs</DependentUpon>
     </EmbeddedResource>
@@ -174,19 +236,23 @@
     <EmbeddedResource Include="Forms\FrmStatus.resx">
       <DependentUpon>FrmStatus.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\FrmTorrentFiles.resx">
+      <DependentUpon>FrmTorrentFiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\PosterControl.resx">
+      <DependentUpon>PosterControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\SegementsControl.resx">
+      <DependentUpon>SegementsControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Notify\FrmNotify.resx">
       <DependentUpon>FrmNotify.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Content Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -202,9 +268,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\dokan-net-0.6.0\DokanNet\DokanNet.csproj">
-      <Project>{A09B408A-26A0-4FF8-83D5-6E1B1DA5F63C}</Project>
-      <Name>DokanNet</Name>
+    <ProjectReference Include="..\..\monotorrent\src\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
+      <Project>{7a2a7e73-fd43-4171-aa34-da413d35459e}</Project>
+      <Name>MonoTorrent.Dht</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\monotorrent\src\MonoTorrent\MonoTorrent.csproj">
+      <Project>{411a9e0e-fdc6-4e25-828a-0c2cd1cd96f8}</Project>
+      <Name>MonoTorrent</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\sharpdc\SharpDc\SharpDc.csproj">
       <Project>{660e074c-9bac-4681-856e-1668862252ca}</Project>
@@ -219,6 +289,8 @@
     <None Include="Resources\exit1.png" />
     <None Include="Resources\search.png" />
     <None Include="Resources\livedc_action.ico" />
+    <None Include="Resources\ajax-loader.gif" />
+    <None Include="Resources\1389054985_80_Globe.png" />
     <Content Include="x64\SQLite.Interop.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -250,9 +322,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Setup $(ProjectDir)bin\InnoSetupVersionUpdate.exe $(SolutionDir)Setup\livedc.iss $(TargetPath)
-
-if $(ConfigurationName) == Setup "C:\Program Files (x86)\Inno Setup 5\compil32.exe" /cc $(SolutionDir)Setup\livedc.iss
+    <PostBuildEvent>if $(ConfigurationName) == Setup $(ProjectDir)bin\InnoSetupManager.exe $(SolutionDir)Setup $(TargetPath)
 
 if $(ConfigurationName) == Setup start C:\Windows\explorer.exe /select, $(SolutionDir)Setup\Output</PostBuildEvent>
   </PropertyGroup>

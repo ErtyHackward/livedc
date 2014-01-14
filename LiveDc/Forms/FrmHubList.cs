@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Windows.Forms;
 using LiveDc.Helpers;
+using LiveDc.Managers;
 using LiveDc.Properties;
+using LiveDc.Providers;
 using SharpDc.Connections;
 
 namespace LiveDc.Forms
@@ -9,13 +11,15 @@ namespace LiveDc.Forms
     public partial class FrmHubList : Form
     {
         private readonly LiveClient _client;
+        private readonly DcProvider _dcProvider;
 
         private HubConnection _hub;
 
-        public FrmHubList(LiveClient client)
+        public FrmHubList(LiveClient client, DcProvider dcProvider)
         {
             Icon = Resources.livedc;
             _client = client;
+            _dcProvider = dcProvider;
             InitializeComponent();
         }
 
@@ -31,7 +35,7 @@ namespace LiveDc.Forms
 
             try
             {
-                _hub = _client.Engine.Hubs.Add(hubText.Text, _client.Settings.Nickname);
+                _hub = _dcProvider.Engine.Hubs.Add(hubText.Text, _client.Settings.Nickname);
             }
             catch (Exception)
             {
@@ -65,7 +69,7 @@ namespace LiveDc.Forms
                 if (!string.IsNullOrEmpty(_client.Settings.City))
                     LiveApi.PostHubsAsync(_client.Settings.City, hubText.Text);
 
-                _client.AsyncOperation.Post((o) =>
+                _client.AsyncOperation.Post(o =>
                                                 {
                                                     statusLabel.Text = "Успешное подключение. Клиент готов к работе. Если желаете, можно добавить еще.";
                                                     hubText.Text = "";
@@ -90,7 +94,7 @@ namespace LiveDc.Forms
                     hubText.Enabled = true;
                 }, null);
 
-                _client.Engine.Hubs.Remove(_hub);
+                _dcProvider.Engine.Hubs.Remove(_hub);
                 CleanUpHub();
             }
 

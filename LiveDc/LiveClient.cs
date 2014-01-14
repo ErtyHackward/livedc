@@ -1,28 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
-using System.Net;
+using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Windows.Forms;
 using LiveDc.Forms;
 using LiveDc.Helpers;
 using LiveDc.Managers;
 using LiveDc.Notify;
 using LiveDc.Properties;
+using LiveDc.Providers;
+using Microsoft.Win32;
+using MonoTorrent.Common;
 using SharpDc;
-using SharpDc.Interfaces;
-using SharpDc.Logging;
-using SharpDc.Managers;
 using SharpDc.Structs;
 using Win32;
 using DataReceivedEventArgs = Win32.DataReceivedEventArgs;
+using LogManager = SharpDc.Logging.LogManager;
 using Timer = System.Windows.Forms.Timer;
 
 namespace LiveDc
 {
+    /// <summary>
+    /// General entity that incorporates different p2p protocols and provides common stuff like settings, history, etc
+    /// </summary>
     public partial class LiveClient
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
@@ -30,59 +32,39 @@ namespace LiveDc
         private DateTime _hideTime;
         private NotifyIcon _icon;
         private Timer _timer;
-
-        private DcEngine _engine;
-        private AsyncOperation _ao;
+        
+        private readonly AsyncOperation _ao;
         private LiveDcDrive _drive;
-        private CopyData _copyData;
-        
-        private List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
-
-        private HubManager _hubManager;
-
-        public HubManager HubManager { get { return _hubManager; } }
-
-        public Settings Settings { get; private set; }
-
-        public DcEngine Engine
-        {
-            get { return _engine; }
-        }
-
-        public LiveHistoryManager History { get; private set; }
-
-        public AutoUpdateManager AutoUpdate { get; private set; }
-        
-        public AsyncOperation AsyncOperation
-        {
-            get { return _ao; }
-        }
-
-        public LiveDcDrive Drive { get { return _drive; } }
-
-        public LaunchManager LaunchManager { get; set; }
-
-        private string IncompletePath { get { return Path.Combine(Settings.SettingsFolder, "downloads.xml"); } }
-
-        private string SharePath { get { return Path.Combine(Settings.SettingsFolder, "share.xml"); } }
+        private readonly CopyData _copyData;
+        private readonly List<Tuple<Action, string>> _importantActions = new List<Tuple<Action, string>>();
+        private readonly List<IP2PProvider> _providers = new List<IP2PProvider>();
+        private readonly List<IFsProvider> _fsProviders = new List<IFsProvider>();
+        private IStartItem _startItem;
+        private FrmStatus _statusForm;
+        private readonly HttpProvider _httpProvider;
+        private readonly DcProvider _dcProvider;
+        private StorageManager _storageManager;
 
         private string DriveLockPath { get { return Path.Combine(Settings.SettingsFolder, "drive.lck"); } }
+        
+        public Settings Settings { get; private set; }
+        public LiveHistoryManager History { get; private set; }
+        public AutoUpdateManager AutoUpdate { get; private set; }
+        public AsyncOperation AsyncOperation { get { return _ao; } }
+        public LiveDcDrive Drive { get { return _drive; } }
+        public IEnumerable<IP2PProvider> Providers { get { return _providers; } }
+        public IEnumerable<IFsProvider> FsProviders { get { return _providers.Concat(_fsProviders); } }
 
+        public HttpProvider HttpProvider
+        {
+            get { return _httpProvider; }
+        }
+        
         public LiveClient()
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomainUnhandledException;
             Application.ApplicationExit += ApplicationApplicationExit;
             
-
-            if (!WindowsHelper.IsMagnetHandlerAssigned)
-            {
-                var res = WindowsHelper.RegisterMagnetHandler();
-                //if (MessageBox.Show("Хотите чтобы LiveDC обрабатывал магнет-ссылки ?", "Вопрос", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                //{
-                //    VistaSecurity.StartElevated("-reg");
-                //}
-            }
-
             InitializeComponent();
 
             Settings = new Settings();
@@ -90,8 +72,9 @@ namespace LiveDc
                 Settings.Load();
 
             LogManager.LogManagerInstance = new NLogManager();
+            MonoTorrent.LogManager.LogManagerInstance = new TorrentNLogManager();
 
-            logger.Info("------------------------------starting");
+            logger.Info("------------------------------starting LiveDC {0}", Assembly.GetExecutingAssembly().GetName().Version);
             
             _copyData = new CopyData();
             _copyData.CreateHandle(new CreateParams());
@@ -103,35 +86,84 @@ namespace LiveDc
 
             Utils.FileSizeFormatProvider.BinaryModifiers = new[] { " Б", " КБ", " МБ", " ГБ", " ТБ", " ПБ" };
 
+
+
+            _providers.Add(_dcProvider = new DcProvider(Settings, this));
+            _providers.Add(new TorrentProvider(this));
+
+            _fsProviders.Add(_httpProvider = new HttpProvider(this));
+
             InitializeEngine();
 
-            History = new LiveHistoryManager(this);
+            History = new LiveHistoryManager();
             History.Load();
 
             AutoUpdate = new AutoUpdateManager(this);
             AutoUpdate.CheckUpdate();
-
-            LaunchManager = new LaunchManager(this);
-
-            if (!string.IsNullOrEmpty(Settings.PortCheckUrl))
-                LiveApi.PortCheckUri = Settings.PortCheckUrl;
-            LiveApi.CheckPortAsync(_engine.Settings.TcpPort, PortCheckComplete);
-
+            
             if (!Settings.ShownGreetingsTooltip)
             {
                 _icon.ShowBalloonTip(10000, "LiveDC", "Добро пожаловать! Нажмите здесь, чтобы увидеть текущий статус работы.", ToolTipIcon.Info);
+                OpenStartPage();
 
                 Settings.ShownGreetingsTooltip = true;
                 Settings.Save();
             }
             else if (!Program.SilentMode)
             {
+                OpenStartPage();
                 _icon.ShowBalloonTip(10000, "LiveDC", "Клиент запущен.", ToolTipIcon.Info);
             }
 
             if (!string.IsNullOrEmpty(Program.StartMagnet))
             {
-                LaunchManager.StartFile(Magnet.Parse(Program.StartMagnet));
+                StartFile(Magnet.Parse(Program.StartMagnet));
+            }
+
+            SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
+        }
+
+        /// <summary>
+        /// Checks all possible cache locations for specified amount of bytes and returns first
+        /// If none has enough space removes old cached files 
+        /// </summary>
+        /// <param name="bytesToReserve"></param>
+        /// <returns>Path to root cache directory or null if there is no free space</returns>
+        public string ReserveCacheSpace(long bytesToReserve)
+        {
+            string root;
+
+            var freed = 0L;
+
+            while (( root = _storageManager.GetStoragePoint(bytesToReserve) ) == null)
+            {
+                if (!Settings.StorageAutoPrune)
+                    return null;
+
+                var round = 0L;
+
+                foreach (var p2PProvider in Providers)
+                {
+                    round += p2PProvider.ReleaseFileCache(bytesToReserve);
+
+                    if (round > 0 && freed + round >= bytesToReserve)
+                        break;
+                }
+
+                if (round == 0)
+                    return null;
+
+                freed += round;
+            }
+
+            return root;
+        }
+
+        void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Resume)
+            {
+                _dcProvider.Engine.Connect();
             }
         }
         
@@ -140,17 +172,12 @@ namespace LiveDc
             if (_importantActions.Count > 0)
             {
                 var action = _importantActions[0];
-
                 action.Item1();
-
                 _importantActions.RemoveAt(0);
-
                 UpdateTrayIcon();
-
                 return;
             }
-
-
+            
             if ((DateTime.Now - _hideTime).TotalMilliseconds < 300)
                 return;
 
@@ -169,40 +196,24 @@ namespace LiveDc
 
             _form.Show();
             _form.Activate();
+            _form.TopMost = true;
         }
 
         private void form_Deactivate(object sender, EventArgs e)
         {
+            if (_form.Visible)
+                _hideTime = DateTime.Now;
+
             var form = (Form)sender;
             form.Hide();
-            _hideTime = DateTime.Now;
         }
 
-        void ApplicationApplicationExit(object sender, EventArgs e)
+        private void ApplicationApplicationExit(object sender, EventArgs e)
         {
             logger.Info("Preparing to exit...");
             Dispose();
             logger.Info("Ready to exit");
         }
-
-        private void PortCheckComplete(CheckIpResult e)
-        {
-            logger.Info("Check port: {0} IsOpen:{1}", e.ExternalIpAddress, e.IsPortOpen);
-
-            if (e.IsPortOpen)
-            {
-                _engine.Settings.LocalAddress = e.ExternalIpAddress;
-                Settings.IPAddress = e.ExternalIpAddress;
-            }
-
-            _engine.Settings.ActiveMode = e.IsPortOpen;
-
-            if (string.IsNullOrEmpty(Settings.Hubs))
-            {
-                _hubManager.FindHubs(IPAddress.Parse(e.ExternalIpAddress));
-            }
-        }
-
         
         private void InitializeEngine()
         {
@@ -222,60 +233,7 @@ namespace LiveDc
                 File.Delete(DriveLockPath);
             }
 
-            var settings = EngineSettings.Default;
-
-            settings.ActiveMode = Settings.ActiveMode;
-            settings.UseSparseFiles = true;
-            settings.AutoSelectPort = true;
-
-            if (Settings.TCPPort != 0)
-                settings.TcpPort = Settings.TCPPort;
-
-            if (Settings.UDPPort != 0)
-                settings.UdpPort = Settings.UDPPort;
-
-            _engine = new DcEngine(settings);
-            _engine.TagInfo.Version = "livedc";
-
-            _hubManager = new HubManager(_engine, this);
-
-            if (File.Exists(SharePath))
-            {
-                try
-                {
-                    _engine.Share = MemoryShare.CreateFromXml(SharePath);
-                }
-                catch (Exception x)
-                {
-                    logger.Error("Unable to load share from {0} because {1}", SharePath, x.Message);
-                }
-            }
-
-            if (_engine.Share == null)
-            {
-                _engine.Share = new MemoryShare();
-            }
-
-            if (Settings.StorageAutoSelect)
-            {
-                _engine.Settings.PathDownload = StorageHelper.GetBestSaveDirectory();
-            }
-            else
-            {
-                _engine.Settings.PathDownload = Settings.StoragePath;
-            }
-
-            if (File.Exists(IncompletePath))
-            {
-                try
-                {
-                    _engine.DownloadManager.Load(IncompletePath);
-                }
-                catch (Exception x)
-                {
-                    logger.Error("Unable to load downloads {0}", x.Message);
-                }   
-            }
+            _providers.ForEach(p => p.Initialize());
 
             #region Virtual drive
             char driveLetter;
@@ -294,8 +252,12 @@ namespace LiveDc
                 driveLetter = StorageHelper.GetFreeDrive('l');
             }
 
-            _drive = new LiveDcDrive(_engine);
+            HttpFileStream.Manager.CacheSize = 30 * 1024 * 1024;
+            
+            _drive = new LiveDcDrive(FsProviders);
             _drive.MountAsync(driveLetter);
+            StorageHelper.OwnDrive = char.ToUpper(driveLetter) + ":\\";
+            _storageManager = new StorageManager(StorageHelper.OwnDrive);
 
             if (!Directory.Exists(Path.GetDirectoryName(DriveLockPath)))
                 Directory.CreateDirectory(Path.GetDirectoryName(DriveLockPath));
@@ -303,12 +265,7 @@ namespace LiveDc
             File.WriteAllText(DriveLockPath, driveLetter.ToString());
             #endregion
 
-            Settings.Nickname = "livedc" + Guid.NewGuid().ToString().GetMd5Hash().Substring(0, 8);
 
-            _engine.ActiveStatusChanged += EngineActivated;
-
-            _engine.StartAsync();
-            _engine.Connect();
         }
 
         public void AddClickAction(Action action, string balloonText, string actionId = null)
@@ -336,20 +293,50 @@ namespace LiveDc
             }
         }
 
-        void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
+        private bool OpenStartPage()
         {
-            if (e.Data.ToString() == "SHOW")
+            if (Settings.OpenStartPage && !string.IsNullOrEmpty(Settings.StartPageUrl))
             {
-                _icon.ShowBalloonTip(5000, "Я здесь!", "Клиент LiveDC уже запущен", ToolTipIcon.None);
+                ShellHelper.Start(Settings.StartPageUrl);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void CopyDataDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            var data = e.Data.ToString();
+
+            if (data == "SHOW")
+            {
+                if (!OpenStartPage())
+                    _icon.ShowBalloonTip(5000, "Я здесь!", "Клиент LiveDC уже запущен", ToolTipIcon.None);
                 return;
             }
 
-            var magnet = Magnet.Parse((string)e.Data);
-            LaunchManager.StartFile(magnet);
+            if (data.StartsWith("magnet:"))
+            {
+                var magnet = Magnet.Parse(data);
+                StartFile(magnet);
+                return;
+            }
+
+            if (data.EndsWith(".torrent"))
+            {
+                StartFile(data);
+            }
         }
-        
-        void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+
+        private void CurrentDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
+            var exception = e.ExceptionObject as Exception;
+
+            if (exception != null)
+            {
+                logger.Fatal("Unhandled exception: {0} at {1}", exception.Message, exception.StackTrace);
+            }
+
             if (_drive != null)
             {
                 // it is critically important to release the virtual drive
@@ -358,12 +345,12 @@ namespace LiveDc
             }
         }
 
-        void ProgramExitClick(object sender, EventArgs e)
+        private void ProgramExitClick(object sender, EventArgs e)
         {
             Application.Exit();
         }
 
-        void EngineActivated(object sender, EventArgs e)
+        private void EngineActivated(object sender, EventArgs e)
         {
             UpdateTrayIcon();
             UpdateTrayText();
@@ -377,7 +364,7 @@ namespace LiveDc
                 return;
             }
 
-            if (_engine.Active)
+            if (_providers.Any(p => p.Online))
             {
                 _icon.Icon = Resources.livedc;
             }
@@ -389,36 +376,69 @@ namespace LiveDc
 
         private void UpdateTrayText()
         {
-            var text = _engine.Active ? "Статус: в сети" : "Статус: отключен";
-
-            //if (_currentDownload != null)
-            //{
-            //    var fileName = _currentDownload.Magnet.FileName;
-
-            //    if (fileName.Length > 30)
-            //    {
-            //        var name = Path.GetFileNameWithoutExtension(fileName);
-            //        var ext = Path.GetExtension(fileName);
-
-            //        fileName = name.Substring(0, 30 - ext.Length) + "..." + ext;
-            //    }
-
-            //    text = string.Format("{0}\n{1}/{2} ({3}/с)\n{4} ",
-            //        fileName,
-            //        Utils.FormatBytes(_engine.DownloadManager.GetTotalDownloadBytes(_currentDownload)),
-            //        Utils.FormatBytes(_currentDownload.Magnet.Size),
-            //        Utils.FormatBytes(_engine.TransferManager.GetDownloadSpeed(t => t.DownloadItem == _currentDownload)),
-            //        text);
-            //}
+            var text = _providers.Any(p => p.Online) ? "Статус: в сети" : "Статус: отключен";
             Fixes.SetNotifyIconText(_icon, text);
         }
 
-        void TimerTick(object sender, EventArgs e)
+        private void TimerTick(object sender, EventArgs e)
         {
             UpdateTrayText();
         }
+
+        public void StartFile(string torrentFilePath)
+        {
+            if (!Drive.IsReady)
+            {
+                MessageBox.Show("Не удалось подключить виртуальный диск. Попробуйте перезагрузить компьютер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                var torrent = Torrent.Load(torrentFilePath);
+                var torrentProvider = Providers.OfType<TorrentProvider>().First();
+                
+                _startItem = torrentProvider.StartItem(torrent);
+
+                if (_statusForm == null)
+                    _statusForm = new FrmStatus(_ao);
+
+                if (!_startItem.ReadyToStart)
+                    _statusForm.UpdateAndShow(_startItem);
+            }
+            catch (Exception x)
+            {
+                MessageBox.Show("Произошла ошибка при попытке запуска торрент файла: " + x.Message);
+            }
+        }
+
+        public void StartFile(Magnet magnet)
+        {
+            if (!Drive.IsReady)
+            {
+                MessageBox.Show("Не удалось подключить виртуальный диск. Попробуйте перезагрузить компьютер.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                var provider = FsProviders.First(p => p.CanHandle(magnet));
+
+                _startItem = provider.StartItem(magnet);
+
+                if (_statusForm == null)
+                    _statusForm = new FrmStatus(_ao);
+
+                if (!_startItem.ReadyToStart)
+                    _statusForm.UpdateAndShow(_startItem);
+            }
+            catch (Exception x)
+            {
+                MessageBox.Show("Не удается начать загрузку: " + x.Message);
+            }
+        }
         
-        internal void Dispose()
+        public void Dispose()
         {
             if (_drive != null)
             {
@@ -428,26 +448,25 @@ namespace LiveDc
 
             History.Save();
             
-            if (_engine != null)
-            {
-                _engine.DownloadManager.Save(IncompletePath);
-                
-                var share = (MemoryShare)_engine.Share;
-
-                try
-                {
-                    if (share.IsDirty)
-                        share.ExportAsXml(SharePath);
-                }
-                catch (Exception x)
-                {
-                    logger.Error("Share save error: {0}", x.Message);
-                }
-                _engine.Dispose();
-            }
+            _providers.ForEach(p => p.Dispose());
 
             if (_icon != null)
                 _icon.Visible = false;
+        }
+
+        public void UpdateFileItem(DcFileControl control)
+        {
+            var provider = _providers.First(p => p.CanHandle(control.Magnet));
+
+            provider.UpdateFileItem(control);
+        }
+
+        public void DeleteItem(Magnet magnet)
+        {
+            var provider = _providers.First(p => p.CanHandle(magnet));
+
+            History.DeleteItem(magnet);
+            provider.DeleteFile(magnet);
         }
     }
 

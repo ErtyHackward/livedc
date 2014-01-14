@@ -1,5 +1,7 @@
-﻿using System.Windows.Forms;
+﻿using System.Linq;
+using System.Windows.Forms;
 using LiveDc.Helpers;
+using LiveDc.Providers;
 using LiveDc.Utilites;
 
 namespace LiveDc.Forms
@@ -19,9 +21,16 @@ namespace LiveDc.Forms
             autostartCheck.Checked = WindowsHelper.IsInAutoRun;
             storagePathText.Text = _client.Settings.StorageAutoSelect ? StorageHelper.GetBestSaveDirectory() : _client.Settings.StoragePath;
             storageAutoselectCheck.Checked = _client.Settings.StorageAutoSelect;
+            storageAutopruneCheck.Checked = _client.Settings.StorageAutoPrune;
 
             tcpPortNumeric.Value = _client.Settings.TCPPort;
             udpPortNumeric.Value = _client.Settings.UDPPort;
+
+            startPageCheck.Checked = _client.Settings.OpenStartPage;
+            startPageUrlText.Text = _client.Settings.StartPageUrl;
+
+            torrentAssocCheck.Checked = _client.Settings.AssocTorrentFiles;
+            magnetAssocCheck.Checked = _client.Settings.AssocMagnetLinks;
 
             storageAutoselectCheck_Click(null, null);
         }
@@ -60,7 +69,14 @@ namespace LiveDc.Forms
                 VistaSecurity.StartElevated(autostartCheck.Checked ? "-setstartup" : "-removestartup");
             }
 
+            _client.Settings.OpenStartPage = startPageCheck.Checked;
+            _client.Settings.StartPageUrl = startPageUrlText.Text;
             _client.Settings.StorageAutoSelect = storageAutoselectCheck.Checked;
+            _client.Settings.StorageAutoPrune = storageAutopruneCheck.Checked;
+
+            _client.Settings.AssocTorrentFiles = torrentAssocCheck.Checked;
+            _client.Settings.AssocMagnetLinks = magnetAssocCheck.Checked;
+
             if (!_client.Settings.StorageAutoSelect)
             {
                 _client.Settings.StoragePath = storagePathText.Text;
@@ -69,14 +85,16 @@ namespace LiveDc.Forms
             if (tcpPortNumeric.Value != 0)
             {
                 _client.Settings.TCPPort = (int)tcpPortNumeric.Value;
-                _client.Engine.Settings.TcpPort = _client.Settings.TCPPort;
+                _client.Providers.OfType<DcProvider>().First().Engine.Settings.TcpPort = _client.Settings.TCPPort;
             }
 
             if (udpPortNumeric.Value != 0)
             {
                 _client.Settings.UDPPort = (int)udpPortNumeric.Value;
-                _client.Engine.Settings.UdpPort = _client.Settings.UDPPort;
+                _client.Providers.OfType<DcProvider>().First().Engine.Settings.UdpPort = _client.Settings.UDPPort;
             }
+            
+            
 
             _client.Settings.Save();
 

@@ -7,55 +7,47 @@ namespace LiveDc
     public class Settings
     {
         private static readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-
-        private string _folderName = "LiveDC";
-
-        private string _fileName = "livedc.ini";
+        private static string _folderName = "LiveDC";
+        private static string _fileName = "livedc.ini";
 
         #region Settings
 
         public bool Autostart { get; set; }
-
         public string StoragePath { get; set; }
-
         public bool StorageAutoSelect { get; set; }
-
         public bool StorageAutoPrune { get; set; }
-
         public bool IdleEconomy { get; set; }
-
         public bool AutoUpdate { get; set; }
-
         public string Hubs { get; set; }
-
         public bool ActiveMode { get; set; }
-
         public string IPAddress { get; set; }
-
         public string Nickname { get; set; }
-
         public string VirtualDriveLetter { get; set; }
-
         public bool ShownGreetingsTooltip { get; set; }
-
         public bool DontOverrideHubs { get; set; }
-
         public int TCPPort { get; set; }
-
         public int UDPPort { get; set; }
-
         public string City { get; set; }
-
+        public int TorrentTcpPort { get; set; }
         public string PortCheckUrl { get; set; }
+        public string StartPageUrl { get; set; }
+        public bool OpenStartPage { get; set; }
+        /// <summary>
+        /// Do we need to update hub list using livedc api ?
+        /// </summary>
+        public bool UpdateHubs { get; set; }
+        public DateTime LastHubCheck { get; set; }
+        public bool AssocTorrentFiles { get; set; }
+        public bool AssocMagnetLinks { get; set; }
 
         #endregion
 
-        public string SettingsFilePath
+        public static string SettingsFilePath
         {
             get { return Path.Combine(SettingsFolder, _fileName); }
         }
 
-        public string SettingsFolder
+        public static string SettingsFolder
         {
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), _folderName); }
         }
@@ -66,6 +58,10 @@ namespace LiveDc
             StorageAutoPrune = true;
             AutoUpdate = true;
             ActiveMode = true;
+            UpdateHubs = true;
+
+            AssocTorrentFiles = true;
+            AssocMagnetLinks = true;
         }
 
         public void Save()
@@ -140,6 +136,11 @@ namespace LiveDc
                             continue;
                         }
 
+                        if (prop.PropertyType == typeof(DateTime))
+                        {
+                            prop.SetValue(this, DateTime.Parse(settingValue), null);
+                        }
+
                         logger.Warn("Type {0} of setting {1} is not supported", prop.PropertyType, prop.Name);
 
                     }
@@ -151,7 +152,5 @@ namespace LiveDc
                 logger.Error("Failed to read settings {0}", x);
             }
         }
-
-        
     }
 }
