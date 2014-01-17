@@ -66,7 +66,7 @@ namespace LiveDc
 
             _provider.LiveClient.History.AddItem(magnet);
 
-            _currentDownload = _provider.Engine.DownloadFile(magnet, cacheRoot);
+            _currentDownload = _provider.Engine.DownloadFile(magnet, Path.Combine(cacheRoot, magnet.FileName));
             _currentDownload.LogSegmentEvents = true;
 
             new ThreadStart(FormThread).BeginInvoke(null, null);
