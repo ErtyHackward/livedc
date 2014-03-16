@@ -18,8 +18,18 @@ namespace LiveDc.Forms
             _ao = ao;
 
             InitializeComponent();
-            Closing += FrmStatus_Closing;
+            FormClosing += OnFormClosing;
             NativeImageList.LargeExtensionImageLoaded += NativeImageList_LargeExtensionImageLoaded;
+        }
+
+        private void OnFormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;
+                _startItem.Dispose();
+                Hide();
+            }
         }
 
         void NativeImageList_LargeExtensionImageLoaded(object sender, NativeImageListEventArgs e)
@@ -32,9 +42,7 @@ namespace LiveDc.Forms
 
         void FrmStatus_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            e.Cancel = true;
-            _startItem.Dispose();
-            Hide();
+
         }
 
         private void cancelButton_Click(object sender, EventArgs e)
