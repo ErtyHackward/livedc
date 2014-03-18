@@ -328,7 +328,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == Setup $(ProjectDir)bin\InnoSetupManager.exe $(SolutionDir)Setup $(TargetPath)
-
+if $(ConfigurationName) == Setup $(SolutionDir)Setup\sign.bat
 if $(ConfigurationName) == Setup start C:\Windows\explorer.exe /select, $(SolutionDir)Setup\Output</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
