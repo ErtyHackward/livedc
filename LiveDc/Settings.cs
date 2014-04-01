@@ -39,7 +39,6 @@ namespace LiveDc
         public DateTime LastHubCheck { get; set; }
         public bool AssocTorrentFiles { get; set; }
         public bool AssocMagnetLinks { get; set; }
-
         #endregion
 
         public static string SettingsFilePath
@@ -72,6 +71,9 @@ namespace LiveDc
 
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
+
+                if (File.Exists(SettingsFilePath))
+                    File.Delete(SettingsFilePath);
 
                 using (var sw = new StreamWriter(File.OpenWrite(SettingsFilePath)))
                 {

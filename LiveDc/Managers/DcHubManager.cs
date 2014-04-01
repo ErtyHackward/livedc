@@ -20,7 +20,7 @@ namespace LiveDc.Managers
         private readonly DcProvider _provider;
         private readonly LiveClient _client;
 
-        private List<HubConnection> _failedHubs = new List<HubConnection>();
+        private readonly List<HubConnection> _failedHubs = new List<HubConnection>();
         private List<string> _allHubs = new List<string>();
 
         private Settings Settings { get { return _client.Settings; } }
@@ -58,8 +58,17 @@ namespace LiveDc.Managers
             }
         }
 
+
+        /// <summary>
+        /// Starts hubs update procedure
+        /// 1. Find out the user's city name 
+        /// 2. Request hubs for that city
+        /// 3. If nothing is found - shows dialog to enter new address
+        /// </summary>
+        /// <param name="externalIp"></param>
         public void FindHubs(IPAddress externalIp)
         {
+            logger.Info("Starting global hub update...");
             if (FlyLinkHelper.IsInstalled)
             {
                 var hubs = FlyLinkHelper.ReadHubs();
@@ -223,8 +232,10 @@ namespace LiveDc.Managers
             }
         }
 
-        private void AddHub(string hubAddress)
+        public void AddHub(string hubAddress)
         {
+            hubAddress = NormalizeHubAddress(hubAddress);
+
             if (_provider.Engine.Hubs.All().Any(h => h.Settings.HubAddress == hubAddress))
                 return;
 
@@ -299,7 +310,7 @@ namespace LiveDc.Managers
         {
             var result = address.ToLower();
 
-            if (result.StartsWith("dchub://"))
+            if (result.StartsWith("dchub://", StringComparison.InvariantCultureIgnoreCase))
                 result = result.Remove(0, 8);
 
             if (result.EndsWith(":411"))
