@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
+using System.Threading;
+using System.Xml.Serialization;
 using LiveDc.Helpers;
 using LiveDc.Managers;
 using LiveDc.Notify;
@@ -243,6 +246,64 @@ namespace LiveDc.Providers
 
             if (!string.IsNullOrEmpty(Settings.PortCheckUrl))
                 LiveApi.PortCheckUri = Settings.PortCheckUrl;
+
+            ThreadPool.QueueUserWorkItem(o => AutoConfiguration());
+        }
+
+        private bool _providerConfiguration;
+
+        public void AutoConfiguration()
+        {
+            logger.Info("Autoconfiguration started...");
+
+            using (var wc = new WebClient())
+            {
+                wc.Encoding = Encoding.UTF8;
+
+                var config = new ProviderConfiguration();
+                _providerConfiguration = false;
+
+                try
+                {
+                    logger.Info("Loading provider specific data http://dc.local/ISP_favorites.xml");
+                    var xmlData = wc.DownloadString("http://dc.local/ISP_favorites.xml");
+                    var xml = new XmlSerializer(typeof(ProviderConfiguration));
+                    logger.Info("Deserialization...");
+                    config = (ProviderConfiguration)xml.Deserialize(new StringReader(xmlData));
+                    _providerConfiguration = true;
+                    logger.Info("Provider configuration sucessfully loaded");
+                }
+                catch (Exception e)
+                {
+                    logger.Error("Unable to load provider configuration: {0}", e.Message);
+                }
+
+                if (_providerConfiguration)
+                {
+                    if (!string.IsNullOrEmpty(config.LiveDcConfig.PortCheckUrl))
+                    {
+                        logger.Info("Using new port check url: {0}", config.LiveDcConfig.PortCheckUrl);
+                        LiveApi.PortCheckUri  = config.LiveDcConfig.PortCheckUrl;
+                        Settings.PortCheckUrl = config.LiveDcConfig.PortCheckUrl;
+                        Settings.Save();
+                    }
+
+                    if (config.Hubs != null && config.Hubs.Count > 0)
+                    {
+                        logger.Info("Using provider hubs...");
+                        Engine.Hubs.Clear();
+
+                        foreach (var hubInfo in config.Hubs)
+                        {
+                            _hubManager.AddHub(hubInfo.Address);    
+                        }
+                        
+                        Settings.Hubs = string.Join(";", config.Hubs.Select(h => DcHubManager.NormalizeHubAddress(h.Address)));
+                        Settings.Save();
+                    }
+                }
+            }
+
             LiveApi.CheckPortAsync(Settings.TCPPort, PortCheckComplete);
         }
 
@@ -278,11 +339,15 @@ namespace LiveDc.Providers
             }
 
             _engine.Settings.ActiveMode = e.IsPortOpen;
-
+            
             if (string.IsNullOrEmpty(Settings.Hubs) || (DateTime.Now - Settings.LastHubCheck).TotalDays > 7)
             {
-                _hubManager.FindHubs(IPAddress.Parse(e.ExternalIpAddress));
+                if (!_providerConfiguration)
+                {
+                    _hubManager.FindHubs(IPAddress.Parse(e.ExternalIpAddress));
+                }
             }
+
         }
     }
 }

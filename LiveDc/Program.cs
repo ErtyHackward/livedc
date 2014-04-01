@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 using LiveDc.Helpers;
+using LiveDc.Managers;
 using LiveDc.Notify;
 using LiveDc.Utilites;
 using SharpDc.Structs;
