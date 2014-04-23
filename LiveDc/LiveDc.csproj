@@ -129,6 +129,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Helpers\DcSharaApi.cs" />
+    <Compile Include="LiveDcWeb.cs" />
     <Compile Include="Managers\ProviderConfiguration.cs" />
     <Compile Include="Managers\StorageManager.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

@@ -39,6 +39,8 @@ namespace LiveDc
         public DateTime LastHubCheck { get; set; }
         public bool AssocTorrentFiles { get; set; }
         public bool AssocMagnetLinks { get; set; }
+        public bool WebServer { get; set; }
+
         #endregion
 
         public static string SettingsFilePath
